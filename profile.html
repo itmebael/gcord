@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Gcord Profile Management</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --sidebar: #0052CC;
+    --active: #00368C;
+    --header: #EAF5FF;
+    --ink: #0A2540;
+    --muted: #1B3A5C;
+    --accent: #0052CC;
+    --danger: #D64545;
+  }
+  body {
+    min-height: 100vh;
+    font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    color: var(--ink);
+    background: #F7F9FC;
+  }
+  .app {
+    min-height: 100vh;
+    display: grid;
+    grid-template-columns: 260px minmax(0, 1fr);
+  }
+  .sidebar {
+    background: var(--sidebar);
+    color: white;
+    padding: 22px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    position: sticky;
+    top: 0;
+  }
+  .side-top {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 4px 8px 12px;
+    border-bottom: 2px solid rgba(255,255,255,0.35);
+  }
+  .brand-mark {
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    background: rgba(255,255,255,0.18);
+    display: grid;
+    place-items: center;
+  }
+  .brand-text strong { display: block; font-size: 14px; font-weight: 700; }
+  .brand-text span { display: block; font-size: 13px; line-height: 1.3; }
+  .menu-title { font-size: 14px; opacity: 0.78; padding: 0 8px; }
+  .menu { display: flex; flex-direction: column; gap: 10px; }
+  .menu a {
+    min-height: 42px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 9px 10px;
+    color: white;
+    text-decoration: none;
+    border-radius: 8px;
+    font-size: 15px;
+    line-height: 1.25;
+  }
+  .menu a.active {
+    background: var(--active);
+    box-shadow: 0 3px 7px rgba(30, 55, 120, 0.26);
+  }
+  .menu svg { flex: 0 0 auto; }
+  .main {
+    min-width: 0;
+    padding: 5px clamp(18px, 3vw, 42px) 0;
+  }
+  .page {
+    max-width: 1440px;
+    margin: 0 auto;
+  }
+  .profile-header {
+    min-height: 286px;
+    background: var(--header);
+    padding: 30px 22px 16px;
+    position: relative;
+    display: grid;
+    grid-template-rows: auto 1fr;
+  }
+  .hero-profile {
+    align-self: center;
+    justify-self: center;
+    text-align: center;
+    margin-top: 8px;
+  }
+  .profile-avatar {
+    width: 96px;
+    height: 96px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    background: linear-gradient(155deg, #2485FF 0%, #0052CC 100%);
+    margin: 0 auto 10px;
+  }
+  .hero-profile h1 {
+    font-size: 16px;
+    font-weight: 900;
+    margin-bottom: 8px;
+    color: #000000;
+  }
+  .eyebrow {
+    color: #000000;
+    font-size: 19px;
+    font-weight: 800;
+    line-height: 1.2;
+    margin-bottom: 14px;
+  }
+  .profile-body h2 {
+    color: #000000;
+  }
+  .role-pill {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 93px;
+    min-height: 28px;
+    padding: 3px 16px;
+    border-radius: 999px;
+    background: var(--accent);
+    color: white;
+    font-weight: 800;
+    margin-bottom: 4px;
+  }
+  .email-small {
+    font-size: 12px;
+  }
+  .profile-body {
+    width: min(720px, 100%);
+    margin: 0 auto;
+    padding: 12px 18px 38px;
+  }
+  .profile-body h2 {
+    font-size: 20px;
+    font-weight: 700;
+    margin-bottom: 28px;
+  }
+  .details {
+    display: grid;
+    grid-template-columns: 190px minmax(0, 1fr);
+    row-gap: 22px;
+    column-gap: 24px;
+    font-size: 18px;
+    margin-bottom: 58px;
+  }
+  .details dt { font-weight: 500; }
+  .details dd { font-weight: 500; overflow-wrap: anywhere; }
+  .account-title {
+    font-size: 17px;
+    font-weight: 800;
+    margin-bottom: 24px;
+  }
+  .account-list {
+    display: grid;
+    gap: 34px;
+  }
+  .account-row {
+    width: 100%;
+    border: 0;
+    background: transparent;
+    display: grid;
+    grid-template-columns: 40px minmax(0, 1fr) 28px;
+    align-items: center;
+    gap: 8px;
+    color: var(--ink);
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+  }
+  .account-row strong {
+    display: block;
+    font-size: 18px;
+    font-weight: 500;
+    margin-bottom: 4px;
+  }
+  .account-row span {
+    display: block;
+    font-size: 13px;
+  }
+  .account-row .danger-icon {
+    color: var(--danger);
+  }
+  .chevron {
+    justify-self: end;
+  }
+  @media (max-width: 840px) {
+    .app { grid-template-columns: 1fr; }
+    .sidebar { position: static; height: auto; }
+    .menu { display: grid; grid-template-columns: repeat(2, 1fr); }
+    .main { padding: 16px; }
+    .profile-header { min-height: 250px; }
+  }
+  @media (max-width: 560px) {
+    .menu { grid-template-columns: 1fr; }
+    .profile-body { padding-inline: 8px; }
+    .details {
+      grid-template-columns: 1fr;
+      row-gap: 6px;
+    }
+    .details dd { margin-bottom: 14px; }
+  }
+
+  /* ============ GLASS UI REFRESH ============ */
+  body {
+    background:
+      radial-gradient(circle at 8% 6%, rgba(61,139,255,0.24), transparent 30%),
+      radial-gradient(circle at 92% 18%, rgba(0,182,122,0.16), transparent 28%),
+      linear-gradient(135deg, #F7FBFF 0%, #EEF5FF 48%, #F9FBFE 100%);
+  }
+  .app { grid-template-columns: 280px minmax(0, 1fr); }
+  .sidebar {
+    margin: 16px 0 16px 16px;
+    height: calc(100vh - 32px);
+    border: 1px solid rgba(255,255,255,0.28);
+    border-radius: 22px;
+    background: linear-gradient(155deg, rgba(0,82,204,0.88), rgba(0,54,140,0.78));
+    box-shadow: 0 24px 54px -28px rgba(0,52,140,0.62);
+    backdrop-filter: blur(18px);
+  }
+  .side-top {
+    border-bottom: 1px solid rgba(255,255,255,0.24);
+    padding: 8px 10px 16px;
+  }
+  .brand-mark, .menu a.active {
+    background: rgba(255,255,255,0.18);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.24);
+  }
+  .menu { gap: 8px; }
+  .menu a {
+    border: 1px solid transparent;
+    border-radius: 12px;
+    padding: 11px 12px;
+    transition: background 0.18s ease, border-color 0.18s ease, transform 0.18s ease;
+  }
+  .menu a:hover {
+    background: rgba(255,255,255,0.12);
+    border-color: rgba(255,255,255,0.18);
+    transform: translateX(2px);
+  }
+  .main { padding: 22px clamp(20px, 3vw, 42px) 34px; }
+  .page {
+    border-radius: 22px;
+    overflow: hidden;
+    background: rgba(234,245,255,0.54);
+    border: 1px solid rgba(255,255,255,0.72);
+    box-shadow: 0 18px 48px -34px rgba(10,37,64,0.5);
+    backdrop-filter: blur(18px);
+  }
+  .profile-header {
+    min-height: 280px;
+    background:
+      radial-gradient(circle at 50% 18%, rgba(61,139,255,0.2), transparent 42%),
+      rgba(255,255,255,0.46);
+    border-bottom: 1px solid rgba(255,255,255,0.72);
+  }
+  .profile-avatar {
+    box-shadow: 0 18px 42px -22px rgba(0,82,204,0.56);
+    border: 4px solid rgba(255,255,255,0.72);
+  }
+  .profile-body {
+    width: min(880px, 100%);
+    padding: 28px;
+  }
+  .details,
+  .account-list {
+    background: rgba(255,255,255,0.68);
+    border: 1px solid rgba(255,255,255,0.74);
+    border-radius: 18px;
+    padding: 22px;
+    box-shadow: 0 18px 42px -34px rgba(10,37,64,0.54);
+    backdrop-filter: blur(18px);
+  }
+  .details {
+    row-gap: 16px;
+    margin-bottom: 28px;
+  }
+  .account-title { margin-bottom: 12px; }
+  .account-list { gap: 18px; }
+  .account-row {
+    border-radius: 14px;
+    padding: 12px;
+    transition: background 0.18s ease, transform 0.18s ease;
+  }
+  .account-row:hover {
+    background: rgba(234,245,255,0.64);
+    transform: translateX(2px);
+  }
+  @media (max-width: 840px) {
+    .app { grid-template-columns: 1fr; }
+    .sidebar {
+      position: static;
+      height: auto;
+      margin: 12px;
+      border-radius: 18px;
+    }
+    .main { padding: 12px; }
+  }
+
+  .backdrop {
+    position: fixed;
+    inset: 0;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    background: rgba(10, 25, 48, 0.45);
+    backdrop-filter: blur(4px);
+    z-index: 120;
+    padding: 20px;
+  }
+  .backdrop.active { display: flex; }
+  .modal {
+    width: min(420px, 100%);
+    background: #fff;
+    border-radius: 20px;
+    padding: 22px;
+    box-shadow: 0 28px 80px rgba(15, 23, 42, 0.18);
+  }
+  .modal h2 { font-size: 18px; font-weight: 900; margin-bottom: 6px; }
+  .modal .sub { color: #64748B; font-size: 13px; margin-bottom: 16px; }
+  .form-grid { display: grid; gap: 12px; }
+  .field { display: grid; gap: 6px; }
+  .field label { font-size: 12px; font-weight: 700; color: #475569; }
+  .field input {
+    height: 44px;
+    border: 1px solid #D7E0EC;
+    border-radius: 12px;
+    padding: 0 12px;
+    font: inherit;
+    outline: none;
+  }
+  .field input:focus { border-color: #0052CC; box-shadow: 0 0 0 3px rgba(0, 82, 204, 0.12); }
+  .field .error { display: none; color: #DC2626; font-size: 12px; }
+  .field.invalid input { border-color: #DC2626; }
+  .field.invalid .error { display: block; }
+  .modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 4px;
+  }
+  .btn {
+    border: 0;
+    border-radius: 12px;
+    height: 42px;
+    padding: 0 16px;
+    font: inherit;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  .btn.ghost { background: #EEF2F7; color: #334155; }
+  .btn.primary { background: #0052CC; color: #fff; }
+  .btn:disabled { opacity: 0.65; cursor: not-allowed; }
+  .toast {
+    position: fixed;
+    left: 50%;
+    bottom: 24px;
+    transform: translateX(-50%);
+    display: none;
+    color: #fff;
+    background: #0F9B6A;
+    border-radius: 999px;
+    padding: 12px 18px;
+    font-size: 14px;
+    font-weight: 700;
+    z-index: 140;
+    box-shadow: 0 14px 34px rgba(15, 23, 42, 0.18);
+  }
+  .toast.show { display: block; }
+  .toast.err { background: #DC2626; }
+</style>
+</head>
+<body>
+<div class="app">
+  <div id="sidebar-root"></div>
+
+  <main class="main">
+    <div class="page">
+      <div class="eyebrow">PROFILE MANAGEMENT</div>
+      <header class="profile-header">
+        <div class="hero-profile">
+          <div class="profile-avatar" aria-hidden="true">
+            <svg width="66" height="66" fill="none" stroke="white" stroke-width="4" viewBox="0 0 64 64"><circle cx="32" cy="20" r="10"/><path d="M14 53c0-11 8-18 18-18s18 7 18 18"/></svg>
+          </div>
+          <h1>Mace Zhang</h1>
+          <div class="role-pill">Staff</div>
+          <div class="email-small">mAce_ang@gmail.com</div>
+        </div>
+      </header>
+
+      <section class="profile-body">
+        <h2>Profile Management</h2>
+        <dl class="details">
+          <dt>Lastname:</dt><dd>Zhang</dd>
+          <dt>Firstname:</dt><dd>Mace</dd>
+          <dt>M.I</dt><dd>V.</dd>
+          <dt>Email Address:</dt><dd>mAce_ang@gmail.com</dd>
+          <dt>Role:</dt><dd>Staff</dd>
+          <dt>Phone Number:</dt><dd>09171234567</dd>
+        </dl>
+
+        <div class="account-title">Account</div>
+        <div class="account-list">
+          <button class="account-row" type="button" id="changePasswordBtn">
+            <svg width="28" height="28" fill="none" stroke="#1f2937" stroke-width="2.2" viewBox="0 0 24 24"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
+            <span><strong>Change Password:</strong><span>Update your account password</span></span>
+            <svg class="chevron" width="24" height="24" fill="none" stroke="#111827" stroke-width="2.8" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg>
+          </button>
+          <button class="account-row" type="button" data-logout-trigger data-target="login.html">
+            <svg class="danger-icon" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><path d="M10 17l5-5-5-5M15 12H3"/></svg>
+            <span><strong>Log out</strong><span>Sign out from your account</span></span>
+            <svg class="chevron" width="24" height="24" fill="none" stroke="#111827" stroke-width="2.8" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg>
+          </button>
+        </div>
+      </section>
+    </div>
+  </main>
+</div>
+
+<div class="backdrop" id="passwordModal" role="dialog" aria-modal="true" aria-labelledby="passwordModalTitle">
+  <div class="modal">
+    <h2 id="passwordModalTitle">Change Password</h2>
+    <p class="sub">Update your account password</p>
+    <form id="passwordForm" class="form-grid" novalidate>
+      <div class="field">
+        <label for="currentPassword">Current Password</label>
+        <input id="currentPassword" name="currentPassword" type="password" autocomplete="current-password" required />
+        <div class="error">Current password is required.</div>
+      </div>
+      <div class="field">
+        <label for="newPassword">New Password</label>
+        <input id="newPassword" name="newPassword" type="password" autocomplete="new-password" required minlength="8" />
+        <div class="error">Use at least 8 characters.</div>
+      </div>
+      <div class="field">
+        <label for="confirmPassword">Confirm New Password</label>
+        <input id="confirmPassword" name="confirmPassword" type="password" autocomplete="new-password" required />
+        <div class="error">Passwords do not match.</div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn ghost" type="button" id="cancelPasswordBtn">Cancel</button>
+        <button class="btn primary" type="submit" id="submitPasswordBtn">Update Password</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase-config.js"></script>
+<script src="supabase-api.js"></script>
+<script src="sidebar.js"></script>
+<script>
+  (function () {
+    var user = GcordAPI.requireAuth();
+    if (!user) return;
+
+    var roleLabel = user.role === 'super_admin' ? 'Super Admin' : 'Staff';
+    var first = user.first_name || '';
+    var last = user.last_name || '';
+    if (!first && user.full_name) {
+      var parts = String(user.full_name).trim().split(/\s+/);
+      first = parts[0] || '';
+      last = parts.slice(1).join(' ') || '';
+    }
+
+    var heroName = document.querySelector('.hero-profile h1');
+    var rolePill = document.querySelector('.role-pill');
+    var emailSmall = document.querySelector('.email-small');
+    if (heroName) heroName.textContent = user.full_name || (first + ' ' + last).trim() || user.username;
+    if (rolePill) rolePill.textContent = roleLabel;
+    if (emailSmall) emailSmall.textContent = user.email || '—';
+
+    var details = document.querySelectorAll('.details dd');
+    if (details.length >= 6) {
+      details[0].textContent = last || '—';
+      details[1].textContent = first || '—';
+      details[2].textContent = '—';
+      details[3].textContent = user.email || '—';
+      details[4].textContent = roleLabel;
+      details[5].textContent = user.phone || '—';
+    }
+
+    var modal = document.getElementById('passwordModal');
+    var form = document.getElementById('passwordForm');
+    var submitBtn = document.getElementById('submitPasswordBtn');
+
+    function showToast(message, type) {
+      var toast = document.getElementById('toast');
+      toast.textContent = message;
+      toast.className = 'toast show ' + (type || 'ok');
+      clearTimeout(showToast._timer);
+      showToast._timer = setTimeout(function () {
+        toast.className = 'toast';
+      }, 2600);
+    }
+
+    function setInvalid(field, invalid) {
+      field.classList.toggle('invalid', !!invalid);
+    }
+
+    function clearErrors() {
+      form.querySelectorAll('.field').forEach(function (field) {
+        field.classList.remove('invalid');
+      });
+    }
+
+    function openModal() {
+      clearErrors();
+      form.reset();
+      modal.classList.add('active');
+      document.getElementById('currentPassword').focus();
+    }
+
+    function closeModal() {
+      modal.classList.remove('active');
+      clearErrors();
+      form.reset();
+    }
+
+    document.getElementById('changePasswordBtn').addEventListener('click', openModal);
+    document.getElementById('cancelPasswordBtn').addEventListener('click', closeModal);
+    modal.addEventListener('click', function (e) {
+      if (e.target === modal) closeModal();
+    });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && modal.classList.contains('active')) closeModal();
+    });
+
+    form.addEventListener('submit', async function (e) {
+      e.preventDefault();
+      var current = document.getElementById('currentPassword');
+      var next = document.getElementById('newPassword');
+      var confirm = document.getElementById('confirmPassword');
+
+      var hasCurrent = current.value.length > 0;
+      var nextOk = next.value.length >= 8;
+      var confirmOk = next.value === confirm.value && confirm.value.length > 0;
+
+      setInvalid(current.closest('.field'), !hasCurrent);
+      current.closest('.field').querySelector('.error').textContent = 'Current password is required.';
+      setInvalid(next.closest('.field'), !nextOk);
+      setInvalid(confirm.closest('.field'), !confirmOk);
+
+      if (!hasCurrent || !nextOk || !confirmOk) {
+        showToast('Please fix the password fields.', 'err');
+        return;
+      }
+
+      submitBtn.disabled = true;
+      try {
+        await GcordAPI.changePassword(current.value, next.value);
+        closeModal();
+        showToast('Password updated successfully.');
+      } catch (err) {
+        var msg = (err && err.message) ? err.message : 'Could not update password.';
+        if (/current password/i.test(msg)) {
+          setInvalid(current.closest('.field'), true);
+          current.closest('.field').querySelector('.error').textContent = msg;
+        }
+        showToast(msg, 'err');
+      } finally {
+        submitBtn.disabled = false;
+      }
+    });
+  })();
+</script>
+</body>
+</html>

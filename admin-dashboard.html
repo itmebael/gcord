@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Gcord Super Admin Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --blue: #0052CC;
+    --blue-soft: #3D8BFF;
+    --blue-panel: #EAF5FF;
+    --sidebar: #0052CC;
+    --ink: #0A2540;
+    --muted: #5C7088;
+    --line: #E3E8F0;
+    --card: #ffffff;
+    --success: #00B67A;
+    --danger: #D64545;
+    --shadow: 0 1px 2px rgba(10,37,64,0.04), 0 12px 32px -8px rgba(10,37,64,0.10);
+  }
+  body {
+    min-height: 100vh;
+    font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    color: var(--ink);
+    background:
+      radial-gradient(circle at 8% 6%, rgba(61,139,255,0.24), transparent 30%),
+      radial-gradient(circle at 92% 18%, rgba(0,182,122,0.16), transparent 28%),
+      linear-gradient(135deg, #F7FBFF 0%, #EEF5FF 48%, #F9FBFE 100%);
+  }
+  .app {
+    min-height: 100vh;
+    display: grid;
+    grid-template-columns: 280px minmax(0, 1fr);
+  }
+  .sidebar {
+    margin: 16px 0 16px 16px;
+    height: calc(100vh - 32px);
+    padding: 22px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    position: sticky;
+    top: 16px;
+    color: white;
+    border: 1px solid rgba(255,255,255,0.28);
+    border-radius: 22px;
+    background: linear-gradient(155deg, rgba(0,82,204,0.88), rgba(0,54,140,0.78));
+    box-shadow: 0 24px 54px -28px rgba(0,52,140,0.62);
+    backdrop-filter: blur(18px);
+  }
+  .side-top {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 10px 16px;
+    border-bottom: 1px solid rgba(255,255,255,0.24);
+  }
+  .brand-mark {
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    background: rgba(255,255,255,0.18);
+    display: grid;
+    place-items: center;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.24);
+  }
+  .brand-text strong { display: block; font-size: 14px; font-weight: 700; }
+  .brand-text span { display: block; font-size: 13px; line-height: 1.3; }
+  .menu-title { font-size: 14px; opacity: 0.78; padding: 0 8px; }
+  .menu { display: flex; flex-direction: column; gap: 8px; }
+  .menu a {
+    min-height: 42px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 11px 12px;
+    color: white;
+    text-decoration: none;
+    border: 1px solid transparent;
+    border-radius: 12px;
+    font-size: 15px;
+    line-height: 1.25;
+    transition: background 0.18s ease, border-color 0.18s ease, transform 0.18s ease;
+  }
+  .menu a:hover {
+    background: rgba(255,255,255,0.12);
+    border-color: rgba(255,255,255,0.18);
+    transform: translateX(2px);
+  }
+  .menu a.active {
+    background: rgba(255,255,255,0.18);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.24);
+  }
+  .menu svg { flex: 0 0 auto; }
+  .main {
+    min-width: 0;
+    padding: 22px clamp(20px, 3vw, 42px) 34px;
+  }
+  .page {
+    max-width: 1440px;
+    margin: 0 auto;
+  }
+  .page-banner {
+    background: rgba(255,255,255,0.82);
+    border: 1px solid rgba(10,37,64,0.18);
+    border-radius: 14px;
+    padding: 16px 18px;
+    margin-bottom: 22px;
+    box-shadow: 0 18px 48px -34px rgba(10,37,64,0.5);
+  }
+  .page-banner h1 {
+    font-size: clamp(18px, 2vw, 26px);
+    font-weight: 800;
+    letter-spacing: 0;
+  }
+  .content-grid {
+    display: grid;
+    grid-template-columns: minmax(280px, 0.9fr) minmax(0, 1.1fr);
+    gap: 22px;
+    align-items: start;
+  }
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+  }
+  .stat-card {
+    min-height: 118px;
+    background: rgba(255,255,255,0.78);
+    border: 1px solid rgba(255,255,255,0.8);
+    border-radius: 16px;
+    padding: 18px 16px;
+    box-shadow: 0 18px 42px -32px rgba(10,37,64,0.55);
+    backdrop-filter: blur(18px);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 10px;
+  }
+  .stat-head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .stat-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    flex: 0 0 auto;
+  }
+  .stat-icon.admins {
+    background: #E8F1FF;
+    color: #1D5BD6;
+  }
+  .stat-icon.staff {
+    background: #E4F8EF;
+    color: #0F9B6A;
+  }
+  .stat-label {
+    color: #334155;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+  }
+  .stat-value {
+    font-size: clamp(28px, 3vw, 40px);
+    font-weight: 800;
+    line-height: 1;
+    color: #0A2540;
+  }
+  .stat-bar {
+    height: 8px;
+    border-radius: 999px;
+    background: #E8EEF6;
+    overflow: hidden;
+  }
+  .stat-bar > span {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+  }
+  .stat-bar.tx > span {
+    width: 0%;
+    background: linear-gradient(90deg, #3D8BFF, #0052CC);
+  }
+  .stat-bar.dup > span {
+    width: 0%;
+    background: linear-gradient(90deg, #F87171, #DC2626);
+  }
+  .panels {
+    display: grid;
+    gap: 18px;
+  }
+  .panel {
+    background: rgba(255,255,255,0.78);
+    border: 1px solid rgba(255,255,255,0.8);
+    border-radius: 18px;
+    padding: 20px;
+    box-shadow: 0 18px 48px -34px rgba(10,37,64,0.5);
+    backdrop-filter: blur(18px);
+  }
+  .panel-title {
+    font-size: 16px;
+    font-weight: 800;
+    margin-bottom: 16px;
+  }
+  .chart-wrap {
+    background: #F3F6FB;
+    border: 1px solid #E3E8F0;
+    border-radius: 14px;
+    padding: 18px 14px 12px;
+    min-height: 190px;
+  }
+  .bars {
+    height: 140px;
+    display: grid;
+    grid-template-columns: repeat(10, 1fr);
+    align-items: end;
+    gap: 8px;
+  }
+  .bars span {
+    display: block;
+    border-radius: 8px 8px 4px 4px;
+    background: linear-gradient(180deg, #A8C7F0 0%, #7BA3D9 100%);
+    min-height: 18px;
+  }
+  .activity-list {
+    background: #EAF5FF;
+    border: 1px solid rgba(125,145,239,0.28);
+    border-radius: 14px;
+    overflow: hidden;
+  }
+  .activity-item {
+    display: grid;
+    gap: 8px;
+    padding: 16px 18px;
+    border-top: 1px solid rgba(125,145,239,0.28);
+  }
+  .activity-item:first-child { border-top: 0; }
+  .activity-item p {
+    font-size: 14px;
+    font-weight: 600;
+    color: #0A2540;
+    line-height: 1.35;
+  }
+  .activity-item time {
+    display: block;
+    text-align: right;
+    font-size: 12px;
+    color: #5C7088;
+    font-weight: 500;
+  }
+  .top-users {
+    margin-top: 22px;
+  }
+  .top-users-list {
+    display: grid;
+    gap: 10px;
+  }
+  .top-user-row {
+    display: grid;
+    grid-template-columns: 36px 1fr auto;
+    gap: 14px;
+    align-items: center;
+    padding: 14px 16px;
+    background: #F5F8FD;
+    border: 1px solid #E3E8F0;
+    border-radius: 14px;
+  }
+  .top-user-row.rank-1 {
+    background: linear-gradient(135deg, #FFF8E8 0%, #F3F7FF 100%);
+    border-color: #F0D9A0;
+  }
+  .rank-badge {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    font-size: 13px;
+    font-weight: 800;
+    color: #1D5BD6;
+    background: #E8F1FF;
+  }
+  .top-user-row.rank-1 .rank-badge {
+    background: #F59E0B;
+    color: #fff;
+  }
+  .top-user-row.rank-2 .rank-badge {
+    background: #94A3B8;
+    color: #fff;
+  }
+  .top-user-row.rank-3 .rank-badge {
+    background: #D97706;
+    color: #fff;
+  }
+  .top-user-meta {
+    min-width: 0;
+  }
+  .top-user-meta strong {
+    display: block;
+    font-size: 14px;
+    font-weight: 800;
+    margin-bottom: 4px;
+  }
+  .top-user-meta span {
+    display: block;
+    font-size: 12px;
+    color: #64748B;
+  }
+  .progress-line {
+    margin-top: 8px;
+    height: 6px;
+    border-radius: 999px;
+    background: #E2E8F0;
+    overflow: hidden;
+  }
+  .progress-line > i {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+    background: linear-gradient(90deg, #3D8BFF, #0052CC);
+  }
+  .top-user-stats {
+    text-align: right;
+  }
+  .top-user-stats strong {
+    display: block;
+    font-size: 16px;
+    font-weight: 800;
+    color: #0A2540;
+  }
+  .top-user-stats span {
+    display: block;
+    margin-top: 2px;
+    font-size: 11px;
+    font-weight: 700;
+    color: #64748B;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+  }
+  @media (max-width: 1100px) {
+    .content-grid { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 840px) {
+    .app { grid-template-columns: 1fr; }
+    .sidebar {
+      position: static;
+      height: auto;
+      margin: 12px;
+      border-radius: 18px;
+    }
+    .main { padding: 12px; }
+  }
+  @media (max-width: 520px) {
+    .stats { grid-template-columns: 1fr; }
+    .bars { gap: 5px; }
+    .top-user-row {
+      grid-template-columns: 36px 1fr;
+      grid-template-areas:
+        "rank meta"
+        "rank stats";
+    }
+    .rank-badge { grid-area: rank; }
+    .top-user-meta { grid-area: meta; }
+    .top-user-stats {
+      grid-area: stats;
+      text-align: left;
+      margin-top: 4px;
+    }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <div id="sidebar-root"></div>
+
+  <main class="main">
+    <div id="admin-topbar-root" data-welcome="Welcome back!"></div>
+
+    <div class="page">
+      <div class="page-banner">
+        <h1 id="adminDashTitle">Admin Dashboard</h1>
+      </div>
+
+      <div class="content-grid">
+        <section class="stats" aria-label="Summary statistics">
+          <article class="stat-card">
+            <div class="stat-head">
+              <div class="stat-icon admins" aria-hidden="true">
+                <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <circle cx="9" cy="8" r="3"/>
+                  <circle cx="16" cy="9" r="2.5"/>
+                  <path d="M2.5 19c0-3 2.5-5 6.5-5s6.5 2 6.5 5"/>
+                  <path d="M15 14.5c2.4.3 4.5 1.7 4.5 4.5"/>
+                </svg>
+              </div>
+              <span class="stat-label">Total Super Admins</span>
+            </div>
+            <strong class="stat-value" id="dashTotalAdmins">0</strong>
+          </article>
+
+          <article class="stat-card">
+            <div class="stat-head">
+              <div class="stat-icon staff" aria-hidden="true">
+                <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <circle cx="8" cy="8" r="2.8"/>
+                  <circle cx="16" cy="8" r="2.8"/>
+                  <circle cx="12" cy="13" r="2.4"/>
+                  <path d="M2.5 19c.4-2.6 2.4-4.2 5.5-4.2 1.1 0 2 .2 2.8.6"/>
+                  <path d="M13.2 15.4c.8-.4 1.7-.6 2.8-.6 3.1 0 5.1 1.6 5.5 4.2"/>
+                </svg>
+              </div>
+              <span class="stat-label">Total Staff</span>
+            </div>
+            <strong class="stat-value" id="dashTotalStaff">0</strong>
+          </article>
+
+          <article class="stat-card">
+            <div>
+              <span class="stat-label">Total Transactions</span>
+              <strong class="stat-value" id="dashTotalTx" style="display:block;margin-top:10px;">0</strong>
+            </div>
+            <div class="stat-bar tx" aria-hidden="true"><span id="dashTxBar" style="width:0%"></span></div>
+          </article>
+
+          <article class="stat-card">
+            <div>
+              <span class="stat-label">Duplicate Blocked</span>
+              <strong class="stat-value" id="dashDup" style="display:block;margin-top:10px;">0</strong>
+            </div>
+            <div class="stat-bar dup" aria-hidden="true"><span id="dashDupBar" style="width:0%"></span></div>
+          </article>
+        </section>
+
+        <section class="panels">
+          <article class="panel">
+            <div class="panel-title">Transaction Trends</div>
+            <div class="chart-wrap">
+              <div class="bars" id="trendBars" aria-label="Transaction trends bar chart"></div>
+            </div>
+          </article>
+
+          <article class="panel">
+            <div class="panel-title">Recent System Activities</div>
+            <div class="activity-list" id="recentActivities">
+              <div class="activity-item"><p>Loading activities…</p><time></time></div>
+            </div>
+          </article>
+        </section>
+      </div>
+
+      <section class="panel top-users" aria-label="Top 5 users by transaction records">
+        <div class="panel-title">Top 5 Users — Highest Transaction Records</div>
+        <div class="top-users-list" id="topUsersList">Loading…</div>
+      </section>
+    </div>
+  </main>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase-config.js"></script>
+<script src="supabase-api.js"></script>
+<script src="admin-sidebar.js"></script>
+<script src="admin-topbar.js"></script>
+<script src="sidebar.js"></script>
+<script>
+(function () {
+  if (!GcordAPI.requireAuth({ adminOnly: true })) return;
+
+  var user = GcordAPI.getSession();
+  var titleEl = document.getElementById('adminDashTitle');
+  if (titleEl && user) {
+    titleEl.textContent = 'Super Admin Dashboard';
+  }
+
+  function peso(n) {
+    return '₱' + Number(n || 0).toLocaleString('en-PH');
+  }
+
+  function formatLogTime(iso) {
+    if (!iso) return '';
+    var d = new Date(iso);
+    if (isNaN(d.getTime())) return iso;
+    return d.toLocaleString('en-US', {
+      month: '2-digit', day: '2-digit', year: 'numeric',
+      hour: 'numeric', minute: '2-digit'
+    });
+  }
+
+  function renderTopUsers(users) {
+    var list = document.getElementById('topUsersList');
+    if (!users.length) {
+      list.innerHTML = '<div style="color:#64748B;font-weight:600;padding:8px;">No transaction records yet.</div>';
+      return;
+    }
+    var maxCount = users[0].count || 1;
+    list.innerHTML = users.map(function (user, index) {
+      var rank = index + 1;
+      var pct = Math.max(8, Math.round((user.count / maxCount) * 100));
+      return '' +
+        '<article class="top-user-row rank-' + rank + '">' +
+          '<div class="rank-badge">#' + rank + '</div>' +
+          '<div class="top-user-meta">' +
+            '<strong>' + (user.name || 'Unknown') + '</strong>' +
+            '<span>' + user.role + ' · ' + peso(user.amount) + ' total cash-out</span>' +
+            '<div class="progress-line" aria-hidden="true"><i style="width:' + pct + '%"></i></div>' +
+          '</div>' +
+          '<div class="top-user-stats">' +
+            '<strong>' + Number(user.count).toLocaleString() + '</strong>' +
+            '<span>Transactions</span>' +
+          '</div>' +
+        '</article>';
+    }).join('');
+  }
+
+  async function loadDashboard() {
+    try {
+      var data = await GcordAPI.getDashboardSummary();
+      document.getElementById('dashTotalAdmins').textContent = String(data.totalAdmins);
+      document.getElementById('dashTotalStaff').textContent = String(data.totalStaff);
+      document.getElementById('dashTotalTx').textContent = Number(data.totalTransactions).toLocaleString();
+      document.getElementById('dashDup').textContent = String(data.duplicateBlocked);
+
+      var txPct = Math.min(100, data.totalTransactions ? 70 + Math.min(30, data.totalTransactions) : 0);
+      var dupPct = data.totalTransactions
+        ? Math.max(6, Math.round((data.duplicateBlocked / data.totalTransactions) * 100))
+        : 0;
+      document.getElementById('dashTxBar').style.width = txPct + '%';
+      document.getElementById('dashDupBar').style.width = dupPct + '%';
+
+      var heights = [35, 48, 42, 60, 55, 72, 50, 68, 58, 80];
+      if (data.totalTransactions) {
+        heights = heights.map(function (h, i) {
+          return Math.max(18, Math.min(95, h + ((data.totalTransactions + i) % 17)));
+        });
+      }
+      document.getElementById('trendBars').innerHTML = heights.map(function (h) {
+        return '<span style="height:' + h + '%"></span>';
+      }).join('');
+
+      var activities = document.getElementById('recentActivities');
+      if (!data.recentLogs.length) {
+        activities.innerHTML = '<div class="activity-item"><p>No recent activities.</p><time></time></div>';
+      } else {
+        activities.innerHTML = data.recentLogs.slice(0, 5).map(function (log) {
+          return '' +
+            '<div class="activity-item">' +
+              '<p>' + (log.message || log.action_code) + '</p>' +
+              '<time>' + formatLogTime(log.created_at) + '</time>' +
+            '</div>';
+        }).join('');
+      }
+
+      renderTopUsers(data.topUsers || []);
+    } catch (err) {
+      var msg = err.message || String(err);
+      document.getElementById('topUsersList').textContent = 'Failed to load dashboard: ' + msg;
+      document.getElementById('recentActivities').innerHTML =
+        '<div class="activity-item"><p>Failed to load activities.</p><time></time></div>';
+    }
+  }
+
+  loadDashboard();
+})();
+</script>
+</body>
+</html>

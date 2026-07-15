@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Gcord Admin Settings</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --blue: #0052CC;
+    --ink: #0A2540;
+    --muted: #5C7088;
+  }
+  body {
+    min-height: 100vh;
+    font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    color: var(--ink);
+    background:
+      radial-gradient(circle at 8% 6%, rgba(61,139,255,0.24), transparent 30%),
+      radial-gradient(circle at 92% 18%, rgba(0,182,122,0.16), transparent 28%),
+      linear-gradient(135deg, #F7FBFF 0%, #EEF5FF 48%, #F9FBFE 100%);
+  }
+  .app {
+    min-height: 100vh;
+    display: grid;
+    grid-template-columns: 280px minmax(0, 1fr);
+  }
+  .sidebar {
+    margin: 16px 0 16px 16px;
+    height: calc(100vh - 32px);
+    padding: 22px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    position: sticky;
+    top: 16px;
+    color: white;
+    border: 1px solid rgba(255,255,255,0.28);
+    border-radius: 22px;
+    background: linear-gradient(155deg, rgba(0,82,204,0.88), rgba(0,54,140,0.78));
+    box-shadow: 0 24px 54px -28px rgba(0,52,140,0.62);
+    backdrop-filter: blur(18px);
+  }
+  .side-top {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 10px 16px;
+    border-bottom: 1px solid rgba(255,255,255,0.24);
+  }
+  .brand-mark {
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    background: rgba(255,255,255,0.18);
+    display: grid;
+    place-items: center;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.24);
+  }
+  .brand-text strong { display: block; font-size: 14px; font-weight: 700; }
+  .brand-text span { display: block; font-size: 13px; line-height: 1.3; }
+  .menu-title { font-size: 14px; opacity: 0.78; padding: 0 8px; }
+  .menu { display: flex; flex-direction: column; gap: 8px; }
+  .menu a {
+    min-height: 42px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 11px 12px;
+    color: white;
+    text-decoration: none;
+    border: 1px solid transparent;
+    border-radius: 12px;
+    font-size: 15px;
+  }
+  .menu a:hover { background: rgba(255,255,255,0.12); }
+  .menu a.active {
+    background: rgba(255,255,255,0.18);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.24);
+  }
+  .menu svg { flex: 0 0 auto; }
+  .main { min-width: 0; padding: 22px clamp(20px, 3vw, 42px) 34px; overflow: visible; }
+  .page { max-width: 720px; margin: 0 auto; }
+  .page-banner {
+    background: rgba(255,255,255,0.82);
+    border: 1px solid rgba(10,37,64,0.18);
+    border-radius: 14px;
+    padding: 16px 18px;
+    margin-bottom: 22px;
+    box-shadow: 0 18px 48px -34px rgba(10,37,64,0.5);
+  }
+  .page-banner h1 { font-size: clamp(18px, 2vw, 26px); font-weight: 800; }
+  .hero {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    text-align: center;
+    margin-bottom: 24px;
+  }
+  .hero-avatar {
+    width: 88px;
+    height: 88px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    color: white;
+    background: linear-gradient(155deg, #2485FF 0%, #0052CC 100%);
+    box-shadow: 0 16px 36px -18px rgba(0,82,204,0.7);
+  }
+  .hero h2 { font-size: 22px; font-weight: 800; }
+  .role-pill {
+    display: inline-flex;
+    padding: 5px 12px;
+    border-radius: 999px;
+    background: #E8F1FF;
+    color: #1D5BD6;
+    font-size: 12px;
+    font-weight: 800;
+  }
+  .hero-email { color: #64748B; font-size: 13px; }
+  .panel {
+    background: rgba(255,255,255,0.9);
+    border: 1px solid rgba(255,255,255,0.8);
+    border-radius: 18px;
+    padding: 22px;
+    box-shadow: 0 18px 48px -34px rgba(10,37,64,0.5);
+    margin-bottom: 18px;
+    scroll-margin-top: 24px;
+  }
+  .panel h3 {
+    font-size: 15px;
+    font-weight: 800;
+    margin-bottom: 16px;
+  }
+  .form-grid {
+    display: grid;
+    gap: 14px;
+  }
+  .form-grid.two {
+    grid-template-columns: 1fr 1fr;
+  }
+  .field { display: grid; gap: 6px; }
+  .field label {
+    font-size: 12px;
+    font-weight: 700;
+    color: #475569;
+  }
+  .field input {
+    height: 44px;
+    border: 1px solid rgba(10,37,64,0.14);
+    border-radius: 12px;
+    padding: 0 14px;
+    font: inherit;
+    font-size: 14px;
+    color: var(--ink);
+    background: #fff;
+    outline: 0;
+  }
+  .field input:focus {
+    border-color: #1D5BD6;
+    box-shadow: 0 0 0 3px rgba(29,91,214,0.12);
+  }
+  .field .error {
+    display: none;
+    font-size: 12px;
+    font-weight: 600;
+    color: #DC2626;
+  }
+  .field.invalid input { border-color: #DC2626; }
+  .field.invalid .error { display: block; }
+  .actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 16px;
+  }
+  .btn {
+    min-height: 42px;
+    padding: 0 16px;
+    border: 0;
+    border-radius: 12px;
+    font: inherit;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  .btn.primary { background: #1D5BD6; color: #fff; }
+  .btn.ghost { background: #F1F5F9; color: #475569; }
+  .btn.danger { background: #DC2626; color: #fff; }
+  .toggle-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 14px 0;
+    border-top: 1px solid rgba(10,37,64,0.08);
+  }
+  .toggle-row:first-of-type { border-top: 0; padding-top: 0; }
+  .toggle-row strong { display: block; font-size: 14px; }
+  .toggle-row small { display: block; margin-top: 3px; color: var(--muted); font-size: 12px; }
+  .switch {
+    position: relative;
+    width: 48px;
+    height: 28px;
+    flex: 0 0 auto;
+  }
+  .switch input { opacity: 0; width: 0; height: 0; }
+  .switch span {
+    position: absolute;
+    inset: 0;
+    border-radius: 999px;
+    background: #CBD5E1;
+    cursor: pointer;
+    transition: background 0.18s ease;
+  }
+  .switch span::before {
+    content: "";
+    position: absolute;
+    width: 22px;
+    height: 22px;
+    left: 3px;
+    top: 3px;
+    border-radius: 50%;
+    background: #fff;
+    transition: transform 0.18s ease;
+  }
+  .switch input:checked + span { background: #1D5BD6; }
+  .switch input:checked + span::before { transform: translateX(20px); }
+  .toast {
+    position: fixed;
+    right: 20px;
+    bottom: 20px;
+    z-index: 200;
+    display: none;
+    min-width: 240px;
+    max-width: calc(100vw - 40px);
+    padding: 14px 16px;
+    border-radius: 12px;
+    background: #0A2540;
+    color: #fff;
+    font-size: 13px;
+    font-weight: 700;
+    box-shadow: 0 18px 40px -20px rgba(10,37,64,0.55);
+  }
+  .toast.show { display: block; }
+  .toast.ok { background: #0F9B6A; }
+  .toast.err { background: #DC2626; }
+  @media (max-width: 840px) {
+    .app { grid-template-columns: 1fr; }
+    .sidebar {
+      position: static;
+      height: auto;
+      margin: 12px;
+      border-radius: 18px;
+    }
+    .main { padding: 12px; }
+  }
+  @media (max-width: 560px) {
+    .form-grid.two { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <div id="sidebar-root"></div>
+
+  <main class="main">
+    <div id="admin-topbar-root"></div>
+
+    <div class="page">
+      <div class="page-banner">
+        <h1>Admin Settings</h1>
+      </div>
+
+      <div class="hero">
+        <div class="hero-avatar" aria-hidden="true">
+          <svg width="42" height="42" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <circle cx="12" cy="8" r="3"/><path d="M5 21c0-4 3-7 7-7s7 3 7 7"/>
+          </svg>
+        </div>
+        <h2 id="heroName">Super Admin</h2>
+        <div class="role-pill">Super Admin</div>
+        <div class="hero-email" id="heroEmail">superadmin@gcash.local</div>
+      </div>
+
+      <section class="panel" id="account">
+        <h3>Account Settings</h3>
+        <form id="profileForm" class="form-grid" novalidate>
+          <div class="form-grid two">
+            <div class="field">
+              <label for="firstName">First Name</label>
+              <input id="firstName" name="firstName" type="text" required />
+              <div class="error">First name is required.</div>
+            </div>
+            <div class="field">
+              <label for="lastName">Last Name</label>
+              <input id="lastName" name="lastName" type="text" required />
+              <div class="error">Last name is required.</div>
+            </div>
+          </div>
+          <div class="field">
+            <label for="email">Email Address</label>
+            <input id="email" name="email" type="email" required />
+            <div class="error">Enter a valid email address.</div>
+          </div>
+          <div class="field">
+            <label for="phone">Phone Number</label>
+            <input id="phone" name="phone" type="tel" required />
+            <div class="error">Phone number is required.</div>
+          </div>
+          <div class="actions">
+            <button class="btn ghost" type="button" id="resetProfileBtn">Reset</button>
+            <button class="btn primary" type="submit">Save Changes</button>
+          </div>
+        </form>
+      </section>
+
+      <section class="panel" id="password">
+        <h3>Change Password</h3>
+        <form id="passwordForm" class="form-grid" novalidate>
+          <div class="field">
+            <label for="currentPassword">Current Password</label>
+            <input id="currentPassword" name="currentPassword" type="password" autocomplete="current-password" required />
+            <div class="error">Current password is required.</div>
+          </div>
+          <div class="field">
+            <label for="newPassword">New Password</label>
+            <input id="newPassword" name="newPassword" type="password" autocomplete="new-password" required minlength="8" />
+            <div class="error">Use at least 8 characters.</div>
+          </div>
+          <div class="field">
+            <label for="confirmPassword">Confirm New Password</label>
+            <input id="confirmPassword" name="confirmPassword" type="password" autocomplete="new-password" required />
+            <div class="error">Passwords do not match.</div>
+          </div>
+          <div class="actions">
+            <button class="btn ghost" type="button" id="clearPasswordBtn">Clear</button>
+            <button class="btn primary" type="submit">Update Password</button>
+          </div>
+        </form>
+      </section>
+
+      <section class="panel" id="security">
+        <h3>Security</h3>
+        <div class="toggle-row">
+          <div>
+            <strong>Login Alerts</strong>
+            <small>Get notified when a new admin login is detected</small>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="loginAlerts" checked />
+            <span></span>
+          </label>
+        </div>
+        <div class="toggle-row">
+          <div>
+            <strong>Duplicate Alerts</strong>
+            <small>Alert when a duplicate transaction is blocked</small>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="duplicateAlerts" checked />
+            <span></span>
+          </label>
+        </div>
+        <div class="toggle-row">
+          <div>
+            <strong>Require Password on Sensitive Actions</strong>
+            <small>Confirm identity before deleting admin accounts</small>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="requireReauth" />
+            <span></span>
+          </label>
+        </div>
+        <div class="actions">
+          <button class="btn primary" type="button" id="saveSecurityBtn">Save Security Settings</button>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h3>Session</h3>
+        <div class="actions" style="justify-content:flex-start;margin-top:0;">
+          <button class="btn danger logout-link" type="button" data-logout-trigger data-target="login.html">Log Out</button>
+        </div>
+      </section>
+    </div>
+  </main>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase-config.js"></script>
+<script src="supabase-api.js"></script>
+<script src="admin-sidebar.js"></script>
+<script src="admin-topbar.js"></script>
+<script src="sidebar.js"></script>
+<script>
+(function () {
+  if (!GcordAPI.requireAuth({ adminOnly: true })) return;
+
+  var STORAGE_PROFILE = 'gcord_admin_profile';
+  var STORAGE_SECURITY = 'gcord_admin_security';
+
+  var defaults = {
+    profile: {
+      firstName: 'Super',
+      lastName: 'Admin',
+      email: 'superadmin@gcash.local',
+      phone: '09170000000'
+    },
+    security: {
+      loginAlerts: true,
+      duplicateAlerts: true,
+      requireReauth: false
+    }
+  };
+
+  function loadJson(key, fallback) {
+    try {
+      var raw = localStorage.getItem(key);
+      return raw ? Object.assign({}, fallback, JSON.parse(raw)) : Object.assign({}, fallback);
+    } catch (e) {
+      return Object.assign({}, fallback);
+    }
+  }
+
+  function saveJson(key, value) {
+    localStorage.setItem(key, JSON.stringify(value));
+  }
+
+  function showToast(message, type) {
+    var toast = document.getElementById('toast');
+    toast.textContent = message;
+    toast.className = 'toast show ' + (type || 'ok');
+    clearTimeout(showToast._timer);
+    showToast._timer = setTimeout(function () {
+      toast.className = 'toast';
+    }, 2600);
+  }
+
+  function setInvalid(field, invalid) {
+    field.classList.toggle('invalid', !!invalid);
+  }
+
+  function updateHero(profile) {
+    document.getElementById('heroName').textContent = (profile.firstName + ' ' + profile.lastName).trim();
+    document.getElementById('heroEmail').textContent = profile.email;
+  }
+
+  function fillProfile(profile) {
+    document.getElementById('firstName').value = profile.firstName;
+    document.getElementById('lastName').value = profile.lastName;
+    document.getElementById('email').value = profile.email;
+    document.getElementById('phone').value = profile.phone;
+    updateHero(profile);
+  }
+
+  function fillSecurity(security) {
+    document.getElementById('loginAlerts').checked = !!security.loginAlerts;
+    document.getElementById('duplicateAlerts').checked = !!security.duplicateAlerts;
+    document.getElementById('requireReauth').checked = !!security.requireReauth;
+  }
+
+  var profile = loadJson(STORAGE_PROFILE, defaults.profile);
+  var security = loadJson(STORAGE_SECURITY, defaults.security);
+
+  // Prefill from live session when available
+  var sessionUser = GcordAPI.getSession();
+  if (sessionUser) {
+    profile = {
+      firstName: sessionUser.first_name || profile.firstName,
+      lastName: sessionUser.last_name || profile.lastName,
+      email: sessionUser.email || profile.email,
+      phone: sessionUser.phone || profile.phone
+    };
+  }
+
+  fillProfile(profile);
+  fillSecurity(security);
+
+  document.getElementById('profileForm').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var firstName = document.getElementById('firstName');
+    var lastName = document.getElementById('lastName');
+    var email = document.getElementById('email');
+    var phone = document.getElementById('phone');
+    var emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.value.trim());
+
+    setInvalid(firstName.closest('.field'), !firstName.value.trim());
+    setInvalid(lastName.closest('.field'), !lastName.value.trim());
+    setInvalid(email.closest('.field'), !emailOk);
+    setInvalid(phone.closest('.field'), !phone.value.trim());
+
+    if (!firstName.value.trim() || !lastName.value.trim() || !emailOk || !phone.value.trim()) {
+      showToast('Please fix the highlighted fields.', 'err');
+      return;
+    }
+
+    profile = {
+      firstName: firstName.value.trim(),
+      lastName: lastName.value.trim(),
+      email: email.value.trim(),
+      phone: phone.value.trim()
+    };
+    saveJson(STORAGE_PROFILE, profile);
+    updateHero(profile);
+    showToast('Account settings saved.');
+  });
+
+  document.getElementById('resetProfileBtn').addEventListener('click', function () {
+    fillProfile(profile);
+    document.querySelectorAll('#profileForm .field').forEach(function (field) {
+      field.classList.remove('invalid');
+    });
+  });
+
+  document.getElementById('passwordForm').addEventListener('submit', async function (e) {
+    e.preventDefault();
+    var current = document.getElementById('currentPassword');
+    var next = document.getElementById('newPassword');
+    var confirm = document.getElementById('confirmPassword');
+    var submitBtn = document.querySelector('#passwordForm button[type="submit"]');
+
+    var hasCurrent = current.value.length > 0;
+    var nextOk = next.value.length >= 8;
+    var confirmOk = next.value === confirm.value && confirm.value.length > 0;
+
+    setInvalid(current.closest('.field'), !hasCurrent);
+    current.closest('.field').querySelector('.error').textContent = 'Current password is required.';
+    setInvalid(next.closest('.field'), !nextOk);
+    setInvalid(confirm.closest('.field'), !confirmOk);
+
+    if (!hasCurrent || !nextOk || !confirmOk) {
+      showToast('Please fix the password fields.', 'err');
+      return;
+    }
+
+    submitBtn.disabled = true;
+    try {
+      await GcordAPI.changePassword(current.value, next.value);
+      document.getElementById('passwordForm').reset();
+      document.querySelectorAll('#passwordForm .field').forEach(function (field) {
+        field.classList.remove('invalid');
+      });
+      showToast('Password updated successfully.');
+    } catch (err) {
+      var msg = (err && err.message) ? err.message : 'Could not update password.';
+      if (/current password/i.test(msg)) {
+        setInvalid(current.closest('.field'), true);
+        current.closest('.field').querySelector('.error').textContent = msg;
+      }
+      showToast(msg, 'err');
+    } finally {
+      submitBtn.disabled = false;
+    }
+  });
+
+  document.getElementById('clearPasswordBtn').addEventListener('click', function () {
+    document.getElementById('passwordForm').reset();
+    document.querySelectorAll('#passwordForm .field').forEach(function (field) {
+      field.classList.remove('invalid');
+    });
+  });
+
+  document.getElementById('saveSecurityBtn').addEventListener('click', function () {
+    security = {
+      loginAlerts: document.getElementById('loginAlerts').checked,
+      duplicateAlerts: document.getElementById('duplicateAlerts').checked,
+      requireReauth: document.getElementById('requireReauth').checked
+    };
+    saveJson(STORAGE_SECURITY, security);
+    showToast('Security settings saved.');
+  });
+
+  function focusHash() {
+    var hash = (location.hash || '').replace('#', '');
+    if (!hash) return;
+    var el = document.getElementById(hash);
+    if (!el) return;
+    el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    el.style.outline = '2px solid rgba(29,91,214,0.35)';
+    el.style.outlineOffset = '4px';
+    setTimeout(function () {
+      el.style.outline = '';
+      el.style.outlineOffset = '';
+    }, 1600);
+  }
+
+  focusHash();
+  window.addEventListener('hashchange', focusHash);
+})();
+</script>
+</body>
+</html>

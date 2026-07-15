@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Gcord System Logs</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --blue: #0052CC;
+    --ink: #0A2540;
+    --muted: #5C7088;
+  }
+  body {
+    min-height: 100vh;
+    font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    color: var(--ink);
+    background:
+      radial-gradient(circle at 8% 6%, rgba(61,139,255,0.24), transparent 30%),
+      radial-gradient(circle at 92% 18%, rgba(0,182,122,0.16), transparent 28%),
+      linear-gradient(135deg, #F7FBFF 0%, #EEF5FF 48%, #F9FBFE 100%);
+  }
+  .app {
+    min-height: 100vh;
+    display: grid;
+    grid-template-columns: 280px minmax(0, 1fr);
+  }
+  .sidebar {
+    margin: 16px 0 16px 16px;
+    height: calc(100vh - 32px);
+    padding: 22px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    position: sticky;
+    top: 16px;
+    color: white;
+    border: 1px solid rgba(255,255,255,0.28);
+    border-radius: 22px;
+    background: linear-gradient(155deg, rgba(0,82,204,0.88), rgba(0,54,140,0.78));
+    box-shadow: 0 24px 54px -28px rgba(0,52,140,0.62);
+    backdrop-filter: blur(18px);
+  }
+  .side-top {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 10px 16px;
+    border-bottom: 1px solid rgba(255,255,255,0.24);
+  }
+  .brand-mark {
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    background: rgba(255,255,255,0.18);
+    display: grid;
+    place-items: center;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.24);
+  }
+  .brand-text strong { display: block; font-size: 14px; font-weight: 700; }
+  .brand-text span { display: block; font-size: 13px; line-height: 1.3; }
+  .menu-title { font-size: 14px; opacity: 0.78; padding: 0 8px; }
+  .menu { display: flex; flex-direction: column; gap: 8px; }
+  .menu a {
+    min-height: 42px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 11px 12px;
+    color: white;
+    text-decoration: none;
+    border: 1px solid transparent;
+    border-radius: 12px;
+    font-size: 15px;
+    line-height: 1.25;
+    transition: background 0.18s ease, border-color 0.18s ease, transform 0.18s ease;
+  }
+  .menu a:hover {
+    background: rgba(255,255,255,0.12);
+    border-color: rgba(255,255,255,0.18);
+    transform: translateX(2px);
+  }
+  .menu a.active {
+    background: rgba(255,255,255,0.18);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.24);
+  }
+  .menu svg { flex: 0 0 auto; }
+  .main { min-width: 0; padding: 22px clamp(20px, 3vw, 42px) 34px; }
+  .page { max-width: 960px; margin: 0 auto; }
+  .page-banner {
+    background: rgba(255,255,255,0.9);
+    border: 1px solid rgba(10,37,64,0.2);
+    border-radius: 14px;
+    padding: 16px 18px;
+    margin-bottom: 18px;
+    text-align: center;
+    box-shadow: 0 18px 48px -34px rgba(10,37,64,0.5);
+  }
+  .page-banner h1 {
+    font-size: clamp(18px, 2vw, 26px);
+    font-weight: 800;
+  }
+  .filter-row {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 18px;
+  }
+  .calendar-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 42px;
+    padding: 0 16px;
+    border: 0;
+    border-radius: 12px;
+    background: #1D5BD6;
+    color: white;
+    font: inherit;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 12px 28px -16px rgba(29,91,214,0.7);
+  }
+  .calendar-btn[aria-expanded="true"] {
+    background: #00368C;
+  }
+  .filter-chip {
+    display: none;
+    align-items: center;
+    gap: 8px;
+    min-height: 42px;
+    padding: 0 12px 0 14px;
+    border-radius: 12px;
+    background: #E8F1FF;
+    color: #0A2540;
+    font-size: 13px;
+    font-weight: 700;
+  }
+  .filter-chip.active { display: inline-flex; }
+  .filter-chip button {
+    width: 24px;
+    height: 24px;
+    border: 0;
+    border-radius: 8px;
+    background: rgba(29,91,214,0.12);
+    color: #1D5BD6;
+    display: grid;
+    place-items: center;
+    cursor: pointer;
+  }
+  .calendar-popover {
+    display: none;
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 0;
+    z-index: 30;
+    width: min(320px, calc(100vw - 40px));
+    background: rgba(255,255,255,0.96);
+    border: 1px solid rgba(10,37,64,0.12);
+    border-radius: 18px;
+    padding: 16px;
+    box-shadow: 0 24px 60px -28px rgba(10,37,64,0.55);
+    backdrop-filter: blur(16px);
+  }
+  .calendar-popover.open { display: block; }
+  .cal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
+  }
+  .cal-header strong {
+    font-size: 15px;
+    font-weight: 800;
+  }
+  .cal-nav {
+    width: 34px;
+    height: 34px;
+    border: 1px solid rgba(10,37,64,0.1);
+    border-radius: 10px;
+    background: #F3F6FB;
+    color: var(--ink);
+    display: grid;
+    place-items: center;
+    cursor: pointer;
+  }
+  .cal-weekdays,
+  .cal-days {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 4px;
+  }
+  .cal-weekdays span {
+    text-align: center;
+    font-size: 11px;
+    font-weight: 800;
+    color: var(--muted);
+    padding: 6px 0;
+  }
+  .cal-days button {
+    aspect-ratio: 1;
+    border: 0;
+    border-radius: 10px;
+    background: transparent;
+    color: var(--ink);
+    font: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .cal-days button:hover:not(:disabled) { background: #E8F1FF; }
+  .cal-days button:disabled {
+    color: #CBD5E1;
+    cursor: default;
+  }
+  .cal-days button.has-logs {
+    box-shadow: inset 0 -2px 0 #3D8BFF;
+  }
+  .cal-days button.selected {
+    background: #1D5BD6;
+    color: white;
+    box-shadow: none;
+  }
+  .cal-days button.today:not(.selected) {
+    outline: 1.5px solid rgba(29,91,214,0.35);
+  }
+  .cal-footer {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+    margin-top: 14px;
+    padding-top: 12px;
+    border-top: 1px solid rgba(10,37,64,0.08);
+  }
+  .cal-footer button {
+    min-height: 36px;
+    padding: 0 12px;
+    border: 0;
+    border-radius: 10px;
+    font: inherit;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  .cal-footer .clear {
+    background: #F1F5F9;
+    color: #475569;
+  }
+  .cal-footer .close {
+    background: #1D5BD6;
+    color: white;
+  }
+  .log-list {
+    display: grid;
+    gap: 12px;
+  }
+  .empty-state {
+    background: rgba(255,255,255,0.9);
+    border: 1px dashed rgba(10,37,64,0.18);
+    border-radius: 14px;
+    padding: 28px 18px;
+    text-align: center;
+    color: var(--muted);
+    font-weight: 600;
+  }
+  .log-card {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 14px;
+    align-items: center;
+    background: rgba(255,255,255,0.9);
+    border: 1px solid rgba(10,37,64,0.16);
+    border-radius: 14px;
+    padding: 16px;
+    box-shadow: 0 14px 36px -28px rgba(10,37,64,0.55);
+  }
+  .log-icon {
+    width: 42px;
+    height: 42px;
+    border-radius: 12px;
+    display: grid;
+    place-items: center;
+    flex: 0 0 auto;
+  }
+  .log-icon.login { background: #E8F1FF; color: #1D5BD6; }
+  .log-icon.create { background: #E4F8EF; color: #0F9B6A; }
+  .log-icon.warn { background: #FFF4E0; color: #D97706; }
+  .log-icon.update { background: #EEE8FF; color: #6D28D9; }
+  .log-icon.logout { background: #F1F5F9; color: #475569; }
+  .log-body strong {
+    display: block;
+    font-size: 14px;
+    font-weight: 700;
+    line-height: 1.35;
+    margin-bottom: 4px;
+  }
+  .log-body time {
+    color: var(--muted);
+    font-size: 12px;
+    font-weight: 500;
+  }
+  .status {
+    min-width: 78px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 6px 12px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 700;
+  }
+  .status.success {
+    background: #E4F8EF;
+    color: #0F9B6A;
+  }
+  .status.warning {
+    background: #FFF4E0;
+    color: #D97706;
+  }
+  @media (max-width: 840px) {
+    .app { grid-template-columns: 1fr; }
+    .sidebar {
+      position: static;
+      height: auto;
+      margin: 12px;
+      border-radius: 18px;
+    }
+    .main { padding: 12px; }
+  }
+  @media (max-width: 560px) {
+    .log-card {
+      grid-template-columns: auto 1fr;
+      grid-template-areas:
+        "icon body"
+        "icon status";
+    }
+    .log-icon { grid-area: icon; }
+    .log-body { grid-area: body; }
+    .status { grid-area: status; justify-self: start; margin-top: 2px; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <div id="sidebar-root"></div>
+
+  <main class="main">
+    <div id="admin-topbar-root"></div>
+
+    <div class="page">
+      <div class="page-banner">
+        <h1>System Logs</h1>
+      </div>
+
+      <div class="filter-row">
+        <button class="calendar-btn" id="calendarBtn" type="button" aria-expanded="false" aria-controls="calendarPopover">
+          <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
+            <rect x="3" y="5" width="18" height="16" rx="2"/>
+            <path d="M8 3v4M16 3v4M3 10h18"/>
+          </svg>
+          <span id="calendarBtnLabel">Calendar</span>
+        </button>
+
+        <div class="filter-chip" id="filterChip">
+          <span id="filterChipText"></span>
+          <button type="button" id="clearFilterBtn" aria-label="Clear date filter">
+            <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.4" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg>
+          </button>
+        </div>
+
+        <div class="calendar-popover" id="calendarPopover" role="dialog" aria-label="Filter logs by date">
+          <div class="cal-header">
+            <button class="cal-nav" id="prevMonth" type="button" aria-label="Previous month">
+              <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.4" viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg>
+            </button>
+            <strong id="calMonthLabel">February 2026</strong>
+            <button class="cal-nav" id="nextMonth" type="button" aria-label="Next month">
+              <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.4" viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg>
+            </button>
+          </div>
+          <div class="cal-weekdays">
+            <span>Su</span><span>Mo</span><span>Tu</span><span>We</span><span>Th</span><span>Fr</span><span>Sa</span>
+          </div>
+          <div class="cal-days" id="calDays"></div>
+          <div class="cal-footer">
+            <button class="clear" id="calClear" type="button">Show all</button>
+            <button class="close" id="calClose" type="button">Done</button>
+          </div>
+        </div>
+      </div>
+
+      <section class="log-list" id="logList" aria-label="System log entries"></section>
+    </div>
+  </main>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase-config.js"></script>
+<script src="supabase-api.js"></script>
+<script src="admin-sidebar.js"></script>
+<script src="admin-topbar.js"></script>
+<script src="sidebar.js"></script>
+<script>
+(function () {
+  if (!GcordAPI.requireAuth({ adminOnly: true })) return;
+
+  var ICONS = {
+    login: { cls: 'login', svg: '<circle cx="12" cy="8" r="3"/><path d="M5 21c0-4 3-7 7-7s7 3 7 7"/>' },
+    create: { cls: 'create', svg: '<path d="M12 5v14M5 12h14"/>' },
+    warn: { cls: 'warn', svg: '<path d="M12 3l10 18H2L12 3z"/><path d="M12 9v5M12 17h.01"/>' },
+    update: { cls: 'update', svg: '<path d="M12 3l7 4v5c0 5-3 8-7 9-4-1-7-4-7-9V7l7-4z"/><path d="M9.5 12l1.8 1.8L15 10"/>' },
+    logout: { cls: 'logout', svg: '<path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><path d="M10 17l5-5-5-5M15 12H3"/>' },
+    info: { cls: 'login', svg: '<circle cx="12" cy="12" r="9"/><path d="M12 10v5M12 7h.01"/>' }
+  };
+
+  var MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  var LOGS = [];
+  var selectedDate = null;
+  var now = new Date();
+  var viewYear = now.getFullYear();
+  var viewMonth = now.getMonth();
+
+  var calendarBtn = document.getElementById('calendarBtn');
+  var calendarBtnLabel = document.getElementById('calendarBtnLabel');
+  var popover = document.getElementById('calendarPopover');
+  var calDays = document.getElementById('calDays');
+  var calMonthLabel = document.getElementById('calMonthLabel');
+  var filterChip = document.getElementById('filterChip');
+  var filterChipText = document.getElementById('filterChipText');
+  var logList = document.getElementById('logList');
+  var logDates = {};
+
+  function pad(n) { return n < 10 ? '0' + n : String(n); }
+  function toKey(y, m, d) { return y + '-' + pad(m + 1) + '-' + pad(d); }
+  function formatDisplay(key) {
+    var parts = key.split('-');
+    return Number(parts[1]) + '/' + Number(parts[2]) + '/' + parts[0];
+  }
+
+  function mapLog(row) {
+    var created = new Date(row.created_at);
+    var dateKey = isNaN(created.getTime())
+      ? String(row.created_at).slice(0, 10)
+      : toKey(created.getFullYear(), created.getMonth(), created.getDate());
+    var iconKey = row.icon || 'info';
+    var icon = ICONS[iconKey] || ICONS.info;
+    return {
+      date: dateKey,
+      timeLabel: isNaN(created.getTime()) ? row.created_at : created.toLocaleString('en-US', {
+        month: '2-digit', day: '2-digit', year: 'numeric', hour: 'numeric', minute: '2-digit'
+      }),
+      message: row.message || row.action_code,
+      status: row.status === 'warning' || row.status === 'error' ? 'warning' : 'success',
+      icon: icon.cls,
+      iconSvg: icon.svg
+    };
+  }
+
+  function rebuildDateIndex() {
+    logDates = {};
+    LOGS.forEach(function (log) { logDates[log.date] = true; });
+  }
+
+  function openCalendar() {
+    popover.classList.add('open');
+    calendarBtn.setAttribute('aria-expanded', 'true');
+    renderCalendar();
+  }
+  function closeCalendar() {
+    popover.classList.remove('open');
+    calendarBtn.setAttribute('aria-expanded', 'false');
+  }
+  function toggleCalendar() {
+    if (popover.classList.contains('open')) closeCalendar();
+    else openCalendar();
+  }
+
+  function renderCalendar() {
+    calMonthLabel.textContent = MONTHS[viewMonth] + ' ' + viewYear;
+    var firstDay = new Date(viewYear, viewMonth, 1).getDay();
+    var daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
+    var today = new Date();
+    var todayKey = toKey(today.getFullYear(), today.getMonth(), today.getDate());
+    var html = '';
+    for (var i = 0; i < firstDay; i++) html += '<button type="button" disabled></button>';
+    for (var day = 1; day <= daysInMonth; day++) {
+      var key = toKey(viewYear, viewMonth, day);
+      var classes = [];
+      if (logDates[key]) classes.push('has-logs');
+      if (selectedDate === key) classes.push('selected');
+      if (key === todayKey) classes.push('today');
+      html += '<button type="button" data-date="' + key + '"' +
+        (classes.length ? ' class="' + classes.join(' ') + '"' : '') +
+        '>' + day + '</button>';
+    }
+    calDays.innerHTML = html;
+  }
+
+  function renderLogs() {
+    var filtered = selectedDate
+      ? LOGS.filter(function (log) { return log.date === selectedDate; })
+      : LOGS.slice();
+
+    if (!filtered.length) {
+      logList.innerHTML = '<div class="empty-state">' +
+        (selectedDate ? ('No logs found for ' + formatDisplay(selectedDate) + '.') : 'No system logs found.') +
+        '</div>';
+    } else {
+      logList.innerHTML = filtered.map(function (log) {
+        return '' +
+          '<article class="log-card">' +
+            '<div class="log-icon ' + log.icon + '" aria-hidden="true">' +
+              '<svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">' + log.iconSvg + '</svg>' +
+            '</div>' +
+            '<div class="log-body">' +
+              '<strong>' + log.message + '</strong>' +
+              '<time>' + log.timeLabel + '</time>' +
+            '</div>' +
+            '<span class="status ' + log.status + '">' + (log.status === 'warning' ? 'Warning' : 'Success') + '</span>' +
+          '</article>';
+      }).join('');
+    }
+
+    if (selectedDate) {
+      filterChip.classList.add('active');
+      filterChipText.textContent = formatDisplay(selectedDate);
+      calendarBtnLabel.textContent = formatDisplay(selectedDate);
+    } else {
+      filterChip.classList.remove('active');
+      filterChipText.textContent = '';
+      calendarBtnLabel.textContent = 'Calendar';
+    }
+  }
+
+  function selectDate(key) {
+    selectedDate = key;
+    renderCalendar();
+    renderLogs();
+    closeCalendar();
+  }
+
+  function clearFilter() {
+    selectedDate = null;
+    renderCalendar();
+    renderLogs();
+  }
+
+  async function loadLogs() {
+    logList.innerHTML = '<div class="empty-state">Loading system logs…</div>';
+    try {
+      var rows = await GcordAPI.listSystemLogs();
+      LOGS = rows.map(mapLog);
+      rebuildDateIndex();
+      if (LOGS.length) {
+        var first = LOGS[0].date.split('-');
+        viewYear = Number(first[0]);
+        viewMonth = Number(first[1]) - 1;
+      }
+      renderCalendar();
+      renderLogs();
+    } catch (err) {
+      logList.innerHTML = '<div class="empty-state">Failed to load logs: ' + (err.message || err) + '</div>';
+    }
+  }
+
+  calendarBtn.addEventListener('click', function (e) {
+    e.stopPropagation();
+    toggleCalendar();
+  });
+  popover.addEventListener('click', function (e) { e.stopPropagation(); });
+  document.getElementById('prevMonth').addEventListener('click', function () {
+    viewMonth -= 1;
+    if (viewMonth < 0) { viewMonth = 11; viewYear -= 1; }
+    renderCalendar();
+  });
+  document.getElementById('nextMonth').addEventListener('click', function () {
+    viewMonth += 1;
+    if (viewMonth > 11) { viewMonth = 0; viewYear += 1; }
+    renderCalendar();
+  });
+  calDays.addEventListener('click', function (e) {
+    var btn = e.target.closest('button[data-date]');
+    if (!btn) return;
+    selectDate(btn.getAttribute('data-date'));
+  });
+  document.getElementById('calClear').addEventListener('click', function () {
+    clearFilter();
+    closeCalendar();
+  });
+  document.getElementById('calClose').addEventListener('click', closeCalendar);
+  document.getElementById('clearFilterBtn').addEventListener('click', clearFilter);
+  document.addEventListener('click', function () {
+    if (popover.classList.contains('open')) closeCalendar();
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') closeCalendar();
+  });
+
+  loadLogs();
+})();
+</script>
+</body>
+</html>

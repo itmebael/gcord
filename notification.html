@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Gcord Notifications</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --sidebar: #0052CC;
+    --active: #00368C;
+    --panel: #EAF5FF;
+    --ink: #0A2540;
+    --muted-title: rgba(10,37,64,0.22);
+    --tab: #0052CC;
+  }
+  body {
+    min-height: 100vh;
+    font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    color: var(--ink);
+    background: #F7F9FC;
+  }
+  .app {
+    min-height: 100vh;
+    display: grid;
+    grid-template-columns: 260px minmax(0, 1fr);
+  }
+  .sidebar {
+    background: var(--sidebar);
+    color: white;
+    padding: 22px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    position: sticky;
+    top: 0;
+  }
+  .side-top {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 4px 8px 12px;
+    border-bottom: 2px solid rgba(255,255,255,0.35);
+  }
+  .brand-mark {
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    background: rgba(255,255,255,0.18);
+    display: grid;
+    place-items: center;
+  }
+  .brand-text strong { display: block; font-size: 14px; font-weight: 700; }
+  .brand-text span { display: block; font-size: 13px; line-height: 1.3; }
+  .menu-title { font-size: 14px; opacity: 0.78; padding: 0 8px; }
+  .menu { display: flex; flex-direction: column; gap: 10px; }
+  .menu a {
+    min-height: 42px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 9px 10px;
+    color: white;
+    text-decoration: none;
+    border-radius: 8px;
+    font-size: 15px;
+    line-height: 1.25;
+  }
+  .menu a.active {
+    background: var(--active);
+    box-shadow: 0 3px 7px rgba(30, 55, 120, 0.26);
+  }
+  .menu svg { flex: 0 0 auto; }
+  .main {
+    min-width: 0;
+    padding: 0 clamp(18px, 3vw, 42px) 0;
+  }
+  .page {
+    max-width: 1440px;
+    margin: 0 auto;
+  }
+  .eyebrow {
+    color: #000000;
+    font-size: 19px;
+    font-weight: 800;
+    line-height: 1.2;
+    margin: 0 0 16px;
+  }
+  .notification-shell {
+    background: var(--panel);
+    min-height: calc(100vh - 34px);
+    padding: 34px 10px 8px;
+  }
+  .topbar {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    margin-bottom: 42px;
+  }
+  .icon-button {
+    width: 38px;
+    height: 38px;
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    color: #172241;
+    display: grid;
+    place-items: center;
+    cursor: pointer;
+  }
+  .content {
+    width: min(760px, 100%);
+    margin: 0 auto;
+  }
+  .page-title {
+    color: #000000;
+    text-align: center;
+    font-size: 22px;
+    font-weight: 800;
+    margin-bottom: 10px;
+  }
+  .tabs {
+    display: grid;
+    grid-template-columns: 1fr 1.45fr 1fr 1fr;
+    background: white;
+    border-radius: 8px;
+    overflow: hidden;
+    margin-bottom: 8px;
+  }
+  .tab {
+    min-height: 48px;
+    border: 0;
+    background: white;
+    color: #05070d;
+    font: inherit;
+    font-size: 16px;
+    font-weight: 500;
+    cursor: pointer;
+  }
+  .tab.active {
+    background: var(--tab);
+    color: white;
+  }
+  .group-title {
+    font-size: 13px;
+    font-weight: 900;
+    margin: 9px 0 5px 4px;
+  }
+  .notification-list {
+    display: grid;
+    gap: 4px;
+  }
+  .notification-card {
+    min-height: 74px;
+    display: grid;
+    grid-template-columns: 46px minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 10px;
+    background: #ffffff;
+    border: 1.5px solid #D3DDEA;
+    border-radius: 8px;
+    padding: 10px 12px;
+    box-shadow: 0 1px 0 rgba(30, 55, 120, 0.22);
+  }
+  .notification-card strong {
+    display: block;
+    font-size: 13px;
+    font-weight: 900;
+    margin-bottom: 5px;
+  }
+  .notification-card p {
+    font-size: 13px;
+  }
+  .notification-card time {
+    align-self: end;
+    white-space: nowrap;
+    font-size: 13px;
+  }
+  .status-icon {
+    width: 32px;
+    height: 32px;
+  }
+  @media (max-width: 840px) {
+    .app { grid-template-columns: 1fr; }
+    .sidebar { position: static; height: auto; }
+    .menu { display: grid; grid-template-columns: repeat(2, 1fr); }
+    .main { padding: 16px; }
+    .notification-shell { min-height: auto; padding: 22px 10px; }
+  }
+  @media (max-width: 560px) {
+    .menu { grid-template-columns: 1fr; }
+    .tabs { grid-template-columns: repeat(2, 1fr); }
+    .notification-card {
+      grid-template-columns: 38px minmax(0, 1fr);
+    }
+    .notification-card time {
+      grid-column: 2;
+      justify-self: end;
+    }
+  }
+
+  /* ============ GLASS UI REFRESH ============ */
+  body {
+    background:
+      radial-gradient(circle at 8% 6%, rgba(61,139,255,0.24), transparent 30%),
+      radial-gradient(circle at 92% 18%, rgba(0,182,122,0.16), transparent 28%),
+      linear-gradient(135deg, #F7FBFF 0%, #EEF5FF 48%, #F9FBFE 100%);
+  }
+  .app { grid-template-columns: 280px minmax(0, 1fr); }
+  .sidebar {
+    margin: 16px 0 16px 16px;
+    height: calc(100vh - 32px);
+    border: 1px solid rgba(255,255,255,0.28);
+    border-radius: 22px;
+    background: linear-gradient(155deg, rgba(0,82,204,0.88), rgba(0,54,140,0.78));
+    box-shadow: 0 24px 54px -28px rgba(0,52,140,0.62);
+    backdrop-filter: blur(18px);
+  }
+  .side-top {
+    border-bottom: 1px solid rgba(255,255,255,0.24);
+    padding: 8px 10px 16px;
+  }
+  .brand-mark, .menu a.active {
+    background: rgba(255,255,255,0.18);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.24);
+  }
+  .menu { gap: 8px; }
+  .menu a {
+    border: 1px solid transparent;
+    border-radius: 12px;
+    padding: 11px 12px;
+    transition: background 0.18s ease, border-color 0.18s ease, transform 0.18s ease;
+  }
+  .menu a:hover {
+    background: rgba(255,255,255,0.12);
+    border-color: rgba(255,255,255,0.18);
+    transform: translateX(2px);
+  }
+  .main { padding: 22px clamp(20px, 3vw, 42px) 34px; }
+  .eyebrow {
+    margin-bottom: 14px;
+    color: #000000;
+  }
+  .notification-shell {
+    min-height: calc(100vh - 88px);
+    border-radius: 22px;
+    padding: 32px 26px 26px;
+    background: rgba(234,245,255,0.82);
+    border: 1px solid rgba(255,255,255,0.78);
+    box-shadow: 0 18px 48px -34px rgba(10,37,64,0.45);
+    backdrop-filter: blur(18px);
+  }
+  .topbar {
+    margin-bottom: 24px;
+    padding: 12px 14px;
+    border-radius: 16px;
+    background: rgba(255,255,255,0.64);
+    border: 1px solid rgba(255,255,255,0.72);
+  }
+  .content { width: min(760px, 100%); margin: 0 auto; }
+  .notification-group { margin-bottom: 32px; }
+  .group-title { font-size: 13px; font-weight: 900; margin: 0 0 14px 0; }
+  .tabs,
+  .notification-card {
+    background: rgba(255,255,255,0.78);
+    border: 1px solid rgba(255,255,255,0.8);
+    box-shadow: 0 18px 42px -34px rgba(10,37,64,0.54);
+    backdrop-filter: blur(18px);
+  }
+  .tabs {
+    border-radius: 16px;
+    padding: 6px;
+    gap: 6px;
+    overflow: visible;
+    margin-bottom: 24px;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+  .tab { border-radius: 12px; background: transparent; font: inherit; font-size: 16px; font-weight: 500; color: #05070d; min-height: 52px; }
+  .tab.active { background: linear-gradient(135deg, var(--tab), #00368C); color: white; }
+  .notification-list { display: grid; gap: 16px; }
+  .notification-card {
+    min-height: 82px;
+    display: grid;
+    grid-template-columns: 50px minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 14px;
+    border-radius: 16px;
+    padding: 18px 20px;
+  }
+  .notification-card strong {
+    display: block;
+    font-size: 15px;
+    font-weight: 900;
+    margin-bottom: 6px;
+  }
+  .notification-card p {
+    font-size: 13px;
+    color: #1f2937;
+  }
+  .notification-card time {
+    align-self: flex-end;
+    white-space: nowrap;
+    font-size: 13px;
+    color: #475569;
+  }
+  .status-icon {
+    width: 46px;
+    height: 46px;
+  }
+  .status-icon {
+    width: 42px;
+    height: 42px;
+  }
+  .icon-button {
+    background: rgba(255,255,255,0.62);
+    border: 1px solid rgba(211,221,234,0.78);
+  }
+  @media (max-width: 840px) {
+    .app { grid-template-columns: 1fr; }
+    .sidebar {
+      position: static;
+      height: auto;
+      margin: 12px;
+      border-radius: 18px;
+    }
+    .main { padding: 12px; }
+    .notification-shell { min-height: auto; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <div id="sidebar-root"></div>
+
+  <main class="main">
+    <div class="page">
+      <div class="eyebrow">NOTIFICATION</div>
+      <section class="notification-shell">
+        <div class="content">
+          <div class="tabs" role="tablist" aria-label="Notification categories">
+            <button class="tab active" type="button" role="tab" aria-selected="true" data-filter="all">All</button>
+            <button class="tab" type="button" role="tab" aria-selected="false" data-filter="transactions">Transactions</button>
+            <button class="tab" type="button" role="tab" aria-selected="false" data-filter="alerts">Alerts</button>
+            <button class="tab" type="button" role="tab" aria-selected="false" data-filter="system">System</button>
+          </div>
+
+          <div id="notificationGroups">
+            <p style="color:#64748B;font-weight:600;padding:12px 8px;">Loading notifications…</p>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase-config.js"></script>
+<script src="supabase-api.js"></script>
+<script src="sidebar.js"></script>
+<script>
+(function () {
+  if (!GcordAPI.requireAuth()) return;
+
+  var tabs = document.querySelectorAll('.tab');
+  var root = document.getElementById('notificationGroups');
+  var activeFilter = 'all';
+  var allItems = [];
+
+  var ICONS = {
+    success: '<svg class="status-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="11" fill="#00ad16"/><path d="m6.5 12.5 3.2 3.2 7.8-8.2" fill="none" stroke="white" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+    warning: '<svg class="status-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2 23 21H1L12 2z" fill="#ffdd21" stroke="#111" stroke-width="1.5"/><path d="M12 8v7M12 18h.01" stroke="#111" stroke-width="2.2" stroke-linecap="round"/></svg>',
+    danger: '<svg class="status-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="11" fill="#ee0f16"/><path d="m8 8 8 8M16 8l-8 8" stroke="white" stroke-width="2.8" stroke-linecap="round"/></svg>',
+    info: '<svg class="status-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="11" fill="#10b6b6"/><path d="M12 10v7M12 7h.01" stroke="white" stroke-width="2.8" stroke-linecap="round"/></svg>',
+    transactions: '<svg class="status-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3h10l2 3v15H5V6l2-3z" fill="#2c6f99"/><path d="M8 9h8M8 12h8M8 15h6" stroke="white" stroke-width="1.4"/></svg>'
+  };
+
+  function iconFor(n) {
+    if (n.severity === 'warning' || n.category === 'alerts') return ICONS.warning;
+    if (n.severity === 'danger') return ICONS.danger;
+    if (n.severity === 'success' || n.category === 'transactions') return ICONS.success;
+    if (n.category === 'transactions') return ICONS.transactions;
+    return ICONS.info;
+  }
+
+  function cardHtml(n) {
+    var body = n.body ? '<p>' + n.body + '</p>' : '';
+    return '' +
+      '<article class="notification-card" data-category="' + n.category + '">' +
+        iconFor(n) +
+        '<div><strong>' + n.title + '</strong>' + body + '</div>' +
+        '<time>' + n.timeLabel + '</time>' +
+      '</article>';
+  }
+
+  function groupHtml(title, items) {
+    if (!items.length) return '';
+    return '' +
+      '<div class="notification-group">' +
+        '<div class="group-title">' + title + '</div>' +
+        '<div class="notification-list">' + items.map(cardHtml).join('') + '</div>' +
+      '</div>';
+  }
+
+  function applyFilter(filter) {
+    activeFilter = filter || 'all';
+    document.querySelectorAll('.notification-group').forEach(function (group) {
+      var visibleCount = 0;
+      group.querySelectorAll('.notification-card').forEach(function (card) {
+        var category = card.dataset.category || 'all';
+        var show = activeFilter === 'all' || category === activeFilter;
+        card.style.display = show ? '' : 'none';
+        if (show) visibleCount += 1;
+      });
+      group.style.display = visibleCount ? '' : 'none';
+    });
+  }
+
+  function render(items) {
+    allItems = items || [];
+    if (!allItems.length) {
+      root.innerHTML = '<p style="color:#64748B;font-weight:600;padding:12px 8px;">No notifications for your account yet.</p>';
+      return;
+    }
+    var today = allItems.filter(function (n) { return n.dayKey === 'today'; });
+    var yesterday = allItems.filter(function (n) { return n.dayKey === 'yesterday'; });
+    var older = allItems.filter(function (n) { return n.dayKey === 'older'; });
+
+    root.innerHTML =
+      groupHtml('Recent Notifications', today.length ? today : (yesterday.length || older.length ? [] : allItems.slice(0, 5))) +
+      groupHtml('Yesterday', yesterday) +
+      groupHtml('Earlier', older);
+
+    // If nothing in "today", put latest in Recent
+    if (!today.length && (yesterday.length || older.length)) {
+      var recent = allItems.slice(0, Math.min(5, allItems.length));
+      var recentIds = {};
+      recent.forEach(function (n) { recentIds[n.id] = true; });
+      var restY = yesterday.filter(function (n) { return !recentIds[n.id]; });
+      var restO = older.filter(function (n) { return !recentIds[n.id]; });
+      root.innerHTML =
+        groupHtml('Recent Notifications', recent) +
+        groupHtml('Yesterday', restY) +
+        groupHtml('Earlier', restO);
+    }
+
+    applyFilter(activeFilter);
+  }
+
+  tabs.forEach(function (tab) {
+    tab.addEventListener('click', function () {
+      tabs.forEach(function (btn) {
+        var active = btn === tab;
+        btn.classList.toggle('active', active);
+        btn.setAttribute('aria-selected', active ? 'true' : 'false');
+      });
+      applyFilter(tab.dataset.filter);
+    });
+  });
+
+  GcordAPI.listNotifications()
+    .then(render)
+    .catch(function (err) {
+      root.innerHTML = '<p style="color:#DC2626;font-weight:700;padding:12px 8px;">Failed to load notifications: ' +
+        (err.message || err) + '</p>';
+    });
+})();
+</script>
+</body>
+</html>
