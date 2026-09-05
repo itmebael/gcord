@@ -1,0 +1,1092 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Gcord Analytics &amp; Reports</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --blue: #0052CC;
+    --ink: #0A2540;
+    --muted: #5C7088;
+    --line: #E3E8F0;
+    --success: #00B67A;
+    --danger: #D64545;
+  }
+  body {
+    min-height: 100vh;
+    font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    color: var(--ink);
+    background:
+      radial-gradient(circle at 8% 6%, rgba(61,139,255,0.24), transparent 30%),
+      radial-gradient(circle at 92% 18%, rgba(0,182,122,0.16), transparent 28%),
+      linear-gradient(135deg, #F7FBFF 0%, #EEF5FF 48%, #F9FBFE 100%);
+  }
+  .app {
+    min-height: 100vh;
+    display: grid;
+    grid-template-columns: 280px minmax(0, 1fr);
+  }
+  .sidebar {
+    margin: 16px 0 16px 16px;
+    height: calc(100vh - 32px);
+    padding: 22px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    position: sticky;
+    top: 16px;
+    color: white;
+    border: 1px solid rgba(255,255,255,0.28);
+    border-radius: 22px;
+    background: linear-gradient(155deg, rgba(0,82,204,0.88), rgba(0,54,140,0.78));
+    box-shadow: 0 24px 54px -28px rgba(0,52,140,0.62);
+    backdrop-filter: blur(18px);
+  }
+  .side-top {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 10px 16px;
+    border-bottom: 1px solid rgba(255,255,255,0.24);
+  }
+  .brand-mark {
+    width: 34px; height: 34px; border-radius: 10px;
+    background: rgba(255,255,255,0.18);
+    display: grid; place-items: center;
+  }
+  .brand-text strong { display: block; font-size: 14px; font-weight: 700; }
+  .brand-text span { display: block; font-size: 13px; line-height: 1.3; }
+  .menu-title { font-size: 14px; opacity: 0.78; padding: 0 8px; }
+  .menu { display: flex; flex-direction: column; gap: 8px; }
+  .menu a {
+    min-height: 42px; display: flex; align-items: center; gap: 12px;
+    padding: 11px 12px; color: white; text-decoration: none;
+    border: 1px solid transparent; border-radius: 12px; font-size: 15px; line-height: 1.25;
+  }
+  .menu a:hover { background: rgba(255,255,255,0.12); }
+  .menu a.active { background: rgba(255,255,255,0.18); }
+  .menu svg { flex: 0 0 auto; }
+  .main { min-width: 0; padding: 22px clamp(20px, 3vw, 42px) 34px; }
+  .page { max-width: 1440px; margin: 0 auto; }
+
+  .page-banner {
+    background: rgba(255,255,255,0.82);
+    border: 1px solid rgba(10,37,64,0.12);
+    border-radius: 14px;
+    padding: 16px 18px;
+    margin-bottom: 18px;
+    box-shadow: 0 18px 48px -34px rgba(10,37,64,0.5);
+  }
+  .page-banner h1 { font-size: clamp(18px, 2vw, 26px); font-weight: 800; }
+  .page-banner p { margin-top: 6px; color: var(--muted); font-size: 13px; font-weight: 600; }
+
+  .filters {
+    display: grid;
+    gap: 18px;
+    background: rgba(255,255,255,0.9);
+    border: 1px solid rgba(10,37,64,0.1);
+    border-radius: 18px;
+    padding: 18px 18px 16px;
+    margin-bottom: 18px;
+    box-shadow: 0 18px 42px -32px rgba(10,37,64,0.45);
+  }
+  .filters-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+  .filters-groups {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(220px, 1fr));
+    gap: 16px;
+    flex: 1;
+    min-width: 0;
+  }
+  .filter-group {
+    display: grid;
+    gap: 10px;
+  }
+  .filter-label {
+    font-size: 11px;
+    font-weight: 800;
+    color: #64748B;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+  .chip-group {
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: 0;
+    padding: 4px;
+    background: #F1F5F9;
+    border: 1px solid #E2E8F0;
+    border-radius: 12px;
+    width: fit-content;
+    max-width: 100%;
+  }
+  .chip {
+    border: 0;
+    background: transparent;
+    color: #475569;
+    border-radius: 9px;
+    padding: 9px 14px;
+    font: inherit;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+    white-space: nowrap;
+  }
+  .chip:hover { color: #0A2540; background: rgba(255,255,255,0.7); }
+  .chip.active {
+    background: #0052CC;
+    color: #fff;
+    box-shadow: 0 6px 14px -8px rgba(0,82,204,0.85);
+  }
+  .filters-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 0 0 auto;
+    padding-top: 2px;
+  }
+  .custom-dates {
+    display: none;
+    align-items: end;
+    gap: 12px;
+    flex-wrap: wrap;
+    padding: 14px;
+    border-radius: 14px;
+    background: linear-gradient(180deg, #F8FBFF 0%, #F1F6FC 100%);
+    border: 1px solid #D8E4F2;
+  }
+  .custom-dates.show { display: flex; }
+  .custom-dates .field {
+    display: grid;
+    gap: 6px;
+    min-width: 160px;
+  }
+  .custom-dates .field label {
+    font-size: 11px;
+    font-weight: 800;
+    color: #64748B;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  .custom-dates .field input {
+    min-height: 42px;
+    width: 100%;
+    border: 1px solid #D0DCEC;
+    border-radius: 11px;
+    padding: 0 12px;
+    font: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--ink);
+    background: #fff;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.8);
+  }
+  .custom-dates .field input:focus {
+    outline: none;
+    border-color: #5B9BFF;
+    box-shadow: 0 0 0 3px rgba(0,82,204,0.12);
+  }
+  .date-sep {
+    display: grid;
+    place-items: center;
+    min-height: 42px;
+    color: #94A3B8;
+    font-weight: 800;
+    padding-bottom: 1px;
+  }
+  .btn {
+    min-height: 42px;
+    border: 0;
+    border-radius: 11px;
+    padding: 0 16px;
+    font: inherit;
+    font-size: 13px;
+    font-weight: 800;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+  .btn-primary {
+    background: #0052CC;
+    color: #fff;
+    box-shadow: 0 10px 20px -14px rgba(0,82,204,0.9);
+  }
+  .btn-primary:hover { background: #0046B0; }
+  .btn-excel {
+    background: #0F9B6A;
+    color: #fff;
+    box-shadow: 0 10px 20px -14px rgba(15,155,106,0.9);
+  }
+  .btn-excel:hover { background: #0C855A; }
+  .btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 14px;
+    margin-bottom: 18px;
+  }
+  .stat-card {
+    background: rgba(255,255,255,0.82);
+    border: 1px solid rgba(255,255,255,0.8);
+    border-radius: 16px;
+    padding: 16px;
+    box-shadow: 0 18px 42px -32px rgba(10,37,64,0.45);
+  }
+  .stat-card span {
+    display: block;
+    font-size: 11px;
+    font-weight: 800;
+    color: #64748B;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  .stat-card strong {
+    display: block;
+    margin-top: 10px;
+    font-size: clamp(22px, 2.4vw, 32px);
+    font-weight: 800;
+    line-height: 1;
+  }
+
+  .panel {
+    background: rgba(255,255,255,0.88);
+    border: 1px solid rgba(10,37,64,0.1);
+    border-radius: 16px;
+    padding: 16px;
+    box-shadow: 0 18px 42px -32px rgba(10,37,64,0.45);
+    margin-bottom: 16px;
+  }
+  .panel-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 14px;
+    flex-wrap: wrap;
+  }
+  .panel-head h2 { font-size: 16px; font-weight: 800; }
+  .panel-head .range { font-size: 12px; font-weight: 700; color: #64748B; }
+
+  .table-wrap { overflow: auto; max-height: min(58vh, 560px); }
+  table { width: 100%; border-collapse: collapse; min-width: 720px; }
+  th, td {
+    text-align: left;
+    padding: 12px 10px;
+    border-bottom: 1px solid #E8EEF7;
+    font-size: 13px;
+    vertical-align: top;
+  }
+  th {
+    position: sticky; top: 0;
+    background: #F8FAFC;
+    font-size: 11px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #64748B;
+    z-index: 1;
+  }
+  td { font-weight: 600; color: #0F172A; }
+  .pill {
+    display: inline-flex;
+    align-items: center;
+    min-height: 26px;
+    padding: 0 10px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 800;
+  }
+  .pill.ok { background: #E4F8EF; color: #0F9B6A; }
+  .pill.warn { background: #FFF4E0; color: #D97706; }
+  .empty, .loading, .error {
+    padding: 28px 12px;
+    text-align: center;
+    color: #64748B;
+    font-weight: 700;
+  }
+  .error { color: #DC2626; }
+
+  .download-backdrop {
+    position: fixed;
+    inset: 0;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    background: rgba(10, 25, 48, 0.45);
+    backdrop-filter: blur(4px);
+    z-index: 1000;
+    padding: 16px;
+  }
+  .download-backdrop.active { display: flex; }
+  .download-modal {
+    width: min(720px, calc(100vw - 28px));
+    max-height: min(86vh, 720px);
+    overflow: auto;
+    background: #fff;
+    border-radius: 18px;
+    padding: 22px;
+    box-shadow: 0 28px 80px rgba(15, 23, 42, 0.22);
+  }
+  .download-modal h2 {
+    margin: 0 0 6px;
+    font-size: 20px;
+    font-weight: 900;
+    color: #0A2540;
+  }
+  .download-modal .dl-sub {
+    margin: 0 0 16px;
+    color: #64748B;
+    font-size: 13px;
+    font-weight: 600;
+  }
+  .dl-meta {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+  .dl-meta-item {
+    border: 1px solid #E2E8F0;
+    background: #F8FAFC;
+    border-radius: 12px;
+    padding: 12px;
+  }
+  .dl-meta-item span {
+    display: block;
+    font-size: 11px;
+    font-weight: 800;
+    color: #64748B;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  .dl-meta-item strong {
+    display: block;
+    margin-top: 6px;
+    font-size: 15px;
+    font-weight: 800;
+    color: #0F172A;
+  }
+  .dl-summary {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 8px;
+    margin-bottom: 14px;
+  }
+  .dl-summary div {
+    border-radius: 10px;
+    padding: 10px;
+    background: #EEF5FF;
+    text-align: center;
+  }
+  .dl-summary span {
+    display: block;
+    font-size: 10px;
+    font-weight: 800;
+    color: #64748B;
+    text-transform: uppercase;
+  }
+  .dl-summary strong {
+    display: block;
+    margin-top: 4px;
+    font-size: 16px;
+    font-weight: 800;
+  }
+  .dl-preview-title {
+    font-size: 13px;
+    font-weight: 800;
+    margin-bottom: 8px;
+    color: #334155;
+  }
+  .dl-preview-wrap {
+    overflow: auto;
+    max-height: 240px;
+    border: 1px solid #E2E8F0;
+    border-radius: 12px;
+    margin-bottom: 16px;
+  }
+  .dl-preview-wrap table {
+    width: 100%;
+    min-width: 540px;
+    border-collapse: collapse;
+  }
+  .dl-preview-wrap th,
+  .dl-preview-wrap td {
+    padding: 9px 10px;
+    border-bottom: 1px solid #EEF2F7;
+    font-size: 12px;
+    text-align: left;
+  }
+  .dl-preview-wrap th {
+    position: sticky;
+    top: 0;
+    background: #F1F5F9;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #64748B;
+  }
+  .dl-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .btn-ghost {
+    background: #E2E8F0;
+    color: #334155;
+  }
+  @media (max-width: 640px) {
+    .dl-meta,
+    .dl-summary { grid-template-columns: 1fr 1fr; }
+  }
+
+  @media (max-width: 980px) {
+    .app { grid-template-columns: 1fr; }
+    .sidebar {
+      position: static;
+      height: auto;
+      margin: 12px;
+    }
+    .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .filters-groups { grid-template-columns: 1fr; }
+    .filters-actions { width: 100%; }
+    .filters-actions .btn-excel { width: 100%; }
+  }
+  @media (max-width: 560px) {
+    .stats { grid-template-columns: 1fr; }
+    .chip-group { width: 100%; }
+    .chip { flex: 1 1 auto; text-align: center; padding-left: 10px; padding-right: 10px; }
+    .custom-dates .field { min-width: 100%; flex: 1 1 100%; }
+    .date-sep { display: none; }
+  }
+
+  /* Staff dashboard visual language for analytics workflows. */
+  body {
+    background:
+      radial-gradient(ellipse at 12% 0%, rgba(184,206,255,0.5), transparent 50%),
+      radial-gradient(ellipse at 95% 35%, rgba(169,195,255,0.4), transparent 45%),
+      linear-gradient(130deg, #F2F6FF, #E7EEFF 60%, #F6F8FF);
+    background-attachment: fixed;
+  }
+  .main { background: transparent; }
+  .sidebar { background: linear-gradient(155deg, rgba(40,91,233,.93), rgba(23,57,156,.87)); border-color: rgba(255,255,255,.31); box-shadow: 0 22px 50px -24px rgba(23,57,156,.56); backdrop-filter: blur(22px); -webkit-backdrop-filter: blur(22px); }
+  .page { max-width: 1440px; }
+  .admin-topbar { min-height: 74px; margin-bottom: 22px; border-radius: 20px; }
+  .page-banner { position: relative; overflow: hidden; padding: 24px; margin-bottom: 22px; border-radius: 22px; border-color: rgba(255,255,255,.44); color: white; background: linear-gradient(115deg, rgba(40,91,233,.93), rgba(25,60,178,.9)); box-shadow: 0 18px 40px -20px rgba(32,77,192,.5); }
+  .page-banner::before { content: 'DECISIONS FROM DATA'; display: block; margin-bottom: 8px; color: #DCE8FF; font-size: 10px; font-weight: 800; letter-spacing: .13em; }
+  .page-banner::after { content: ''; position: absolute; width: 220px; height: 220px; right: 8%; top: -112px; border: 1px solid rgba(255,255,255,.18); border-radius: 50%; box-shadow: 0 0 0 24px rgba(255,255,255,.05), 0 0 0 48px rgba(255,255,255,.035); pointer-events: none; }
+  .page-banner h1, .page-banner p { position: relative; z-index: 1; }
+  .page-banner h1 { color: white; font-size: clamp(22px, 2.3vw, 32px); letter-spacing: -.035em; }
+  .page-banner p { color: #E0EAFF; }
+  .filters, .panel, .stat-card { border-color: rgba(255,255,255,.86); background: rgba(255,255,255,.68); box-shadow: 0 15px 45px -28px rgba(40,73,136,.4), inset 0 1px 0 rgba(255,255,255,.7); backdrop-filter: blur(22px); -webkit-backdrop-filter: blur(22px); }
+  .filters { border-radius: 22px; padding: 20px; }
+  .chip-group { background: rgba(232,239,251,.82); border-color: #D5E4FF; border-radius: 12px; }
+  .chip.active { background: #2454DC; }
+  .custom-dates { background: rgba(248,252,255,.78); border-color: #D5E4FF; }
+  .stats { gap: 16px; margin-bottom: 22px; }
+  .stat-card { min-height: 140px; padding: 20px; border-radius: 22px; }
+  .stat-card span { color: #56718B; }
+  .panel { border-radius: 22px; padding: 20px; }
+  .panel-head h2 { font-size: 15px; letter-spacing: -.015em; }
+  .panel-head .range { color: #58738E; }
+  .table-wrap { border-radius: 16px; background: rgba(249,252,255,.78); border: 1px solid rgba(255,255,255,.72); }
+  table { min-width: 760px; }
+  th { background: rgba(226,237,250,.82); color: #56718B; }
+  th, td { border-color: #E3EDF6; }
+  td { color: #12304C; }
+  .btn-excel { background: #0F9B6A; }
+  .user-filter { display: grid; gap: 8px; min-width: min(260px, 100%); }
+  .user-filter label { color: #56718B; font-size: 11px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
+  .user-filter select { min-height: 42px; width: 100%; padding: 0 12px; border: 1px solid #D5E4FF; border-radius: 11px; background: rgba(249,252,255,.9); color: #12304C; font: inherit; font-size: 13px; font-weight: 700; }
+  .user-filter select:focus { outline: 3px solid rgba(0,82,204,.14); border-color: #5B9BFF; }
+  .filters-top { align-items: end; }
+  .filters-groups { display: flex; align-items: end; gap: 16px; flex-wrap: nowrap; }
+  .filters-groups .filter-group { flex: 0 0 auto; }
+  .filters-groups .user-filter { flex: 0 1 260px; }
+  .filters-actions { align-self: end; }
+  @media (max-width: 560px) { .filters, .panel { padding: 15px; border-radius: 18px; } .stat-card { border-radius: 18px; padding: 15px; } }
+  @media (max-width: 980px) { .filters-groups { flex-wrap: wrap; } }
+</style>
+</head>
+<body>
+<div class="app">
+  <div id="sidebar-root"></div>
+
+  <main class="main">
+    <div id="admin-topbar-root" data-welcome="Analytics &amp; Reports"></div>
+
+    <div class="page">
+      <div class="page-banner">
+        <h1>Analytics &amp; Reports</h1>
+        <p>Filter all transactions, usage, and duplicates — then download Excel.</p>
+      </div>
+
+      <section class="filters" aria-label="Report filters">
+        <div class="filters-top">
+          <div class="filters-groups">
+            <div class="user-filter">
+              <label for="userFilter">User</label>
+              <select id="userFilter" aria-label="Filter transactions by user">
+                <option value="all">All users</option>
+              </select>
+            </div>
+            <div class="filter-group">
+              <span class="filter-label">Data</span>
+              <div class="chip-group" role="group" aria-label="Data type">
+                <button type="button" class="chip active" data-type="all">All</button>
+                <button type="button" class="chip" data-type="transactions">Transactions</button>
+                <button type="button" class="chip" data-type="usage">Usage</button>
+                <button type="button" class="chip" data-type="duplicates">Duplicates</button>
+              </div>
+            </div>
+
+            <div class="filter-group">
+              <span class="filter-label">Period</span>
+              <div class="chip-group" role="group" aria-label="Period">
+                <button type="button" class="chip active" data-period="day">Day</button>
+                <button type="button" class="chip" data-period="week">Week</button>
+                <button type="button" class="chip" data-period="month">Month</button>
+                <button type="button" class="chip" data-period="year">Year</button>
+                <button type="button" class="chip" data-period="custom">Custom</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="filters-actions">
+            <button type="button" class="btn btn-excel" id="downloadExcel">
+              <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path d="M12 3v12m0 0 4-4m-4 4-4-4"/><path d="M5 19h14"/></svg>
+              Download Excel
+            </button>
+          </div>
+        </div>
+
+        <div class="custom-dates" id="customDates">
+          <div class="field">
+            <label for="fromDate">From</label>
+            <input type="date" id="fromDate" />
+          </div>
+          <div class="date-sep" aria-hidden="true">→</div>
+          <div class="field">
+            <label for="toDate">To</label>
+            <input type="date" id="toDate" />
+          </div>
+          <button type="button" class="btn btn-primary" id="applyCustom">Apply Range</button>
+        </div>
+      </section>
+
+      <section class="stats" aria-label="Summary">
+        <article class="stat-card"><span>Total Records</span><strong id="statTotal">0</strong></article>
+        <article class="stat-card"><span>Verified</span><strong id="statVerified">0</strong></article>
+        <article class="stat-card"><span>Duplicates</span><strong id="statDuplicate">0</strong></article>
+        <article class="stat-card"><span>Total Cash-Out</span><strong id="statCashOut">₱0.00</strong></article>
+      </section>
+
+      <section class="panel" id="txnPanel">
+        <div class="panel-head">
+          <h2 id="tableTitle">All Transactions</h2>
+          <span class="range" id="rangeLabel">—</span>
+        </div>
+        <div class="table-wrap">
+          <div class="loading" id="tableState">Loading report…</div>
+          <table id="reportTable" hidden>
+            <thead id="reportHead"></thead>
+            <tbody id="reportBody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="panel" id="usagePanel" hidden>
+        <div class="panel-head">
+          <h2>Staff Usage</h2>
+          <span class="range" id="usageRangeLabel">—</span>
+        </div>
+        <div class="table-wrap">
+          <table id="usageTable">
+            <thead>
+              <tr>
+                <th>Staff</th>
+                <th>Total</th>
+                <th>Verified</th>
+                <th>Duplicates</th>
+                <th>Cash-Out</th>
+              </tr>
+            </thead>
+            <tbody id="usageBody"></tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+  </main>
+</div>
+
+<div class="download-backdrop" id="downloadConfirmModal" aria-hidden="true">
+  <div class="download-modal" role="dialog" aria-modal="true" aria-labelledby="downloadConfirmTitle">
+    <h2 id="downloadConfirmTitle">Confirm Excel Download</h2>
+    <p class="dl-sub">Review the data that will be included in the file before downloading.</p>
+
+    <div class="dl-meta">
+      <div class="dl-meta-item"><span>Data Type</span><strong id="dlType">—</strong></div>
+      <div class="dl-meta-item"><span>Period</span><strong id="dlPeriod">—</strong></div>
+      <div class="dl-meta-item"><span>File Name</span><strong id="dlFilename">—</strong></div>
+      <div class="dl-meta-item"><span>Rows to Export</span><strong id="dlRows">—</strong></div>
+    </div>
+
+    <div class="dl-summary">
+      <div><span>Total</span><strong id="dlTotal">0</strong></div>
+      <div><span>Verified</span><strong id="dlVerified">0</strong></div>
+      <div><span>Duplicates</span><strong id="dlDup">0</strong></div>
+      <div><span>Cash-Out</span><strong id="dlCash">₱0</strong></div>
+    </div>
+
+    <div class="dl-preview-title" id="dlPreviewTitle">Preview (first rows)</div>
+    <div class="dl-preview-wrap">
+      <table>
+        <thead id="dlPreviewHead"></thead>
+        <tbody id="dlPreviewBody"></tbody>
+      </table>
+    </div>
+
+    <div class="dl-actions">
+      <button type="button" class="btn btn-ghost" id="cancelDownload">Cancel</button>
+      <button type="button" class="btn btn-excel" id="confirmDownload">Confirm &amp; Download</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase-config.js"></script>
+<script src="supabase-api.js"></script>
+<script src="admin-sidebar.js"></script>
+<script src="admin-topbar.js"></script>
+<script src="sidebar.js"></script>
+<script>
+(function () {
+  if (!GcordAPI.requireAuth({ adminOnly: true })) return;
+
+  var state = {
+    type: 'all',
+    period: 'day',
+    fromDate: null,
+    toDate: null,
+    report: null,
+    userId: null
+  };
+
+  var typeChips = document.querySelectorAll('[data-type]');
+  var periodChips = document.querySelectorAll('[data-period]');
+  var userFilter = document.getElementById('userFilter');
+  var customDates = document.getElementById('customDates');
+  var fromInput = document.getElementById('fromDate');
+  var toInput = document.getElementById('toDate');
+  var tableState = document.getElementById('tableState');
+  var reportTable = document.getElementById('reportTable');
+  var reportHead = document.getElementById('reportHead');
+  var reportBody = document.getElementById('reportBody');
+  var usagePanel = document.getElementById('usagePanel');
+  var usageBody = document.getElementById('usageBody');
+  var txnPanel = document.getElementById('txnPanel');
+
+  function pad(n) { return String(n).padStart(2, '0'); }
+
+  function toISODate(d) {
+    return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+  }
+
+  function startOfDay(d) {
+    return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  }
+
+  function todayInManila() {
+    var parts = new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'Asia/Manila',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
+    }).formatToParts(new Date());
+    var values = {};
+    parts.forEach(function (part) { values[part.type] = part.value; });
+    return new Date(Number(values.year), Number(values.month) - 1, Number(values.day));
+  }
+
+  function resolveRange(period) {
+    var end = todayInManila();
+    var start = new Date(end);
+
+    if (period === 'day') {
+      /* today */
+    } else if (period === 'week') {
+      var day = end.getDay();
+      var diff = day === 0 ? 6 : day - 1;
+      start = new Date(end);
+      start.setDate(end.getDate() - diff);
+    } else if (period === 'month') {
+      start = new Date(end.getFullYear(), end.getMonth(), 1);
+    } else if (period === 'year') {
+      start = new Date(end.getFullYear(), 0, 1);
+    } else if (period === 'custom') {
+      return {
+        fromDate: fromInput.value || null,
+        toDate: toInput.value || null
+      };
+    }
+
+    return { fromDate: toISODate(start), toDate: toISODate(end) };
+  }
+
+  function setActive(chips, attr, value) {
+    chips.forEach(function (chip) {
+      chip.classList.toggle('active', chip.getAttribute(attr) === value);
+    });
+  }
+
+  function formatRangeLabel(fromDate, toDate) {
+    if (!fromDate && !toDate) return 'All dates';
+    function displayDate(value) {
+      if (!value) return '…';
+      var parts = String(value).split('-');
+      if (parts.length !== 3) return String(value);
+      var date = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+      return isNaN(date.getTime()) ? String(value) : date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    }
+    if (fromDate && toDate && fromDate === toDate) return displayDate(fromDate);
+    return displayDate(fromDate) + ' → ' + displayDate(toDate);
+  }
+
+  function titleForType(type) {
+    if (type === 'transactions') return 'Verified Transactions';
+    if (type === 'duplicates') return 'Duplicate Transactions';
+    if (type === 'usage') return 'Usage Summary';
+    return 'All Transactions';
+  }
+
+  function escapeOptionText(value) {
+    return String(value || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+
+  function userLabel(user) {
+    return user.full_name || [user.first_name, user.last_name].filter(Boolean).join(' ') || user.username || user.email;
+  }
+
+  async function loadUserFilter() {
+    try {
+      var users = await GcordAPI.listUsers({ role: 'staff' });
+      userFilter.innerHTML = '<option value="all">All users</option>' + users.map(function (user) {
+        return '<option value="' + String(user.id) + '">' + escapeOptionText(userLabel(user)) + '</option>';
+      }).join('');
+    } catch (error) {
+      userFilter.innerHTML = '<option value="all">All users</option>';
+    }
+  }
+
+  function renderStats(report) {
+    document.getElementById('statTotal').textContent = String(report.total);
+    document.getElementById('statVerified').textContent = String(report.verified);
+    document.getElementById('statDuplicate').textContent = String(report.duplicate);
+    document.getElementById('statCashOut').textContent = report.cashOutLabel;
+  }
+
+  function renderTxnTable(rows) {
+    reportHead.innerHTML =
+      '<tr>' +
+        '<th>Ref #</th><th>Recipient</th><th>Number</th><th>Amount</th>' +
+        '<th>Status</th><th>Staff</th><th>Recorded Date</th><th>Recorded Time</th>' +
+      '</tr>';
+
+    if (!rows.length) {
+      reportTable.hidden = true;
+      tableState.hidden = false;
+      tableState.className = 'empty';
+      tableState.textContent = 'No records found for this filter.';
+      return;
+    }
+
+    tableState.hidden = true;
+    reportTable.hidden = false;
+    reportBody.innerHTML = rows.map(function (tx) {
+      var pill = tx.status === 'duplicate'
+        ? '<span class="pill warn">Duplicate</span>'
+        : '<span class="pill ok">Verified</span>';
+      return '<tr>' +
+        '<td>' + (tx.ref || '—') + '</td>' +
+        '<td>' + (tx.recipient || '—') + '</td>' +
+        '<td>' + (tx.number || '—') + '</td>' +
+        '<td>' + (tx.amountLabel || '—') + '</td>' +
+        '<td>' + pill + '</td>' +
+        '<td>' + (tx.staffName || '—') + '</td>' +
+        '<td>' + (tx.recordedDate || tx.date || '—') + '</td>' +
+        '<td>' + (tx.recordedTime || tx.time || '—') + '</td>' +
+      '</tr>';
+    }).join('');
+  }
+
+  function renderUsage(rows, rangeText) {
+    document.getElementById('usageRangeLabel').textContent = rangeText;
+    if (!rows.length) {
+      usageBody.innerHTML = '<tr><td colspan="5" class="empty">No usage data for this period.</td></tr>';
+      return;
+    }
+    usageBody.innerHTML = rows.map(function (u) {
+      return '<tr>' +
+        '<td>' + (u.staffName || '—') + '</td>' +
+        '<td>' + u.total + '</td>' +
+        '<td>' + u.verified + '</td>' +
+        '<td>' + u.duplicate + '</td>' +
+        '<td>' + GcordAPI.formatAmount(u.cashOut) + '</td>' +
+      '</tr>';
+    }).join('');
+  }
+
+  async function loadReport() {
+    var range = resolveRange(state.period);
+    state.fromDate = range.fromDate;
+    state.toDate = range.toDate;
+
+    if (state.period === 'custom' && (!state.fromDate || !state.toDate)) {
+      tableState.hidden = false;
+      tableState.className = 'error';
+      tableState.textContent = 'Select both From and To dates for a custom range.';
+      reportTable.hidden = true;
+      return;
+    }
+
+    if (state.period === 'custom' && state.fromDate > state.toDate) {
+      tableState.hidden = false;
+      tableState.className = 'error';
+      tableState.textContent = 'From date must be before To date.';
+      reportTable.hidden = true;
+      return;
+    }
+
+    tableState.hidden = false;
+    tableState.className = 'loading';
+    tableState.textContent = 'Loading report…';
+    reportTable.hidden = true;
+
+    try {
+      var report = await GcordAPI.getAdminReport({
+        type: state.type,
+        userId: state.userId,
+        fromDate: state.fromDate,
+        toDate: state.toDate,
+        useRecordedDate: state.period === 'day' || state.period === 'month'
+      });
+      state.report = report;
+
+      var rangeText = formatRangeLabel(report.fromDate, report.toDate);
+      document.getElementById('rangeLabel').textContent = rangeText;
+      document.getElementById('tableTitle').textContent = titleForType(state.type);
+      renderStats(report);
+
+      if (state.type === 'usage') {
+        txnPanel.hidden = true;
+        usagePanel.hidden = false;
+        renderUsage(report.usage, rangeText);
+      } else {
+        txnPanel.hidden = false;
+        usagePanel.hidden = state.type !== 'all';
+        renderTxnTable(report.transactions);
+        if (state.type === 'all') renderUsage(report.usage, rangeText);
+      }
+    } catch (err) {
+      state.report = null;
+      txnPanel.hidden = false;
+      usagePanel.hidden = true;
+      ['statTotal', 'statVerified', 'statDuplicate', 'statCashOut'].forEach(function (id) {
+        document.getElementById(id).textContent = '\u2014';
+      });
+      tableState.hidden = false;
+      tableState.className = 'error';
+      tableState.textContent = 'Failed to load report: ' + (err.message || err);
+      reportTable.hidden = true;
+    }
+  }
+
+  function csvEscape(value) {
+    var s = String(value == null ? '' : value);
+    if (/[",\n]/.test(s)) return '"' + s.replace(/"/g, '""') + '"';
+    return s;
+  }
+
+  function getExportFilename() {
+    var stamp = (state.fromDate || 'all') + '_to_' + (state.toDate || 'all');
+    var userStamp = state.userId ? '_user_' + state.userId : '';
+    return ('gcord_' + state.type + userStamp + '_' + stamp + '.xls').replace(/\s+/g, '_');
+  }
+
+  function getExportRowCount(report) {
+    if (state.type === 'usage') return (report.usage || []).length;
+    return (report.transactions || []).length;
+  }
+
+  function buildExcelLines(report) {
+    var lines = [];
+    lines.push(['G-Cash Cash Out — Analytics Report'].map(csvEscape).join(','));
+    lines.push(['Period', formatRangeLabel(report.fromDate, report.toDate)].map(csvEscape).join(','));
+    lines.push(['Data Type', state.type].map(csvEscape).join(','));
+    lines.push(['Total', report.total, 'Verified', report.verified, 'Duplicates', report.duplicate, 'Cash-Out', report.cashOutLabel].map(csvEscape).join(','));
+    lines.push('');
+
+    if (state.type === 'usage') {
+      lines.push(['Staff', 'Total', 'Verified', 'Duplicates', 'Cash-Out'].map(csvEscape).join(','));
+      (report.usage || []).forEach(function (u) {
+        lines.push([u.staffName, u.total, u.verified, u.duplicate, GcordAPI.formatAmount(u.cashOut)].map(csvEscape).join(','));
+      });
+    } else {
+      lines.push(['Ref No', 'Recipient', 'Number', 'Amount', 'Status', 'Staff', 'Recorded Date', 'Recorded Time', 'Source'].map(csvEscape).join(','));
+      (report.transactions || []).forEach(function (tx) {
+        lines.push([
+          tx.ref, tx.recipient, tx.number, tx.amountLabel, tx.status,
+          tx.staffName, tx.recordedDate || tx.date, tx.recordedTime || tx.time, tx.source
+        ].map(csvEscape).join(','));
+      });
+
+      if (state.type === 'all' && report.usage && report.usage.length) {
+        lines.push('');
+        lines.push(['Staff Usage'].map(csvEscape).join(','));
+        lines.push(['Staff', 'Total', 'Verified', 'Duplicates', 'Cash-Out'].map(csvEscape).join(','));
+        report.usage.forEach(function (u) {
+          lines.push([u.staffName, u.total, u.verified, u.duplicate, GcordAPI.formatAmount(u.cashOut)].map(csvEscape).join(','));
+        });
+      }
+    }
+    return lines;
+  }
+
+  function renderDownloadPreview(report) {
+    var head = document.getElementById('dlPreviewHead');
+    var body = document.getElementById('dlPreviewBody');
+    var previewTitle = document.getElementById('dlPreviewTitle');
+    var maxPreview = 8;
+
+    if (state.type === 'usage') {
+      var usage = report.usage || [];
+      previewTitle.textContent = 'Preview — Staff usage (' + Math.min(usage.length, maxPreview) + ' of ' + usage.length + ' rows)';
+      head.innerHTML = '<tr><th>Staff</th><th>Total</th><th>Verified</th><th>Duplicates</th><th>Cash-Out</th></tr>';
+      if (!usage.length) {
+        body.innerHTML = '<tr><td colspan="5">No usage rows to export.</td></tr>';
+        return;
+      }
+      body.innerHTML = usage.slice(0, maxPreview).map(function (u) {
+        return '<tr><td>' + (u.staffName || '—') + '</td><td>' + u.total + '</td><td>' + u.verified +
+          '</td><td>' + u.duplicate + '</td><td>' + GcordAPI.formatAmount(u.cashOut) + '</td></tr>';
+      }).join('');
+      return;
+    }
+
+    var txns = report.transactions || [];
+    previewTitle.textContent = 'Preview — Transactions (' + Math.min(txns.length, maxPreview) + ' of ' + txns.length + ' rows)';
+    head.innerHTML = '<tr><th>Ref #</th><th>Recipient</th><th>Amount</th><th>Status</th><th>Staff</th><th>Recorded Date</th></tr>';
+    if (!txns.length) {
+      body.innerHTML = '<tr><td colspan="6">No transaction rows to export.</td></tr>';
+      return;
+    }
+    body.innerHTML = txns.slice(0, maxPreview).map(function (tx) {
+      return '<tr><td>' + (tx.ref || '—') + '</td><td>' + (tx.recipient || '—') + '</td><td>' +
+        (tx.amountLabel || '—') + '</td><td>' + (tx.status || '—') + '</td><td>' +
+        (tx.staffName || '—') + '</td><td>' + (tx.recordedDate || tx.date || '—') + '</td></tr>';
+    }).join('');
+  }
+
+  function openDownloadConfirm() {
+    var report = state.report;
+    if (!report) {
+      alert('Load a report first.');
+      return;
+    }
+    if (!getExportRowCount(report) && state.type !== 'all') {
+      alert('No data to download for the current filter.');
+      return;
+    }
+
+    document.getElementById('dlType').textContent = titleForType(state.type);
+    document.getElementById('dlPeriod').textContent = formatRangeLabel(report.fromDate, report.toDate);
+    document.getElementById('dlFilename').textContent = getExportFilename();
+    document.getElementById('dlRows').textContent = String(getExportRowCount(report));
+    document.getElementById('dlTotal').textContent = String(report.total);
+    document.getElementById('dlVerified').textContent = String(report.verified);
+    document.getElementById('dlDup').textContent = String(report.duplicate);
+    document.getElementById('dlCash').textContent = report.cashOutLabel;
+    renderDownloadPreview(report);
+
+    var modal = document.getElementById('downloadConfirmModal');
+    modal.classList.add('active');
+    modal.setAttribute('aria-hidden', 'false');
+  }
+
+  function closeDownloadConfirm() {
+    var modal = document.getElementById('downloadConfirmModal');
+    modal.classList.remove('active');
+    modal.setAttribute('aria-hidden', 'true');
+  }
+
+  function confirmDownloadExcel() {
+    var report = state.report;
+    if (!report) return;
+
+    var lines = buildExcelLines(report);
+    var filename = getExportFilename();
+    var blob = new Blob(['\uFEFF' + lines.join('\r\n')], { type: 'application/vnd.ms-excel;charset=utf-8;' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+    closeDownloadConfirm();
+  }
+
+  typeChips.forEach(function (chip) {
+    chip.addEventListener('click', function () {
+      state.type = chip.getAttribute('data-type');
+      setActive(typeChips, 'data-type', state.type);
+      loadReport();
+    });
+  });
+
+  periodChips.forEach(function (chip) {
+    chip.addEventListener('click', function () {
+      state.period = chip.getAttribute('data-period');
+      setActive(periodChips, 'data-period', state.period);
+      customDates.classList.toggle('show', state.period === 'custom');
+      if (state.period !== 'custom') loadReport();
+    });
+  });
+
+  userFilter.addEventListener('change', function () {
+    state.userId = userFilter.value === 'all' ? null : userFilter.value;
+    loadReport();
+  });
+
+  document.getElementById('applyCustom').addEventListener('click', loadReport);
+  document.getElementById('downloadExcel').addEventListener('click', openDownloadConfirm);
+  document.getElementById('cancelDownload').addEventListener('click', closeDownloadConfirm);
+  document.getElementById('confirmDownload').addEventListener('click', confirmDownloadExcel);
+  document.getElementById('downloadConfirmModal').addEventListener('click', function (e) {
+    if (e.target.id === 'downloadConfirmModal') closeDownloadConfirm();
+  });
+
+  var today = toISODate(todayInManila());
+  fromInput.value = today;
+  toInput.value = today;
+
+  loadUserFilter().then(loadReport);
+})();
+</script>
+</body>
+</html>

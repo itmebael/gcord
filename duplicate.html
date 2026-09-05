@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Gcord Duplicate Management</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --sidebar: #0052CC;
+    --panel: #EAF5FF;
+    --active: #00368C;
+    --ink: #0A2540;
+    --muted: #5C7088;
+    --primary: #0052CC;
+    --danger: #D64545;
+  }
+  body {
+    min-height: 100vh;
+    font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    color: var(--ink);
+    background: #F7F9FC;
+  }
+  .app {
+    min-height: 100vh;
+    display: grid;
+    grid-template-columns: 260px minmax(0, 1fr);
+  }
+  .sidebar {
+    background: var(--sidebar);
+    color: white;
+    padding: 22px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    position: sticky;
+    top: 0;
+  }
+  .side-top {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 4px 8px 12px;
+    border-bottom: 2px solid rgba(255,255,255,0.35);
+  }
+  .brand-mark {
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    background: rgba(255,255,255,0.18);
+    display: grid;
+    place-items: center;
+  }
+  .brand-text strong { display: block; font-size: 14px; font-weight: 700; }
+  .brand-text span { display: block; font-size: 13px; line-height: 1.3; }
+  .menu-title { font-size: 14px; opacity: 0.78; padding: 0 8px; }
+  .menu { display: flex; flex-direction: column; gap: 10px; }
+  .menu a {
+    min-height: 42px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 9px 10px;
+    color: white;
+    text-decoration: none;
+    border-radius: 8px;
+    font-size: 15px;
+    line-height: 1.25;
+  }
+  .menu a.active {
+    background: var(--active);
+    box-shadow: 0 3px 7px rgba(30, 55, 120, 0.26);
+  }
+  .menu svg { flex: 0 0 auto; }
+  .main {
+    min-width: 0;
+    padding: 10px clamp(18px, 3vw, 42px) 0;
+  }
+  .page {
+    max-width: 1440px;
+    margin: 0 auto;
+  }
+  .duplicate-shell {
+    background: var(--panel);
+    min-height: calc(100vh - 10px);
+    padding: 28px 22px;
+  }
+  .eyebrow {
+    color: #000000;
+    font-size: 19px;
+    font-weight: 800;
+    line-height: 1.2;
+    margin-bottom: 14px;
+  }
+  #duplicateTitle {
+    color: #000000;
+  }
+  .topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 118px;
+  }
+  .icon-button {
+    width: 38px;
+    height: 38px;
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    color: #172241;
+    display: grid;
+    place-items: center;
+    cursor: pointer;
+  }
+  .avatar {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    color: white;
+    background: linear-gradient(155deg, #2485FF 0%, #0052CC 100%);
+  }
+  .content {
+    width: min(760px, 100%);
+    margin: 0 auto;
+  }
+  .alert-card {
+    min-height: 82px;
+    display: grid;
+    grid-template-columns: 62px 1fr;
+    align-items: center;
+    gap: 6px;
+    background: white;
+    border: 1.5px solid #D3DDEA;
+    border-radius: 9px;
+    padding: 16px 20px;
+    margin-bottom: 14px;
+  }
+  .alert-icon {
+    width: 43px;
+    height: 43px;
+  }
+  .alert-card strong {
+    display: block;
+    font-size: 15px;
+    font-weight: 900;
+    margin-bottom: 10px;
+  }
+  .alert-card p {
+    font-size: 13px;
+    font-weight: 500;
+  }
+  .list-card {
+    background: white;
+    border-radius: 9px;
+    padding: 22px 14px 26px;
+  }
+  .list-card h1 {
+    text-align: center;
+    font-size: 16px;
+    line-height: 1.2;
+    margin-bottom: 50px;
+  }
+  .duplicate-list {
+    display: grid;
+    gap: 22px;
+  }
+  .duplicate-item {
+    min-height: 65px;
+    display: grid;
+    grid-template-columns: 54px minmax(0, 1fr) 120px;
+    align-items: center;
+    gap: 8px;
+    border: 1.5px solid #D3DDEA;
+    border-radius: 9px;
+    padding: 10px 26px 10px 22px;
+    background: white;
+  }
+  .receipt-icon {
+    width: 35px;
+    height: 35px;
+  }
+  .item-copy strong {
+    display: block;
+    font-size: 15px;
+    font-weight: 500;
+    line-height: 1.1;
+    overflow-wrap: anywhere;
+  }
+  .item-copy time {
+    display: block;
+    color: var(--muted);
+    font-size: 11px;
+    margin-top: 3px;
+  }
+  .review-button {
+    min-height: 37px;
+    border: 0;
+    border-radius: 8px;
+    background: var(--primary);
+    color: white;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    font: inherit;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+  }
+  @media (max-width: 840px) {
+    .app { grid-template-columns: 1fr; }
+    .sidebar { position: static; height: auto; }
+    .menu { display: grid; grid-template-columns: repeat(2, 1fr); }
+    .main { padding: 16px; }
+    .duplicate-shell { min-height: auto; padding: 20px 14px; }
+    .topbar { margin-bottom: 54px; }
+    .list-card h1 { margin-bottom: 28px; }
+  }
+  @media (max-width: 560px) {
+    .menu { grid-template-columns: 1fr; }
+    .alert-card { grid-template-columns: 45px 1fr; padding: 14px; }
+    .duplicate-item {
+      grid-template-columns: 42px minmax(0, 1fr);
+      padding: 12px;
+    }
+    .review-button {
+      grid-column: 2;
+      width: 100%;
+    }
+  }
+
+  /* ============ GLASS UI REFRESH ============ */
+  body {
+    background:
+      radial-gradient(circle at 8% 6%, rgba(61,139,255,0.24), transparent 30%),
+      radial-gradient(circle at 92% 18%, rgba(0,182,122,0.16), transparent 28%),
+      linear-gradient(135deg, #F7FBFF 0%, #EEF5FF 48%, #F9FBFE 100%);
+  }
+  .app { grid-template-columns: 280px minmax(0, 1fr); }
+  .sidebar {
+    margin: 16px 0 16px 16px;
+    height: calc(100vh - 32px);
+    border: 1px solid rgba(255,255,255,0.28);
+    border-radius: 22px;
+    background: linear-gradient(155deg, rgba(0,82,204,0.88), rgba(0,54,140,0.78));
+    box-shadow: 0 24px 54px -28px rgba(0,52,140,0.62);
+    backdrop-filter: blur(18px);
+  }
+  .side-top {
+    border-bottom: 1px solid rgba(255,255,255,0.24);
+    padding: 8px 10px 16px;
+  }
+  .brand-mark, .menu a.active {
+    background: rgba(255,255,255,0.18);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.24);
+  }
+  .menu { gap: 8px; }
+  .menu a {
+    border: 1px solid transparent;
+    border-radius: 12px;
+    padding: 11px 12px;
+    transition: background 0.18s ease, border-color 0.18s ease, transform 0.18s ease;
+  }
+  .menu a:hover {
+    background: rgba(255,255,255,0.12);
+    border-color: rgba(255,255,255,0.18);
+    transform: translateX(2px);
+  }
+  .main { padding: 22px clamp(20px, 3vw, 42px) 34px; }
+  .duplicate-shell {
+    min-height: calc(100vh - 56px);
+    border-radius: 22px;
+    padding: 22px;
+    background: rgba(234,245,255,0.68);
+    border: 1px solid rgba(255,255,255,0.72);
+    box-shadow: 0 18px 48px -34px rgba(10,37,64,0.5);
+    backdrop-filter: blur(18px);
+  }
+  .topbar {
+    margin-bottom: 34px;
+    padding: 12px 14px;
+    border-radius: 16px;
+    background: rgba(255,255,255,0.64);
+    border: 1px solid rgba(255,255,255,0.72);
+  }
+  .content { width: min(860px, 100%); }
+  .alert-card, .list-card, .duplicate-item {
+    background: rgba(255,255,255,0.72);
+    border: 1px solid rgba(255,255,255,0.74);
+    box-shadow: 0 18px 42px -34px rgba(10,37,64,0.54);
+    backdrop-filter: blur(18px);
+  }
+  .alert-card, .list-card { border-radius: 18px; }
+  .list-card { padding: 24px; }
+  .list-card h1 { margin-bottom: 24px; }
+  .duplicate-list { gap: 14px; }
+  .duplicate-item { border-radius: 14px; padding: 14px 18px; }
+  .icon-button {
+    background: rgba(255,255,255,0.62);
+    border: 1px solid rgba(211,221,234,0.78);
+  }
+  @media (max-width: 840px) {
+    .app { grid-template-columns: 1fr; }
+    .sidebar {
+      position: static;
+      height: auto;
+      margin: 12px;
+      border-radius: 18px;
+    }
+    .main { padding: 12px; }
+    .duplicate-shell { min-height: auto; }
+  }
+  .duplicate-detail-backdrop {
+    position: fixed;
+    inset: 0;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    background: rgba(10,25,48,0.5);
+    padding: 24px;
+    z-index: 1000;
+    overflow-y: auto;
+  }
+  .duplicate-detail-backdrop.active { display: flex; }
+  .duplicate-detail-panel {
+    width: min(960px, 100%);
+    background: rgba(255,255,255,0.96);
+    border-radius: 24px;
+    border: 1px solid rgba(15,23,42,0.08);
+    box-shadow: 0 32px 90px rgba(10,37,64,0.18);
+    padding: 30px 28px;
+    display: grid;
+    gap: 24px;
+  }
+  .duplicate-detail-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 22px;
+  }
+  .duplicate-detail-header h2 {
+    margin: 0;
+    font-size: 22px;
+    font-weight: 900;
+    color: #0F172A;
+  }
+  .duplicate-detail-summary {
+    margin-top: 8px;
+    color: #475569;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+  .duplicate-detail-close {
+    width: 42px;
+    height: 42px;
+    border: 1px solid rgba(15,23,42,0.1);
+    border-radius: 14px;
+    background: white;
+    color: #0F172A;
+    font-size: 22px;
+    line-height: 1;
+    cursor: pointer;
+  }
+  .duplicate-detail-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 22px;
+  }
+  .duplicate-detail-card {
+    border-radius: 20px;
+    padding: 24px;
+    background: #F8FBFF;
+    border: 1px solid rgba(0,82,204,0.14);
+  }
+  .duplicate-detail-card h3 {
+    margin: 0 0 18px;
+    font-size: 15px;
+    font-weight: 800;
+    letter-spacing: 0.01em;
+    color: #0F172A;
+  }
+  .detail-info {
+    display: grid;
+    gap: 16px;
+  }
+  .detail-info-row {
+    display: grid;
+    grid-template-columns: 140px 1fr;
+    gap: 12px;
+    align-items: start;
+  }
+  .detail-info-row strong {
+    font-size: 12px;
+    color: #64748B;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    line-height: 1.4;
+  }
+  .detail-info-row span {
+    font-size: 15px;
+    color: #0F172A;
+    font-weight: 600;
+    line-height: 1.45;
+  }
+  @media (max-width: 840px) {
+    .duplicate-detail-grid { grid-template-columns: 1fr; }
+  }
+</style>
+<link rel="stylesheet" href="staff-glass.css" />
+<link rel="stylesheet" href="staff-pages.css" />
+</head>
+<body class="staff-ui">
+<div class="app">
+  <div id="sidebar-root"></div>
+
+  <main class="main"><header class="staff-page-topbar"><span>Staff workspace</span><nav aria-label="Account shortcuts"><a href="notification.html" aria-label="Notifications"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/></svg></a><a href="profile.html" aria-label="Your profile"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="3"/><path d="M5 21c0-8 14-8 14 0"/></svg></a></nav></header>
+    <div class="page">
+      <header class="staff-page-banner"><p class="staff-page-kicker">YOUR WORKSPACE</p><h1>Duplicate Management</h1><p>Review flagged receipts and their matching transactions.</p></header>
+      <section class="duplicate-shell">
+        <div class="content">
+          <article class="alert-card">
+            <svg class="alert-icon" viewBox="0 0 40 40" aria-hidden="true">
+              <path d="M20 3 38 36H2L20 3z" fill="#D64545"/>
+              <path d="M20 13v12" stroke="white" stroke-width="4" stroke-linecap="round"/>
+              <circle cx="20" cy="30" r="2.5" fill="white"/>
+            </svg>
+            <div>
+              <strong>Duplicate Alerts</strong>
+              <p>Transaction flagged as duplicates.</p>
+            </div>
+          </article>
+
+          <section class="list-card" aria-labelledby="duplicateTitle">
+            <h1 id="duplicateTitle">Duplicate Transactions</h1>
+            <div class="duplicate-list" id="duplicateList">
+              <p style="color:#64748B;font-weight:600;padding:8px 4px;">Loading duplicates…</p>
+            </div>
+          </section>
+        </div>
+      </section>
+    </div>
+  </main>
+</div>
+<div class="duplicate-detail-backdrop" id="duplicateDetailModal" aria-hidden="true">
+  <div class="duplicate-detail-panel" role="dialog" aria-modal="true" aria-labelledby="duplicateDetailTitle">
+    <div class="duplicate-detail-header">
+      <div>
+        <h2 id="duplicateDetailTitle">Transaction Details</h2>
+        <p class="duplicate-detail-summary" id="duplicateDetailSummary">Reference details of the selected transaction and matched duplicate.</p>
+      </div>
+      <button type="button" class="duplicate-detail-close" aria-label="Close detail modal">×</button>
+    </div>
+    <div class="duplicate-detail-grid">
+      <section class="duplicate-detail-card">
+        <h3>Original Transaction</h3>
+        <div class="detail-info">
+          <div class="detail-info-row"><strong>Claimant Name</strong><span id="detailOrigClaimant"></span></div>
+          <div class="detail-info-row"><strong>Reference Number</strong><span id="detailOrigRef"></span></div>
+          <div class="detail-info-row"><strong>Amount</strong><span id="detailOrigAmount"></span></div>
+          <div class="detail-info-row"><strong>Status</strong><span id="detailOrigStatus"></span></div>
+          <div class="detail-info-row"><strong>Date &amp; Time</strong><span id="detailOrigDate"></span></div>
+        </div>
+      </section>
+      <section class="duplicate-detail-card">
+        <h3>Matched Transaction</h3>
+        <div class="detail-info">
+          <div class="detail-info-row"><strong>Claimant Name</strong><span id="detailMatchClaimant"></span></div>
+          <div class="detail-info-row"><strong>Reference Number</strong><span id="detailMatchRef"></span></div>
+          <div class="detail-info-row"><strong>Amount</strong><span id="detailMatchAmount"></span></div>
+          <div class="detail-info-row"><strong>Status</strong><span id="detailMatchStatus"></span></div>
+          <div class="detail-info-row"><strong>Date &amp; Time</strong><span id="detailMatchDate"></span></div>
+        </div>
+      </section>
+    </div>
+  </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase-config.js"></script>
+<script src="supabase-api.js"></script>
+<script src="sidebar.js"></script>
+<script>
+  if (!GcordAPI.requireAuth()) { /* redirecting */ }
+
+  const duplicateList = document.getElementById('duplicateList');
+  const duplicateDetailModal = document.getElementById('duplicateDetailModal');
+  const duplicateDetailClose = duplicateDetailModal.querySelector('.duplicate-detail-close');
+  const detailOrigRef = document.getElementById('detailOrigRef');
+  const detailOrigAmount = document.getElementById('detailOrigAmount');
+  const detailOrigStatus = document.getElementById('detailOrigStatus');
+  const detailOrigDate = document.getElementById('detailOrigDate');
+  const detailMatchRef = document.getElementById('detailMatchRef');
+  const detailMatchAmount = document.getElementById('detailMatchAmount');
+  const detailMatchStatus = document.getElementById('detailMatchStatus');
+  const detailMatchDate = document.getElementById('detailMatchDate');
+  const detailSummary = document.getElementById('duplicateDetailSummary');
+
+  const RECEIPT_ICON =
+    '<svg class="receipt-icon" viewBox="0 0 32 32" aria-hidden="true">' +
+      '<path d="M5 3h22v25l-4-2-4 2-4-2-4 2-4-2-2 1V3z" fill="#f9f8ff" stroke="#6855a8" stroke-width="1.5"/>' +
+      '<path d="M9 11h13M9 15h11M9 19h8" stroke="#6855a8" stroke-width="1.4"/>' +
+      '<path d="M8 6h2M12 6h2M16 6h2M20 6h2" stroke="#6855a8" stroke-width="1.5" stroke-linecap="round"/>' +
+    '</svg>';
+
+  function openDuplicateDetail(item) {
+    const origRef = item.dataset.duplicateRef || '';
+    const origAmount = item.dataset.duplicateAmount || '—';
+    const origStatus = item.dataset.duplicateStatus || 'Pending';
+    const origDate = item.dataset.duplicateDate || '—';
+    const matchRef = item.dataset.matchedRef || origRef;
+    const matchAmount = item.dataset.matchedAmount || origAmount;
+    const matchStatus = item.dataset.matchedStatus || origStatus;
+    const matchDate = item.dataset.matchedDate || origDate;
+
+    detailOrigRef.textContent = origRef;
+    document.getElementById('detailOrigClaimant').textContent = item.dataset.originalClaimant || 'Not available';
+    document.getElementById('detailMatchClaimant').textContent = item.dataset.matchedClaimant || 'Not available';
+    detailOrigAmount.textContent = origAmount;
+    detailOrigStatus.textContent = origStatus;
+    detailOrigDate.textContent = origDate;
+    detailMatchRef.textContent = matchRef;
+    detailMatchAmount.textContent = matchAmount;
+    detailMatchStatus.textContent = matchStatus;
+    detailMatchDate.textContent = matchDate;
+    detailSummary.textContent = origRef + ' · ' + origAmount + ' · ' + origStatus;
+
+    duplicateDetailModal.classList.add('active');
+    duplicateDetailModal.setAttribute('aria-hidden', 'false');
+  }
+
+  function closeDuplicateDetail() {
+    duplicateDetailModal.classList.remove('active');
+    duplicateDetailModal.setAttribute('aria-hidden', 'true');
+  }
+
+  function bindReviewButtons() {
+    duplicateList.querySelectorAll('.review-button').forEach(function (button) {
+      button.addEventListener('click', function () {
+        const item = button.closest('.duplicate-item');
+        if (item) openDuplicateDetail(item);
+      });
+    });
+  }
+
+  function renderDuplicates(rows) {
+    function escapeAttribute(value) {
+      return String(value || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
+    if (!rows.length) {
+      duplicateList.innerHTML = '<p style="color:#64748B;font-weight:600;padding:8px 4px;">No duplicate alerts for your account.</p>';
+      return;
+    }
+    duplicateList.innerHTML = rows.map(function (d) {
+      return '' +
+        '<article class="duplicate-item"' +
+          ' data-original-claimant="' + escapeAttribute(d.origClaimant) + '"' +
+          ' data-matched-claimant="' + escapeAttribute(d.matchClaimant) + '"' +
+          ' data-duplicate-ref="' + d.origRef + '"' +
+          ' data-duplicate-date="' + d.origDate + '"' +
+          ' data-duplicate-amount="' + d.origAmount + '"' +
+          ' data-duplicate-status="' + d.origStatus + '"' +
+          ' data-matched-ref="' + d.matchRef + '"' +
+          ' data-matched-date="' + d.matchDate + '"' +
+          ' data-matched-amount="' + d.matchAmount + '"' +
+          ' data-matched-status="' + d.matchStatus + '">' +
+          RECEIPT_ICON +
+          '<div class="item-copy"><strong>' + d.refLabel + '</strong><time>' + d.detectedAt + '</time></div>' +
+          '<button class="review-button" type="button">Review <span>&gt;</span></button>' +
+        '</article>';
+    }).join('');
+    bindReviewButtons();
+  }
+
+  async function loadDuplicates() {
+    try {
+      const rows = await GcordAPI.listDuplicateEvents();
+      renderDuplicates(rows);
+    } catch (err) {
+      duplicateList.innerHTML = '<p style="color:#DC2626;font-weight:700;padding:8px 4px;">Failed to load duplicates: ' +
+        (err.message || err) + '</p>';
+    }
+  }
+
+  duplicateDetailClose.addEventListener('click', closeDuplicateDetail);
+  duplicateDetailModal.addEventListener('click', function (event) {
+    if (event.target === duplicateDetailModal) closeDuplicateDetail();
+  });
+
+  loadDuplicates();
+</script>
+<script src="staff-account-menu.js"></script>
+</body>
+</html>

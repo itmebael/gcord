@@ -1,0 +1,1009 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Gcord Scan and Records</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --sidebar: #0052CC;
+    --panel: #EAF5FF;
+    --active: #00368C;
+    --ink: #0A2540;
+    --primary: #0052CC;
+    --muted: #5C7088;
+  }
+  body {
+    min-height: 100vh;
+    font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    color: var(--ink);
+    background:
+      radial-gradient(circle at 8% 6%, rgba(61,139,255,0.24), transparent 30%),
+      radial-gradient(circle at 92% 18%, rgba(0,182,122,0.16), transparent 28%),
+      linear-gradient(135deg, #F7FBFF 0%, #EEF5FF 48%, #F9FBFE 100%);
+  }
+  .app {
+    min-height: 100vh;
+    display: grid;
+    grid-template-columns: 280px minmax(0, 1fr);
+  }
+  .sidebar {
+    margin: 16px 0 16px 16px;
+    height: calc(100vh - 32px);
+    padding: 22px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    position: sticky;
+    top: 16px;
+    color: white;
+    border: 1px solid rgba(255,255,255,0.28);
+    border-radius: 22px;
+    background: linear-gradient(155deg, rgba(0,82,204,0.88), rgba(0,54,140,0.78));
+    box-shadow: 0 24px 54px -28px rgba(0,52,140,0.62);
+    backdrop-filter: blur(18px);
+  }
+  .side-top {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 10px 16px;
+    border-bottom: 1px solid rgba(255,255,255,0.24);
+  }
+  .brand-mark {
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    background: rgba(255,255,255,0.18);
+    display: grid;
+    place-items: center;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.24);
+  }
+  .brand-text strong { display: block; font-size: 14px; font-weight: 700; }
+  .brand-text span { display: block; font-size: 13px; line-height: 1.3; }
+  .menu-title { font-size: 14px; opacity: 0.78; padding: 0 8px; }
+  .menu { display: flex; flex-direction: column; gap: 8px; }
+  .menu a {
+    min-height: 42px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 11px 12px;
+    color: white;
+    text-decoration: none;
+    border: 1px solid transparent;
+    border-radius: 12px;
+    font-size: 15px;
+    line-height: 1.25;
+  }
+  .menu a:hover {
+    background: rgba(255,255,255,0.12);
+    border-color: rgba(255,255,255,0.18);
+  }
+  .menu a.active {
+    background: rgba(255,255,255,0.18);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.24);
+  }
+  .menu svg { flex: 0 0 auto; }
+  .main { min-width: 0; padding: 22px clamp(20px, 3vw, 42px) 34px; }
+  .page { max-width: 1440px; margin: 0 auto; }
+  .eyebrow {
+    color: #000;
+    font-size: 19px;
+    font-weight: 800;
+    margin-bottom: 12px;
+  }
+  .scan-shell {
+    min-height: calc(100vh - 88px);
+    border-radius: 22px;
+    padding: 22px;
+    background: rgba(234,245,255,0.68);
+    border: 1px solid rgba(255,255,255,0.72);
+    box-shadow: 0 18px 48px -34px rgba(10,37,64,0.5);
+    backdrop-filter: blur(18px);
+  }
+  .scan-card { max-width: 860px; margin: 0 auto; }
+  .mode-tabs {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+  .mode-tab {
+    min-height: 42px;
+    border: 1px solid rgba(255,255,255,0.74);
+    border-radius: 12px;
+    background: rgba(255,255,255,0.72);
+    color: #101828;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font: inherit;
+    font-size: 13px;
+    font-weight: 800;
+    cursor: pointer;
+    box-shadow: 0 18px 42px -34px rgba(10,37,64,0.54);
+  }
+  .mode-tab.active {
+    background: linear-gradient(135deg, var(--primary), #00368C);
+    color: white;
+    border-color: transparent;
+  }
+  .panel-pane { display: none; }
+  .panel-pane.active { display: block; }
+  .receipt-title {
+    font-size: 13px;
+    font-weight: 900;
+    margin: 0 0 8px 8px;
+  }
+  .scanner-frame {
+    position: relative;
+    background: rgba(255,255,255,0.72);
+    border: 1px solid rgba(255,255,255,0.74);
+    border-radius: 18px;
+    height: clamp(260px, 52vh, 460px);
+    overflow: hidden;
+    box-shadow: 0 18px 42px -34px rgba(10,37,64,0.54);
+  }
+  .scanner-frame video,
+  .scanner-frame img.preview {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    background: #0b1220;
+  }
+  .scanner-frame img.preview { display: none; }
+  .scanner-overlay {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 2;
+  }
+  .scanner-help {
+    position: absolute;
+    left: 14px;
+    top: 14px;
+    z-index: 3;
+    font-size: 12px;
+    font-weight: 700;
+    color: #fff;
+    text-shadow: 0 1px 4px rgba(0,0,0,0.45);
+  }
+  .camera-status {
+    position: absolute;
+    right: 12px;
+    top: 12px;
+    z-index: 3;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: #bce7d5;
+    color: #0d573d;
+    border-radius: 8px;
+    padding: 6px 10px;
+    font-size: 10px;
+    font-weight: 900;
+  }
+  .camera-status.off {
+    background: #FDEAEA;
+    color: #B91C1C;
+  }
+  .camera-status::before {
+    content: "";
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: currentColor;
+  }
+  .scan-area {
+    position: absolute;
+    inset: 70px 24px 24px;
+  }
+  .corner {
+    position: absolute;
+    width: 58px;
+    height: 58px;
+  }
+  .corner::before,
+  .corner::after {
+    content: "";
+    position: absolute;
+    background: #fff;
+    box-shadow: 0 0 0 1px rgba(0,0,0,0.2);
+  }
+  .corner::before { width: 100%; height: 4px; }
+  .corner::after { width: 4px; height: 100%; }
+  .corner.tl { top: 0; left: 0; }
+  .corner.tr { top: 0; right: 0; transform: scaleX(-1); }
+  .corner.bl { bottom: 0; left: 0; transform: scaleY(-1); }
+  .corner.br { right: 0; bottom: 0; transform: scale(-1); }
+  .scan-line {
+    position: absolute;
+    left: 8%;
+    right: 8%;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, #3D8BFF, transparent);
+    animation: scanMove 2.2s ease-in-out infinite;
+    opacity: 0.9;
+  }
+  @keyframes scanMove {
+    0%, 100% { top: 18%; }
+    50% { top: 78%; }
+  }
+  .ocr-progress {
+    display: none;
+    position: absolute;
+    left: 50%;
+    bottom: 22px;
+    transform: translateX(-50%);
+    z-index: 4;
+    min-width: 220px;
+    padding: 10px 14px;
+    border-radius: 12px;
+    background: rgba(10,37,64,0.86);
+    color: #fff;
+    font-size: 12px;
+    font-weight: 700;
+    text-align: center;
+  }
+  .ocr-progress.show { display: block; }
+  .actions {
+    width: min(420px, 100%);
+    display: grid;
+    gap: 8px;
+    margin: 14px auto 0;
+  }
+  .action-button {
+    min-height: 42px;
+    border: 1px solid rgba(255,255,255,0.74);
+    border-radius: 12px;
+    background: rgba(255,255,255,0.82);
+    color: #3f4149;
+    font: inherit;
+    font-size: 15px;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    cursor: pointer;
+  }
+  .action-button.primary {
+    background: linear-gradient(135deg, var(--primary), #00368C);
+    color: #fff;
+    border-color: transparent;
+  }
+  .action-button:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
+  .hidden-input { display: none; }
+  .manual-form {
+    background: rgba(255,255,255,0.82);
+    border: 1px solid rgba(255,255,255,0.8);
+    border-radius: 18px;
+    padding: 20px;
+    box-shadow: 0 18px 42px -34px rgba(10,37,64,0.54);
+  }
+  .form-grid { display: grid; gap: 14px; }
+  .form-grid.two { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+  .field { display: grid; gap: 6px; min-width: 0; }
+  .field label {
+    font-size: 12px;
+    font-weight: 700;
+    color: #475569;
+  }
+  .field input {
+    width: 100%;
+    min-width: 0;
+    height: 44px;
+    border: 1px solid rgba(10,37,64,0.14);
+    border-radius: 12px;
+    padding: 0 14px;
+    font: inherit;
+    font-size: 14px;
+    outline: 0;
+    background: #fff;
+  }
+  .field input:focus {
+    border-color: #1D5BD6;
+    box-shadow: 0 0 0 3px rgba(29,91,214,0.12);
+  }
+  .field.invalid input { border-color: #DC2626; }
+  .backdrop {
+    position: fixed;
+    inset: 0;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    background: rgba(10,25,48,0.45);
+    backdrop-filter: blur(4px);
+    z-index: 120;
+    padding: 20px;
+  }
+  .backdrop.active { display: flex; }
+  .result-modal {
+    width: min(480px, 100%);
+    background: #fff;
+    border-radius: 20px;
+    padding: 22px;
+    box-shadow: 0 28px 80px rgba(15,23,42,0.18);
+    max-height: calc(100vh - 40px);
+    overflow: auto;
+  }
+  .result-modal h2 {
+    font-size: 18px;
+    font-weight: 900;
+    margin-bottom: 6px;
+  }
+  .result-modal .sub {
+    color: var(--muted);
+    font-size: 13px;
+    margin-bottom: 16px;
+  }
+  .dup-banner {
+    display: none;
+    margin-bottom: 14px;
+    padding: 10px 12px;
+    border-radius: 12px;
+    background: #FEF2F2;
+    color: #B91C1C;
+    border: 1px solid #FECACA;
+    border-left: 4px solid #DC2626;
+    line-height: 1.6;
+    font-size: 12px;
+    font-weight: 700;
+  }
+  .dup-banner.show { display: block; }
+  .toast {
+    position: fixed;
+    right: 20px;
+    bottom: 20px;
+    z-index: 200;
+    display: none;
+    padding: 14px 16px;
+    border-radius: 12px;
+    background: #0F9B6A;
+    color: #fff;
+    font-size: 13px;
+    font-weight: 700;
+    box-shadow: 0 18px 40px -20px rgba(10,37,64,0.55);
+  }
+  .toast.show { display: block; }
+  .toast.warn { background: #D97706; }
+  .toast.err { background: #DC2626; }
+  @media (max-width: 840px) {
+    .app { grid-template-columns: 1fr; }
+    .sidebar {
+      position: static;
+      height: auto;
+      margin: 12px;
+      border-radius: 18px;
+    }
+    .main { padding: 12px; }
+    .scan-shell { min-height: auto; }
+  }
+  @media (max-width: 560px) {
+    .mode-tabs { grid-template-columns: 1fr; }
+    .form-grid.two { grid-template-columns: 1fr; }
+    .scan-shell, .manual-form { padding: 14px; }
+    .scanner-help { top: 48px; right: 14px; }
+  }
+</style>
+<link rel="stylesheet" href="staff-glass.css" />
+<link rel="stylesheet" href="staff-pages.css" />
+</head>
+<body class="staff-ui">
+<div class="app">
+  <div id="sidebar-root"></div>
+
+  <main class="main"><header class="staff-page-topbar"><span>Staff workspace</span><nav aria-label="Account shortcuts"><a href="notification.html" aria-label="Notifications"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/></svg></a><a href="profile.html" aria-label="Your profile"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="3"/><path d="M5 21c0-8 14-8 14 0"/></svg></a></nav></header>
+    <div class="page">
+      <header class="staff-page-banner"><p class="staff-page-kicker">YOUR WORKSPACE</p><h1>Scan &amp; Record</h1><p>Record a receipt with your camera, an image, or manual entry.</p></header>
+      <section class="scan-shell">
+        <div class="scan-card">
+          <div class="mode-tabs" role="tablist" aria-label="Scan mode">
+            <button class="mode-tab active" type="button" role="tab" data-mode="camera" aria-selected="true">
+              <svg width="19" height="19" fill="currentColor" viewBox="0 0 24 24"><path d="M4 7h4l1.5-2h5L16 7h4a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2zm8 10a4 4 0 1 0 0-8 4 4 0 0 0 0 8z"/></svg>
+              Camera Scan
+            </button>
+            <button class="mode-tab" type="button" role="tab" data-mode="manual" aria-selected="false">
+              <svg width="21" height="17" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 18"><rect x="1.5" y="2.5" width="21" height="13" rx="2"/><path d="M5 6h2M9 6h2M13 6h2M17 6h2M5 9h2M9 9h2M13 9h2M17 9h2M5 12h6M13 12h6"/></svg>
+              Manual Entry
+            </button>
+          </div>
+
+          <div class="panel-pane active" id="cameraPane" data-pane="camera">
+            <div class="receipt-title">Receipt Scanner</div>
+            <label class="auto-capture-option"><input type="checkbox" id="autoCaptureEnabled" checked> Auto capture a readable GCash receipt</label>
+            <p class="auto-capture-note">Green means receipt text was detected. Review the details before saving.</p>
+            <div class="scanner-frame" id="scannerFrame">
+              <video id="cameraVideo" playsinline muted autoplay></video>
+              <img class="preview" id="capturePreview" alt="Captured receipt" />
+              <p class="scanner-help" id="scannerHelp">Position the GCash receipt within the frame</p>
+              <span class="camera-status off" id="cameraStatus">Camera Off</span>
+              <div class="scanner-overlay" aria-hidden="true">
+                <div class="scan-area">
+                  <span class="corner tl"></span>
+                  <span class="corner tr"></span>
+                  <span class="corner bl"></span>
+                  <span class="corner br"></span>
+                  <span class="scan-line" id="scanLine"></span>
+                </div>
+              </div>
+              <div class="ocr-progress" id="ocrProgress">Reading GCash receipt…</div>
+            </div>
+
+            <div class="actions">
+              <button class="action-button primary" id="captureBtn" type="button" aria-label="Capture and scan receipt">Capture</button>
+              <button class="action-button" id="uploadBtn" type="button" aria-label="Upload receipt photo">Upload</button>
+              <button class="action-button" id="rescanBtn" type="button">
+                <svg width="18" height="18" fill="none" stroke="#657080" stroke-width="2.4" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v6h6"/></svg>
+                Rescan
+              </button>
+              <input class="hidden-input" id="fileInput" type="file" accept="image/*" capture="environment" />
+            </div>
+          </div>
+
+          <div class="panel-pane" id="manualPane" data-pane="manual">
+            <div class="receipt-title">Manual Transaction Entry</div>
+            <form class="manual-form" id="manualForm" novalidate>
+              <div class="field">
+                <label for="manualClaimer">Claimed by (customer name)</label>
+                <input id="manualClaimer" name="claimant" type="text" maxlength="160" placeholder="Enter the name of the person receiving the cash" required />
+              </div>
+              <div class="form-grid">
+                <div class="field">
+                  <label for="manualName">Recipient Name</label>
+                  <input id="manualName" name="recipient" type="text" placeholder="e.g. Maria Santos or J*** S**" required />
+                </div>
+                <div class="form-grid two">
+                  <div class="field">
+                    <label for="manualNumber">GCash / Phone Number</label>
+                    <input id="manualNumber" name="number" type="tel" placeholder="09171234567" required />
+                  </div>
+                  <div class="field">
+                    <label for="manualAmount">Amount</label>
+                    <input id="manualAmount" name="amount" type="number" min="1" step="0.01" placeholder="500.00" required />
+                  </div>
+                </div>
+                <div class="field">
+                  <label for="manualRef">Reference Number</label>
+                  <input id="manualRef" name="ref" type="text" inputmode="numeric" placeholder="13-digit GCash ref no." required />
+                </div>
+                <div class="form-grid two">
+                  <div class="field">
+                    <label for="manualDate">Date</label>
+                    <input id="manualDate" name="date" type="date" required />
+                  </div>
+                  <div class="field">
+                    <label for="manualTime">Time</label>
+                    <input id="manualTime" name="time" type="time" required />
+                  </div>
+                </div>
+              </div>
+              <div class="actions" style="margin-top:16px;">
+                <div class="dup-banner" id="manualDupBanner" role="status" aria-live="polite"></div>
+                <button class="action-button primary" type="submit">Save to Transaction Management</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+</div>
+
+<div class="backdrop" id="resultBackdrop" aria-hidden="true">
+  <div class="result-modal" role="dialog" aria-modal="true" aria-labelledby="resultTitle">
+    <h2 id="resultTitle">Confirm Transaction</h2>
+    <p class="sub">Review the extracted GCash details, then save to Transaction Management.</p>
+    <div class="dup-banner" id="dupBanner">This reference number already exists. Saving will mark it as Duplicate.</div>
+    <form id="resultForm" class="form-grid" novalidate>
+      <div class="field">
+        <label for="resultClaimer">Claimed by (customer name)</label>
+        <input id="resultClaimer" name="claimant" type="text" maxlength="160" placeholder="Enter the name of the person receiving the cash" required aria-describedby="resultClaimerHint" />
+        <small id="resultClaimerHint" class="earnings-note">Enter the customer's name, not the staff member's name.</small>
+      </div>
+      <div class="field">
+        <label for="resultName">Recipient Name</label>
+        <input id="resultName" name="recipient" type="text" required />
+      </div>
+      <div class="field">
+        <label for="resultNumber">GCash / Phone Number</label>
+        <input id="resultNumber" name="number" type="tel" placeholder="09171234567" required />
+        <small id="resultNumberHint" class="earnings-note"></small>
+      </div>
+      <div class="field">
+        <label for="resultAmount">Amount</label>
+        <input id="resultAmount" name="amount" type="number" min="1" step="0.01" required />
+      </div>
+      <div class="field">
+        <label for="resultRef">Reference Number</label>
+        <input id="resultRef" name="ref" type="text" inputmode="numeric" required />
+      </div>
+      <div class="form-grid two">
+        <div class="field">
+          <label for="resultDate">Date</label>
+          <input id="resultDate" name="date" type="text" placeholder="Jun 30, 2026" required />
+        </div>
+        <div class="field">
+          <label for="resultTime">Time</label>
+          <input id="resultTime" name="time" type="text" placeholder="10:42 AM" required />
+        </div>
+      </div>
+      <div class="actions" style="grid-template-columns:1fr 1fr;">
+        <button class="action-button" type="button" id="cancelResultBtn">Edit / Cancel</button>
+        <button class="action-button primary" type="submit">Okay — Save</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<canvas id="captureCanvas" hidden></canvas>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase-config.js"></script>
+<script src="supabase-api.js"></script>
+<script src="transactions.js"></script>
+<script src="sidebar.js"></script>
+<script src="scanner-auto-capture.js"></script>
+<script>
+(function () {
+  if (!GcordAPI.requireAuth()) return;
+
+  var video = document.getElementById('cameraVideo');
+  var preview = document.getElementById('capturePreview');
+  var canvas = document.getElementById('captureCanvas');
+  var cameraStatus = document.getElementById('cameraStatus');
+  var scannerHelp = document.getElementById('scannerHelp');
+  var ocrProgress = document.getElementById('ocrProgress');
+  var scanLine = document.getElementById('scanLine');
+  var fileInput = document.getElementById('fileInput');
+  var resultBackdrop = document.getElementById('resultBackdrop');
+  var dupBanner = document.getElementById('dupBanner');
+  var toast = document.getElementById('toast');
+  var stream = null;
+  var busy = false;
+  var autoCapture = createScannerAutoCapture(video, document.getElementById('scannerFrame'), scannerHelp,
+    document.getElementById('autoCaptureEnabled'), function (shot) {
+      if (busy) return;
+      // Use the exact frame checked by OCR, not a later camera frame.
+      if (shot) { showCaptured(shot); runOcr(shot); }
+    }, function () { return !!stream && !busy && video.style.display !== 'none' && document.getElementById('cameraPane').classList.contains('active'); });
+
+  function showToast(message, type) {
+    toast.textContent = message;
+    toast.className = 'toast show' + (type ? ' ' + type : '');
+    clearTimeout(showToast._t);
+    showToast._t = setTimeout(function () { toast.className = 'toast'; }, 2800);
+  }
+
+  function setCameraStatus(connected, label) {
+    cameraStatus.textContent = label;
+    cameraStatus.classList.toggle('off', !connected);
+  }
+
+  async function startCamera() {
+    stopCamera();
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      setCameraStatus(false, 'Camera Unavailable');
+      scannerHelp.textContent = 'Camera not supported. Use Upload Receipt Photo instead.';
+      return;
+    }
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: { ideal: 'environment' }, width: { ideal: 1920 }, height: { ideal: 1080 } },
+        audio: false
+      });
+      video.srcObject = stream;
+      await video.play();
+      preview.style.display = 'none';
+      video.style.display = 'block';
+      scanLine.style.display = 'block';
+      setCameraStatus(true, 'Camera Connected');
+      scannerHelp.textContent = 'Position the GCash receipt within the frame';
+      autoCapture.start();
+    } catch (err) {
+      setCameraStatus(false, 'Camera Blocked');
+      scannerHelp.textContent = 'Allow camera access or upload a receipt photo.';
+    }
+  }
+
+  function stopCamera() {
+    autoCapture.stop();
+    if (stream) {
+      stream.getTracks().forEach(function (track) { track.stop(); });
+      stream = null;
+    }
+    video.srcObject = null;
+  }
+
+  function switchMode(mode) {
+    document.querySelectorAll('.mode-tab').forEach(function (tab) {
+      var active = tab.dataset.mode === mode;
+      tab.classList.toggle('active', active);
+      tab.setAttribute('aria-selected', active ? 'true' : 'false');
+    });
+    document.querySelectorAll('.panel-pane').forEach(function (pane) {
+      pane.classList.toggle('active', pane.dataset.pane === mode);
+    });
+    if (mode === 'camera') startCamera();
+    else stopCamera();
+  }
+
+  function fillResultForm(data) {
+    document.getElementById('resultClaimer').value = '';
+    document.getElementById('resultName').value = data.recipient || '';
+    document.getElementById('resultNumber').value = data.number || '';
+    document.getElementById('resultName').placeholder = data.recipient ? '' : 'Name not read — enter it from the receipt';
+    document.getElementById('resultNumberHint').textContent = data.number ? '' : data.maskedNumber
+      ? 'Receipt shows ' + data.maskedNumber + '. Enter the complete number to save; hidden digits cannot be recovered.'
+      : 'No complete mobile number was read. Include it in the camera frame, upload the full receipt, or enter it manually.';
+    document.getElementById('resultAmount').value = data.amount || '';
+    document.getElementById('resultRef').value = data.ref || '';
+    document.getElementById('resultDate').value = data.date || GcordTransactions.formatDate(new Date());
+    document.getElementById('resultTime').value = data.time || GcordTransactions.formatTime(new Date());
+    return checkDuplicatePreview();
+  }
+
+  function checkDuplicatePreview() {
+    return checkClaimBanner(document.getElementById('resultRef'), dupBanner);
+  }
+
+  function claimMessage(exists) {
+    var time = exists.claimed_at ? new Date(exists.claimed_at) : null;
+    return 'Duplicate — already claimed by ' + (exists.claimed_by_name || 'Unknown (claimant not recorded)') +
+      '. Claimed at: ' + (time && !isNaN(time.getTime()) ? time.toLocaleString('en-PH', {timeZone:'Asia/Manila'}) + ' (Philippine time)' : 'Not recorded') +
+      '. This transaction cannot be claimed again.';
+  }
+
+  var duplicateDialog = document.createElement('dialog');
+  duplicateDialog.className = 'receipt-duplicate-dialog';
+  duplicateDialog.setAttribute('aria-labelledby', 'duplicatePopupTitle');
+  duplicateDialog.setAttribute('aria-describedby', 'duplicatePopupDescription');
+  duplicateDialog.innerHTML = '<form method="dialog"><div class="duplicate-popup-icon" aria-hidden="true">!</div>' +
+    '<span class="duplicate-popup-label">DUPLICATE RECEIPT</span><h2 id="duplicatePopupTitle">Already claimed</h2>' +
+    '<p id="duplicatePopupDescription">This reference has already been used. It cannot be claimed again.</p>' +
+    '<dl><div><dt>Reference number</dt><dd data-duplicate="ref"></dd></div>' +
+    '<div><dt>Claimed by</dt><dd data-duplicate="name"></dd></div>' +
+    '<div><dt>Claim time · Philippine time</dt><dd data-duplicate="time"></dd></div></dl>' +
+    '<p data-duplicate="save" role="status" aria-live="polite"></p>' +
+    '<button type="submit" value="transactions" autofocus>Go to My Transactions</button></form>';
+  document.body.appendChild(duplicateDialog);
+  var reviewAfterDuplicate = false;
+  duplicateDialog.addEventListener('close', function () {
+    if (duplicateDialog.returnValue === 'transactions') {
+      window.location.href = 'dashboard.html#transactions';
+      return;
+    }
+    if (!reviewAfterDuplicate) return;
+    reviewAfterDuplicate = false;
+    resultBackdrop.classList.add('active');
+    resultBackdrop.setAttribute('aria-hidden', 'false');
+  });
+  function showDuplicatePopup(original, ref) {
+    clearTimeout(showToast._t);
+    toast.className = 'toast';
+    duplicateDialog.querySelector('[data-duplicate="save"]').textContent = '';
+    var time = original && original.claimed_at ? new Date(original.claimed_at) : null;
+    duplicateDialog.querySelector('[data-duplicate="ref"]').textContent = GcordTransactions.normalizeRef(ref);
+    duplicateDialog.querySelector('[data-duplicate="name"]').textContent = original && original.claimed_by_name || 'Claimant not recorded';
+    duplicateDialog.querySelector('[data-duplicate="time"]').textContent = time && !isNaN(time.getTime())
+      ? time.toLocaleString('en-PH', {timeZone: 'Asia/Manila'}) : 'Not recorded';
+    if (!duplicateDialog.open) {
+      duplicateDialog.returnValue = '';
+      duplicateDialog.showModal();
+    }
+  }
+
+  function checkClaimBanner(input, banner) {
+    var ref = input.value;
+    banner.classList.remove('show');
+    if (GcordTransactions.normalizeRef(ref).length < 13) return Promise.resolve();
+    return GcordTransactions.findByRef(ref).then(function (exists) {
+      if (input.value !== ref) return;
+      banner.classList.toggle('show', !!exists);
+      if (exists) {
+        banner.textContent = claimMessage(exists);
+        if (banner.dataset.popupRef !== ref) showDuplicatePopup(exists, ref);
+        banner.dataset.popupRef = ref;
+      } else {
+        delete banner.dataset.popupRef;
+      }
+      return exists;
+    }).catch(function () {
+      if (input.value !== ref) return;
+      banner.classList.add('show');
+      banner.textContent = 'Could not check the original claim. Please try again.';
+    });
+  }
+
+  async function openResult(data) {
+    closeResult();
+    delete dupBanner.dataset.popupRef;
+    var duplicate = await fillResultForm(data);
+    if (duplicate) {
+      reviewAfterDuplicate = true;
+      var saveStatus = duplicateDialog.querySelector('[data-duplicate="save"]');
+      var nextButton = duplicateDialog.querySelector('button');
+      nextButton.disabled = true;
+      saveStatus.textContent = 'Recording duplicate scan...';
+      try {
+        var saved = await GcordAPI.client().rpc('app_record_duplicate_scan', {p_ref: data.ref});
+        if (saved.error) throw saved.error;
+        saveStatus.textContent = 'Duplicate scan recorded. No new claim or earnings added.';
+      } catch (error) {
+        saveStatus.textContent = 'Duplicate detected, but not saved. ' +
+          (error.code === 'PGRST202' ? 'Apply database/record_duplicate_scan.sql first.' : 'Please try scanning again.');
+      } finally {
+        nextButton.disabled = false;
+      }
+      return duplicate;
+    }
+    resultBackdrop.classList.add('active');
+    resultBackdrop.setAttribute('aria-hidden', 'false');
+    return null;
+  }
+
+  function closeResult() {
+    resultBackdrop.classList.remove('active');
+    resultBackdrop.setAttribute('aria-hidden', 'true');
+  }
+
+  function readPayloadFromForm(form) {
+    var fd = new FormData(form);
+    return {
+      recipient: String(fd.get('recipient') || '').trim(),
+      claimant: String(fd.get('claimant') || '').trim(),
+      number: String(fd.get('number') || '').trim(),
+      amount: String(fd.get('amount') || '').trim(),
+      ref: String(fd.get('ref') || '').trim(),
+      date: String(fd.get('date') || '').trim(),
+      time: String(fd.get('time') || '').trim()
+    };
+  }
+
+  function validatePayload(data, form) {
+    var ok = true;
+    form.querySelectorAll('.field').forEach(function (field) {
+      var input = field.querySelector('input');
+      if (!input) return;
+      if (input.readOnly && !input.name) return;
+      var invalid = !String(input.value || '').trim();
+      if (input.name === 'ref' && GcordTransactions.normalizeRef(input.value).length < 13) invalid = true;
+      if (input.name === 'number' && !/^09\d{9}$/.test(GcordTransactions.normalizeNumber(input.value))) invalid = true;
+      if (input.name === 'amount' && !(Number(input.value) > 0)) invalid = true;
+      field.classList.toggle('invalid', invalid);
+      if (invalid) ok = false;
+    });
+    return ok;
+  }
+
+  async function savePayload(data, source) {
+    var user = GcordAPI.getCurrentUser();
+    if (!user) {
+      showToast('Please log in again to save.', 'err');
+      window.location.href = 'login.html';
+      return null;
+    }
+    var result = await GcordTransactions.addTransaction({
+      recipient: data.recipient,
+      claimant_name: data.claimant,
+      number: data.number,
+      amount: data.amount,
+      ref: data.ref,
+      date: data.date,
+      time: data.time,
+      source: source,
+      created_by_user_id: user.id,
+      actor_name: user.full_name || user.username,
+      actor_role: user.role || 'staff'
+    });
+
+    if (result.isDuplicate) {
+      showToast('Duplicate reference saved and flagged.', 'warn');
+      var banner = source === 'manual' ? document.getElementById('manualDupBanner') : dupBanner;
+      banner.classList.add('show');
+      banner.textContent = 'Duplicate blocked. Loading original claim details...';
+      try {
+        var original = await GcordTransactions.findByRef(data.ref);
+        banner.textContent = original ? claimMessage(original) : 'Duplicate blocked. Original claim details are unavailable.';
+        showDuplicatePopup(original, data.ref);
+      } catch (error) {
+        banner.textContent = 'Duplicate blocked. Could not load original claim details.';
+        showDuplicatePopup(null, data.ref);
+      }
+      return result;
+    } else {
+      showToast('Transaction saved to Transaction Management.');
+    }
+
+    setTimeout(function () {
+      window.location.href = 'dashboard.html#transactions';
+    }, 900);
+
+    return result;
+  }
+
+  function showCaptured(dataUrl) {
+    autoCapture.stop();
+    preview.src = dataUrl;
+    preview.style.display = 'block';
+    video.style.display = 'none';
+    scanLine.style.display = 'none';
+  }
+
+  function captureFromVideo() {
+    if (!stream || !video.videoWidth) {
+      showToast('Camera is not ready yet.', 'err');
+      return null;
+    }
+    // Match the centered object-fit: cover live preview, at source resolution.
+    var frameRatio = video.clientWidth / video.clientHeight;
+    var sourceWidth = video.videoWidth;
+    var sourceHeight = video.videoHeight;
+    if (!Number.isFinite(frameRatio) || frameRatio <= 0) return null;
+    if (sourceWidth / sourceHeight > frameRatio) {
+      sourceWidth = sourceHeight * frameRatio;
+    } else {
+      sourceHeight = sourceWidth / frameRatio;
+    }
+    var sourceX = (video.videoWidth - sourceWidth) / 2;
+    var sourceY = (video.videoHeight - sourceHeight) / 2;
+    canvas.width = Math.max(1, Math.round(sourceWidth));
+    canvas.height = Math.max(1, Math.round(sourceHeight));
+    var ctx = canvas.getContext('2d');
+    ctx.drawImage(video, sourceX, sourceY, sourceWidth, sourceHeight, 0, 0, canvas.width, canvas.height);
+    var dataUrl = canvas.toDataURL('image/jpeg', 0.92);
+    showCaptured(dataUrl);
+    return dataUrl;
+  }
+
+  async function runOcr(imageSource) {
+    if (busy) return;
+    busy = true;
+    clearTimeout(showToast._t);
+    toast.className = 'toast';
+    closeResult();
+    ocrProgress.classList.add('show');
+    ocrProgress.textContent = 'Reading GCash receipt… 0%';
+    document.getElementById('captureBtn').disabled = true;
+
+    try {
+      var result = await Tesseract.recognize(imageSource, 'eng', {
+        logger: function (m) {
+          if (m.status === 'recognizing text' && m.progress != null) {
+            ocrProgress.textContent = 'Reading GCash receipt… ' + Math.round(m.progress * 100) + '%';
+          }
+        }
+      });
+      var parsed = GcordTransactions.parseGCashText(result.data && result.data.text ? result.data.text : '');
+      ocrProgress.textContent = 'Checking receipt reference...';
+      await openResult(parsed);
+    } catch (err) {
+      showToast('Scan failed. Try again or use Manual Entry.', 'err');
+    } finally {
+      busy = false;
+      ocrProgress.classList.remove('show');
+      document.getElementById('captureBtn').disabled = false;
+    }
+  }
+
+  document.querySelectorAll('.mode-tab').forEach(function (tab) {
+    tab.addEventListener('click', function () {
+      switchMode(tab.dataset.mode);
+    });
+  });
+
+  document.getElementById('captureBtn').addEventListener('click', async function () {
+    if (busy) return;
+    var shot = captureFromVideo();
+    if (!shot) return;
+    await runOcr(shot);
+  });
+
+  document.getElementById('uploadBtn').addEventListener('click', function () {
+    fileInput.click();
+  });
+
+  fileInput.addEventListener('change', async function () {
+    var file = fileInput.files && fileInput.files[0];
+    if (!file) return;
+    var url = URL.createObjectURL(file);
+    showCaptured(url);
+    setCameraStatus(true, 'Photo Loaded');
+    scannerHelp.textContent = 'Receipt photo ready for scanning';
+    await runOcr(file);
+    fileInput.value = '';
+  });
+
+  document.getElementById('rescanBtn').addEventListener('click', function () {
+    closeResult();
+    preview.style.display = 'none';
+    preview.removeAttribute('src');
+    startCamera();
+  });
+
+  document.getElementById('cancelResultBtn').addEventListener('click', closeResult);
+  resultBackdrop.addEventListener('click', function (e) {
+    if (e.target === resultBackdrop) closeResult();
+  });
+
+  document.getElementById('resultRef').addEventListener('input', checkDuplicatePreview);
+  document.getElementById('manualRef').addEventListener('input', function () {
+    checkClaimBanner(this, document.getElementById('manualDupBanner'));
+  });
+
+  document.getElementById('resultForm').addEventListener('submit', async function (e) {
+    e.preventDefault();
+    var form = e.target;
+    var data = readPayloadFromForm(form);
+    if (!validatePayload(data, form)) {
+      showToast('Please complete all GCash fields.', 'err');
+      return;
+    }
+    try {
+      var result = await savePayload(data, 'scan');
+      if (result && !result.isDuplicate) closeResult();
+    } catch (err) {
+      showToast(err.message || 'Failed to save transaction.', 'err');
+    }
+  });
+
+  document.getElementById('manualForm').addEventListener('submit', async function (e) {
+    e.preventDefault();
+    var form = e.target;
+    var data = readPayloadFromForm(form);
+
+    if (data.date && /^\d{4}-\d{2}-\d{2}$/.test(data.date)) {
+      var d = new Date(data.date + 'T00:00:00');
+      data.date = GcordTransactions.formatDate(d);
+    }
+    if (data.time && /^\d{2}:\d{2}$/.test(data.time)) {
+      var parts = data.time.split(':');
+      var h = Number(parts[0]);
+      var m = parts[1];
+      var ampm = h >= 12 ? 'PM' : 'AM';
+      h = h % 12 || 12;
+      data.time = h + ':' + m + ' ' + ampm;
+    }
+
+    if (!validatePayload(data, form)) {
+      showToast('Please complete all fields.', 'err');
+      return;
+    }
+    try {
+      await savePayload(data, 'manual');
+    } catch (err) {
+      showToast(err.message || 'Failed to save transaction.', 'err');
+    }
+  });
+
+  // Prefill manual date/time
+  (function () {
+    var now = new Date();
+    var yyyy = now.getFullYear();
+    var mm = String(now.getMonth() + 1).padStart(2, '0');
+    var dd = String(now.getDate()).padStart(2, '0');
+    var hh = String(now.getHours()).padStart(2, '0');
+    var mi = String(now.getMinutes()).padStart(2, '0');
+    document.getElementById('manualDate').value = yyyy + '-' + mm + '-' + dd;
+    document.getElementById('manualTime').value = hh + ':' + mi;
+  })();
+
+  startCamera();
+  window.addEventListener('beforeunload', stopCamera);
+})();
+</script>
+<script src="staff-account-menu.js"></script>
+</body>
+</html>

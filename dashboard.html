@@ -1,0 +1,1063 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Gcord Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --blue: #0052CC;
+    --blue-soft: #3D8BFF;
+    --blue-panel: #EAF5FF;
+    --sidebar: #0052CC;
+    --ink: #0A2540;
+    --muted: #5C7088;
+    --line: #E3E8F0;
+    --card: #ffffff;
+    --success: #00B67A;
+    --danger: #D64545;
+    --warning: #B07B1A;
+    --cyan-soft: #E4F8EF;
+    --rose-soft: #FDEAEA;
+    --shadow: 0 1px 2px rgba(10,37,64,0.04), 0 12px 32px -8px rgba(10,37,64,0.10);
+    --radius: 10px;
+  }
+  body {
+    min-height: 100vh;
+    font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    color: var(--ink);
+    background: #F7F9FC;
+  }
+  .app {
+    min-height: 100vh;
+    display: grid;
+    grid-template-columns: 260px minmax(0, 1fr);
+  }
+  .sidebar {
+    background: var(--sidebar);
+    color: white;
+    padding: 22px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    position: sticky;
+    top: 0;
+  }
+  .side-top { display: flex; align-items: center; gap: 12px; padding: 4px 8px 12px; border-bottom: 2px solid rgba(255,255,255,0.35); }
+  .brand-mark {
+    width: 34px; height: 34px; border-radius: 10px;
+    background: rgba(255,255,255,0.18);
+    display: grid; place-items: center;
+  }
+  .brand-text strong { display: block; font-size: 14px; font-weight: 700; }
+  .brand-text span { display: block; font-size: 13px; line-height: 1.3; }
+  .menu-title { font-size: 14px; opacity: 0.78; padding: 0 8px; }
+  .menu { display: flex; flex-direction: column; gap: 10px; }
+  .menu a {
+    min-height: 42px;
+    display: flex; align-items: center; gap: 12px;
+    padding: 9px 10px;
+    color: white; text-decoration: none;
+    border-radius: 8px;
+    font-size: 15px; line-height: 1.25;
+  }
+  .menu a.active {
+    background: #00368C;
+    box-shadow: 0 3px 7px rgba(30, 55, 120, 0.26);
+  }
+  .menu svg { flex: 0 0 auto; }
+  .main {
+    min-width: 0;
+    background:
+      radial-gradient(circle at top left, rgba(61,139,255,0.16), transparent 34%),
+      linear-gradient(180deg, #ffffff 0%, #F7F9FC 100%);
+    padding: 24px clamp(18px, 3vw, 42px) 34px;
+  }
+  .topbar {
+    display: flex; align-items: center; justify-content: space-between;
+    margin: 0 auto 24px;
+    max-width: 1440px;
+    background: rgba(255,255,255,0.94);
+    border: 1px solid rgba(215,223,240,0.86);
+    border-radius: 14px;
+    padding: 14px 18px;
+    box-shadow: 0 16px 40px -34px rgba(18,29,68,0.45);
+  }
+  .hamburger { border: 0; background: transparent; color: var(--ink); cursor: pointer; }
+  .welcome { font-size: 15px; font-weight: 500; }
+  .top-icons { display: flex; align-items: center; gap: 14px; }
+  .bell { position: relative; border: 0; background: transparent; color: var(--ink); cursor: pointer; }
+  .badge {
+    position: absolute; top: -9px; right: -9px;
+    width: 18px; height: 18px; border-radius: 50%;
+    display: grid; place-items: center;
+    background: red; color: white; font-size: 11px; font-weight: 800;
+  }
+  .avatar {
+    width: 24px; height: 24px; border-radius: 50%;
+    display: grid; place-items: center; color: white;
+    background: linear-gradient(155deg, #2485FF 0%, #0052CC 100%);
+  }
+  .dashboard-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 24px;
+    align-items: start;
+    max-width: 1440px;
+    margin: 0 auto;
+  }
+  .view {
+    display: none;
+  }
+  .view.active {
+    display: grid;
+  }
+  .transaction-view {
+    max-width: 1440px;
+    margin: 0 auto;
+    gap: 18px;
+  }
+  .transaction-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+  }
+  .page-title {
+    color: #000000;
+    font-size: clamp(19px, 2vw, 28px);
+    font-weight: 800;
+    letter-spacing: 0;
+    text-transform: uppercase;
+  }
+  .transaction-shell {
+    background: var(--blue-panel);
+    border: 1px solid rgba(125,145,239,0.3);
+    border-radius: 12px;
+    padding: 22px;
+    box-shadow: 0 18px 44px -34px rgba(18,29,68,0.55);
+  }
+  .transaction-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 22px;
+  }
+  .icon-button {
+    width: 38px;
+    height: 38px;
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    color: #172241;
+    display: grid;
+    place-items: center;
+    cursor: pointer;
+  }
+  .transaction-icons {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .transaction-stats {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(150px, 1fr));
+    gap: 14px;
+    margin-bottom: 18px;
+  }
+  .transaction-stat {
+    min-height: 78px;
+    background: #ffffff;
+    border: 1px solid #DCE8F6;
+    border-radius: 10px;
+    box-shadow: 5px 6px 0 rgba(46,51,71,0.24);
+    display: grid;
+    place-items: center;
+    text-align: center;
+    padding: 12px 10px;
+  }
+  .transaction-stat span {
+    color: #151a24;
+    font-size: 12px;
+    font-weight: 700;
+  }
+  .transaction-stat strong {
+    display: block;
+    margin-top: 4px;
+    font-size: 23px;
+    line-height: 1.05;
+    font-weight: 500;
+  }
+  .search-box {
+    height: 42px;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: white;
+    border: 1.5px solid #8a8790;
+    border-radius: 11px;
+    padding: 0 13px;
+    margin-bottom: 18px;
+  }
+  .search-box input {
+    border: 0;
+    outline: 0;
+    min-width: 0;
+    width: 100%;
+    font: inherit;
+    font-size: 15px;
+    color: #151a24;
+    background: transparent;
+  }
+  .table-title {
+    font-size: 15px;
+    font-weight: 800;
+    margin: 0 0 4px;
+  }
+  .transaction-table {
+    overflow: hidden;
+    border: 1.5px solid #9a9aa4;
+    border-radius: 7px;
+    background: #f8f8fb;
+  }
+  .transaction-row {
+    display: grid;
+    grid-template-columns: 1.15fr 0.95fr 1fr 0.95fr;
+    align-items: center;
+    min-height: 70px;
+    padding: 10px 12px;
+    gap: 10px;
+    background: #fff;
+    border-top: 1.5px solid #ccd5ff;
+  }
+  .transaction-row.head {
+    min-height: 31px;
+    background: #f3f3f7;
+    border-top: 0;
+    padding-block: 6px;
+    font-size: 11px;
+    font-weight: 800;
+    color: #252734;
+    text-transform: uppercase;
+  }
+  .ref-code {
+    font-size: 13px;
+    line-height: 1.05;
+    color: #30364b;
+    overflow-wrap: anywhere;
+  }
+  .amount {
+    font-size: 14px;
+    color: #27304d;
+  }
+  .status-pill {
+    width: max-content;
+    min-width: 82px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    border-radius: 999px;
+    padding: 4px 9px;
+    font-size: 11px;
+    font-weight: 800;
+  }
+  .status-pill::before {
+    content: "";
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: currentColor;
+  }
+  .status-pill.verified {
+    color: #1e9b72;
+    background: #E4F8EF;
+  }
+  .status-pill.duplicate {
+    color: #ea4f54;
+    background: #FDEAEA;
+  }
+  .view-details {
+    border: 0;
+    background: transparent;
+    color: #1c347e;
+    display: inline-flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+    font: inherit;
+    font-size: 13px;
+    font-weight: 800;
+    line-height: 1.05;
+    cursor: pointer;
+    text-align: left;
+  }
+  .view-details svg {
+    flex: 0 0 auto;
+  }
+  body.notifications-open .dashboard-grid {
+    grid-template-columns: minmax(420px, 1fr) minmax(300px, 340px);
+  }
+  .overview {
+    display: grid;
+    grid-template-columns: minmax(0, 1.15fr) minmax(280px, 0.85fr);
+    gap: 24px;
+  }
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(150px, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+    grid-column: 1 / -1;
+  }
+  .stat-card {
+    min-height: 104px;
+    background: white;
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    box-shadow: 0 16px 34px -28px rgba(18,29,68,0.5);
+    display: grid; place-items: center;
+    text-align: center;
+    padding: 18px 14px;
+  }
+  .stat-card span { font-size: 12px; font-weight: 800; color: var(--muted); }
+  .stat-card strong { display: block; font-size: 30px; font-weight: 800; margin-top: 8px; color: var(--ink); }
+  .panel {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 18px;
+    box-shadow: 0 16px 34px -30px rgba(18,29,68,0.45);
+  }
+  .chart-panel { min-height: 390px; margin-bottom: 0; }
+  .panel-title { font-size: 15px; font-weight: 800; margin-bottom: 16px; }
+  .legend {
+    display: flex; justify-content: center; align-items: center; gap: 18px;
+    font-size: 12px; margin-bottom: 10px;
+  }
+  .legend span { display: inline-flex; align-items: center; gap: 5px; }
+  .line { width: 25px; height: 2px; display: inline-block; }
+  .line.green { background: var(--success); }
+  .line.red { background: var(--danger); }
+  .chart {
+    height: 300px;
+    display: grid;
+    grid-template-columns: 24px 1fr;
+    gap: 6px;
+  }
+  .y-axis {
+    display: flex; flex-direction: column; justify-content: space-between;
+    padding: 10px 0 22px;
+    font-size: 12px;
+  }
+  .plot { position: relative; min-width: 0; }
+  .plot svg { width: 100%; height: 100%; display: block; overflow: visible; }
+  .x-axis {
+    position: absolute; left: 0; right: 0; bottom: -2px;
+    display: grid; grid-template-columns: repeat(6, 1fr);
+    font-size: 11px; text-align: center; color: #1e2739;
+  }
+  .usage-panel { min-height: 390px; }
+  .usage-content { min-height: 315px; display: flex; align-items: center; justify-content: center; gap: 32px; }
+  .donut {
+    width: 170px; height: 170px; border-radius: 50%;
+    background: conic-gradient(#238ed2 0 80%, #b7d8f8 80% 100%);
+    position: relative;
+  }
+  .donut::after {
+    content: ''; position: absolute; inset: 28px; border-radius: 50%; background: white;
+  }
+  .usage-legend { display: grid; gap: 16px; font-size: 12px; min-width: 150px; }
+  .usage-row { display: grid; grid-template-columns: 14px 1fr auto; gap: 8px; align-items: center; }
+  .dot { width: 14px; height: 14px; border-radius: 50%; background: #2588d9; }
+  .dot.soft { background: #b7d8f8; }
+  .notification-wrap { padding-top: 0; }
+  .notification-wrap,
+  .detail-column {
+    display: none;
+  }
+  body.notifications-open .notification-wrap,
+  body.notifications-open .detail-column {
+    display: block;
+  }
+  body.notifications-open .details-grid {
+    display: grid;
+  }
+  .section-label {
+    font-size: 15px; font-weight: 700; color: rgba(0,0,0,0.12);
+    margin: 0 0 8px 2px;
+  }
+  .notification-panel {
+    background: #EAF5FF;
+    border-radius: 10px;
+    padding: 10px 6px 8px;
+  }
+  .notif-head { position: relative; text-align: center; padding: 4px 34px 10px; }
+  .notif-head strong { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; }
+  .notif-head p { font-size: 9px; margin-top: 10px; }
+  .close {
+    position: absolute; right: 8px; top: 0;
+    border: 0; background: transparent; color: #121212;
+    cursor: pointer;
+  }
+  .filter {
+    height: 27px;
+    background: white;
+    border: 1.4px solid #4a4f5c;
+    border-radius: 6px;
+    margin-bottom: 16px;
+    padding: 3px 8px;
+  }
+  .pill {
+    width: 48px; height: 19px; border-radius: 4px;
+    background: #0052CC; color: white; font-size: 12px;
+    display: grid; place-items: center;
+  }
+  .day { font-size: 12px; font-weight: 800; margin: 0 0 9px 2px; }
+  .notif-list { display: grid; gap: 16px; }
+  .notif-card {
+    display: grid; grid-template-columns: 34px 1fr;
+    gap: 8px;
+    min-height: 62px;
+    border: 1.4px solid #4f545e;
+    border-radius: 6px;
+    padding: 10px 8px 6px;
+    background: #f5f5f5;
+  }
+  .notif-card.warn { background: #FFF6E5; }
+  .notif-card.info { background: #EAF5FF; }
+  .notif-card .icon { align-self: start; }
+  .notif-card strong { display: block; font-size: 13px; margin-bottom: 3px; }
+  .notif-card p { font-size: 10px; text-align: center; }
+  .notif-card time { display: block; text-align: right; font-size: 10px; margin-top: 4px; }
+  .notif-card { cursor: pointer; }
+  .details-grid {
+    display: none;
+    grid-template-columns: repeat(2, minmax(260px, 1fr));
+    gap: 24px;
+    grid-column: 1 / -1;
+  }
+  .detail-column { padding-top: 0; }
+  .detail-card {
+    min-height: 316px;
+    border: 1.5px solid #222;
+    border-radius: 9px;
+    box-shadow: var(--shadow);
+    padding: 34px 14px 24px;
+    position: relative;
+  }
+  .detail-card.success { background: var(--cyan-soft); }
+  .detail-card.duplicate { background: var(--rose-soft); }
+  .transaction-detail-backdrop {
+    position: fixed;
+    inset: 0;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    background: rgba(10,25,48,0.5);
+    z-index: 1001;
+  }
+  .transaction-detail-backdrop.active { display: flex; }
+  .transaction-detail-modal {
+    width: min(520px, 100%);
+    background: rgba(255,255,255,0.98);
+    border-radius: 24px;
+    padding: 28px 24px;
+    border: 1px solid rgba(15,23,42,0.08);
+    box-shadow: 0 28px 80px rgba(15,23,42,0.18);
+  }
+  .transaction-detail-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 18px;
+    margin-bottom: 18px;
+  }
+  .transaction-detail-header h2 {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 900;
+    color: #0F172A;
+  }
+  .transaction-detail-summary {
+    margin: 8px 0 0;
+    color: #475569;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+  .transaction-detail-close {
+    width: 42px;
+    height: 42px;
+    border: 1px solid rgba(15,23,42,0.1);
+    border-radius: 14px;
+    background: white;
+    color: #0F172A;
+    font-size: 24px;
+    line-height: 1;
+    cursor: pointer;
+  }
+  .transaction-detail-list {
+    display: grid;
+    gap: 16px;
+  }
+  .transaction-detail-row {
+    display: grid;
+    grid-template-columns: 110px 1fr;
+    gap: 10px;
+    align-items: start;
+  }
+  .transaction-detail-row strong {
+    font-size: 12px;
+    color: #64748B;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    line-height: 1.4;
+  }
+  .transaction-detail-row span {
+    font-size: 15px;
+    color: #0F172A;
+    font-weight: 600;
+    line-height: 1.4;
+  }
+  .transaction-detail-actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 24px;
+  }
+  .transaction-detail-actions .ok-button {
+    min-height: 44px;
+    padding: 0 24px;
+    border: 0;
+    border-radius: 12px;
+    background: #0052CC;
+    color: white;
+    font: inherit;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  .detail-title {
+    position: absolute; top: 6px; left: 0; right: 0;
+    text-align: center;
+    font-size: 16px;
+  }
+  .detail-close { position: absolute; top: 8px; right: 10px; }
+  .detail-list { display: grid; gap: 28px; margin-top: 34px; font-size: 15px; }
+  .detail-list div { display: grid; grid-template-columns: 90px 1fr; gap: 10px; }
+  .detail-list b { font-weight: 700; }
+  @media (max-width: 1280px) {
+    body.notifications-open .dashboard-grid {
+      grid-template-columns: minmax(300px, 1fr) minmax(280px, 1fr);
+    }
+    .notification-wrap, .detail-column { padding-top: 0; }
+  }
+  @media (max-width: 840px) {
+    .app { grid-template-columns: 1fr; }
+    .sidebar { position: static; }
+    .menu { display: grid; grid-template-columns: repeat(2, 1fr); }
+    .main { background: #f6f8ff; padding: 16px; }
+    .dashboard-grid,
+    body.notifications-open .dashboard-grid { grid-template-columns: 1fr; }
+    .transaction-shell { padding: 16px; }
+    .transaction-stats { grid-template-columns: repeat(2, minmax(135px, 1fr)); }
+    .transaction-row { grid-template-columns: 1fr 0.8fr 0.95fr 0.8fr; padding-inline: 9px; }
+    .topbar { gap: 12px; }
+    .detail-card { min-height: auto; }
+  }
+  @media (max-width: 520px) {
+    .menu { grid-template-columns: 1fr; }
+    .stats { grid-template-columns: 1fr; }
+    .transaction-stats { grid-template-columns: 1fr; }
+    .transaction-row {
+      grid-template-columns: 1fr 1fr;
+      min-height: auto;
+    }
+    .transaction-row.head { display: none; }
+    .transaction-row > *::before {
+      display: block;
+      margin-bottom: 4px;
+      color: var(--muted);
+      font-size: 10px;
+      font-weight: 800;
+      text-transform: uppercase;
+    }
+    .transaction-row .ref-code::before { content: "Ref #"; }
+    .transaction-row .amount::before { content: "Amount"; }
+    .transaction-row .status-cell::before { content: "Status"; }
+    .transaction-row .action-cell::before { content: "Action"; }
+    .view-details { justify-content: flex-start; }
+    .usage-content { flex-direction: column; height: auto; padding-top: 8px; }
+    .usage-panel { height: auto; }
+  }
+
+  /* ============ GLASS UI REFRESH ============ */
+  body {
+    background:
+      radial-gradient(circle at 8% 6%, rgba(61,139,255,0.24), transparent 30%),
+      radial-gradient(circle at 92% 18%, rgba(0,182,122,0.16), transparent 28%),
+      linear-gradient(135deg, #F7FBFF 0%, #EEF5FF 48%, #F9FBFE 100%);
+  }
+  .app { grid-template-columns: 280px minmax(0, 1fr); }
+  .sidebar {
+    margin: 16px 0 16px 16px;
+    height: calc(100vh - 32px);
+    border: 1px solid rgba(255,255,255,0.28);
+    border-radius: 22px;
+    background: linear-gradient(155deg, rgba(0,82,204,0.88), rgba(0,54,140,0.78));
+    box-shadow: 0 24px 54px -28px rgba(0,52,140,0.62);
+    backdrop-filter: blur(18px);
+  }
+  .side-top {
+    border-bottom: 1px solid rgba(255,255,255,0.24);
+    padding: 8px 10px 16px;
+  }
+  .brand-mark, .menu a.active {
+    background: rgba(255,255,255,0.18);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.24);
+  }
+  .menu { gap: 8px; }
+  .menu a {
+    border: 1px solid transparent;
+    border-radius: 12px;
+    padding: 11px 12px;
+    transition: background 0.18s ease, border-color 0.18s ease, transform 0.18s ease;
+  }
+  .menu a:hover {
+    background: rgba(255,255,255,0.12);
+    border-color: rgba(255,255,255,0.18);
+    transform: translateX(2px);
+  }
+  .main { padding: 22px clamp(20px, 3vw, 42px) 34px; }
+  .topbar,
+  .transaction-shell,
+  .stat-card,
+  .panel,
+  .transaction-stat,
+  .search-box,
+  .transaction-table,
+  .notification-panel,
+  .notif-card,
+  .detail-card {
+    background: rgba(255,255,255,0.72);
+    border: 1px solid rgba(255,255,255,0.72);
+    box-shadow: 0 18px 48px -34px rgba(10,37,64,0.5);
+    backdrop-filter: blur(18px);
+  }
+  .transaction-shell,
+  .notification-panel,
+  .detail-card { border-radius: 18px; }
+  .transaction-toolbar { margin-bottom: 18px; }
+  .transaction-stats, .stats { gap: 18px; margin-bottom: 20px; }
+  .transaction-stat, .stat-card {
+    border-radius: 16px;
+    box-shadow: 0 18px 42px -32px rgba(10,37,64,0.55);
+  }
+  .panel { border-radius: 18px; padding: 22px; }
+  .overview { gap: 22px; }
+  .dashboard-grid, .transaction-view { gap: 22px; }
+  .transaction-table { border-radius: 14px; overflow: hidden; }
+  .transaction-row { border-top: 1px solid rgba(211,221,234,0.8); }
+  .transaction-row.head { background: rgba(234,245,255,0.7); }
+  .icon-button, .hamburger {
+    background: rgba(255,255,255,0.62);
+    border: 1px solid rgba(211,221,234,0.78);
+  }
+  @media (max-width: 840px) {
+    .app { grid-template-columns: 1fr; }
+    .sidebar {
+      position: static;
+      height: auto;
+      margin: 12px;
+      border-radius: 18px;
+    }
+    .main { padding: 12px; }
+  }
+</style>
+<link rel="stylesheet" href="staff-dashboard.css" />
+<link rel="stylesheet" href="staff-glass.css" />
+<link rel="stylesheet" href="staff-pages.css" />
+</head>
+<body class="staff-ui">
+<div class="app">
+  <div id="sidebar-root"></div>
+
+  <main class="main">
+    <header class="topbar staff-topbar">
+      <span class="welcome" id="topbarTitle">Welcome back!</span>
+      <div class="top-icons">
+        <a class="staff-icon-button" id="notificationBell" href="notification.html" aria-label="Open notifications"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/></svg></a>
+        <a class="staff-profile-link" href="profile.html" aria-label="Your profile"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="3"/><path d="M5 21c0-8 14-8 14 0"/></svg></a>
+      </div>
+    </header>
+    <section class="dashboard-grid view active" data-view="dashboard">
+      <header class="staff-banner">
+        <div><p class="staff-eyebrow">YOUR WORKSPACE</p><h1 id="staffGreeting">Welcome back!</h1><p class="staff-subtitle">Your transactions, at a glance.</p></div>
+        <a class="staff-scan-link" href="scan.html">+ Scan a receipt</a>
+      </header>
+      <section class="earnings-preview glass-card" aria-labelledby="earningsPreviewTitle">
+        <div class="staff-panel-heading"><h2 id="earningsPreviewTitle">My Earnings</h2><a href="earnings.html">View earnings &amp; reports &rarr;</a></div>
+        <div class="earnings-summary">
+          <div><span>Overall earnings</span><strong data-earnings="overall_earnings">&mdash;</strong></div>
+          <div><span>Today</span><strong data-earnings="today_earnings">&mdash;</strong></div>
+          <div><span>This week</span><strong data-earnings="weekly_earnings">&mdash;</strong></div>
+          <div><span>This month</span><strong data-earnings="monthly_earnings">&mdash;</strong></div>
+        </div>
+        <p id="earningsSummaryStatus" class="earnings-note" role="status">Loading your earnings...</p>
+      </section>
+      <div class="overview">
+        <section class="stats" aria-label="Your transaction summary">
+          <article class="stat-card"><span>TOTAL TRANSACTIONS</span><strong id="overviewTotal">0</strong><div class="staff-meter"><i id="staffTotalBar"></i></div><small>All your recorded transactions</small></article>
+          <article class="stat-card"><span>DUPLICATES BLOCKED</span><strong id="overviewDuplicate">0</strong><div class="staff-meter danger"><i id="staffDuplicateBar"></i></div><small>Flagged for review</small></article>
+          <article class="stat-card"><div class="staff-stat-heading"><i class="staff-stat-icon" aria-hidden="true">&#10003;</i><span>SUCCESSFULLY VERIFIED</span></div><strong id="overviewVerified">0</strong><small>Verified transactions</small></article>
+          <article class="stat-card"><div class="staff-stat-heading"><i class="staff-stat-icon cash" aria-hidden="true">&#8369;</i><span>TOTAL CASH-OUT</span></div><strong id="overviewCashOut">&#8369;0.00</strong><small>From verified transactions</small></article>
+        </section>
+        <div class="staff-panels">
+          <section class="panel staff-trends">
+            <div class="staff-panel-heading"><h2>Transaction Trends</h2><span>Last 7 days</span></div>
+            <div class="staff-chart-surface">
+              <div class="staff-legend"><span><i></i>Verified</span><span><i class="danger"></i>Duplicate</span></div>
+              <div id="staffTrendBars" class="staff-trend-bars" role="img" aria-label="Loading transaction trends"></div>
+              <p id="staffChartNote" class="staff-chart-note">Loading transactions...</p>
+            </div>
+          </section>
+          <section class="panel staff-activity">
+            <div class="staff-panel-heading"><h2>Recent Activity</h2><a href="#transactions">View all &rarr;</a></div>
+            <div id="staffRecentActivity" class="staff-activity-list" aria-live="polite"><p class="staff-empty">Loading activity...</p></div>
+          </section>
+        </div>
+      </div>
+      <div class="notification-wrap">
+        <div class="section-label">Notification</div>
+        <div class="notification-panel">
+          <div class="notif-head">
+            <strong><svg width="18" height="18" fill="currentColor" viewBox="0 0 24 24"><path d="M12 22a2.5 2.5 0 0 0 2.45-2h-4.9A2.5 2.5 0 0 0 12 22zm7-6v-5a7 7 0 0 0-14 0v5l-2 2v1h18v-1l-2-2z"/></svg>Notifications</strong>
+            <button class="close" aria-label="Close notifications"><svg width="18" height="18" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path d="M5 5l14 14M19 5 5 19"/></svg></button>
+            <p>Stay updated with your transaction activities.</p>
+          </div>
+          <div class="filter"><div class="pill">All</div></div>
+          <div class="day">Today</div>
+          <div class="notif-list" id="dashNotifList">
+            <article class="notif-card info">
+              <div><strong>Loading notifications…</strong></div>
+            </article>
+          </div>
+        </div>
+      </div>
+
+    </section>
+
+    <section class="transaction-view view" data-view="transactions">
+      <div class="transaction-header">
+        <p class="staff-page-kicker">YOUR WORKSPACE</p>
+        <h1 class="page-title">Transaction Management</h1>
+        <p>Search and review your recorded transactions.</p>
+      </div>
+
+      <div class="transaction-shell">
+        <div class="transaction-stats">
+          <div class="transaction-stat"><span>TOTAL TRANSACTION</span><strong id="statTotal">0</strong></div>
+          <div class="transaction-stat"><span>VERIFIED</span><strong id="statVerified">0</strong></div>
+          <div class="transaction-stat"><span>DUPLICATE BLOCKED</span><strong id="statDuplicate">0</strong></div>
+          <div class="transaction-stat"><span>TOTAL CASH-OUT</span><strong id="statCashOut">₱0.00</strong></div>
+        </div>
+
+        <label class="search-box">
+          <svg width="19" height="19" fill="none" stroke="#111827" stroke-width="2.2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+          <input id="transactionSearch" type="search" placeholder="Search transactions" aria-label="Search transactions">
+        </label>
+
+        <div class="table-title">All Transactions</div>
+        <div class="transaction-table" id="transactionTable">
+          <div class="transaction-row head">
+            <div>Ref #</div>
+            <div>Amount</div>
+            <div>Status</div>
+            <div>Action</div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase-config.js"></script>
+<script src="supabase-api.js"></script>
+<script src="transactions.js"></script>
+<script src="staff-dashboard.js"></script>
+<script src="staff-earnings.js"></script>
+<script src="sidebar.js"></script>
+<script>
+  // Active sidebar link is set by sidebar.js
+  const currentUser = GcordAPI.requireAuth();
+  if (!currentUser) throw new Error('Auth required');
+
+  const notificationBell = document.getElementById('notificationBell');
+  const notificationLink = document.getElementById('notificationLink');
+  const closeButtons = document.querySelectorAll('.close, .detail-close');
+  const topbarTitle = document.getElementById('topbarTitle');
+  const viewLinks = document.querySelectorAll('[data-view-link]');
+  const views = document.querySelectorAll('[data-view]');
+  const transactionSearch = document.getElementById('transactionSearch');
+  const transactionTable = document.getElementById('transactionTable');
+  const staffFirst = (currentUser && (currentUser.first_name || currentUser.full_name || currentUser.username)) || 'Staff';
+  document.getElementById('staffGreeting').textContent = 'Welcome back, ' + String(staffFirst).split(' ')[0] + '!';
+  const transactionTitles = {
+    dashboard: 'Welcome back, ' + String(staffFirst).split(' ')[0] + '!',
+    transactions: 'My Transactions'
+  };
+  const pageTitleEl = document.querySelector('[data-view="transactions"] .page-title');
+  if (pageTitleEl) pageTitleEl.textContent = 'My Transactions';
+
+  function showView(viewName) {
+    views.forEach((view) => {
+      view.classList.toggle('active', view.dataset.view === viewName);
+    });
+
+    viewLinks.forEach((link) => {
+      link.classList.toggle('active', link.dataset.viewLink === viewName);
+    });
+
+    document.querySelectorAll('.menu a[data-page]').forEach((link) => {
+      link.classList.toggle('active', link.getAttribute('data-page') === viewName);
+    });
+
+    document.body.classList.remove('notifications-open');
+    if (topbarTitle) topbarTitle.textContent = transactionTitles[viewName] || transactionTitles.dashboard;
+  }
+
+  function showNotifications(event) {
+    if (event) event.preventDefault();
+    showView('dashboard');
+    document.body.classList.add('notifications-open');
+  }
+
+  function hideNotifications(event) {
+    if (event) event.preventDefault();
+    document.body.classList.remove('notifications-open');
+  }
+
+  async function renderTransactions() {
+    try {
+      const list = await GcordTransactions.getAll();
+      updateStats(list);
+
+      transactionTable.innerHTML =
+        '<div class="transaction-row head">' +
+          '<div>Ref #</div>' +
+          '<div>Amount</div>' +
+          '<div>Status</div>' +
+          '<div>Action</div>' +
+        '</div>';
+
+      if (!list.length) {
+        const empty = document.createElement('div');
+        empty.className = 'transaction-row';
+        empty.style.gridTemplateColumns = '1fr';
+        empty.innerHTML = '<div style="color:#64748B;font-weight:600;">No transactions yet. Scan a GCash receipt to add one.</div>';
+        transactionTable.appendChild(empty);
+        return;
+      }
+
+      list.forEach((tx) => {
+        const status = tx.status === 'duplicate' ? 'duplicate' : 'verified';
+        const statusLabel = status === 'duplicate' ? 'Duplicate' : 'Verified';
+        const search = [
+          tx.ref, tx.recipient, tx.number, tx.amount, status, tx.date, tx.time
+        ].join(' ').toLowerCase();
+
+        const row = document.createElement('article');
+        row.className = 'transaction-row';
+        row.dataset.search = search;
+        row.dataset.ref = tx.ref || '';
+        row.dataset.recipient = tx.recipient || '';
+        row.dataset.number = tx.number || '';
+        row.dataset.date = tx.date || '';
+        row.dataset.time = tx.time || '';
+        row.dataset.amount = tx.amountLabel || GcordTransactions.formatAmount(tx.amount);
+        row.dataset.status = statusLabel;
+        row.innerHTML =
+          '<div class="ref-code">' + GcordTransactions.formatRefDisplay(tx.ref) + '</div>' +
+          '<div class="amount">' + (tx.amountLabel || GcordTransactions.formatAmount(tx.amount)) + '</div>' +
+          '<div class="status-cell"><span class="status-pill ' + status + '">' + statusLabel + '</span></div>' +
+          '<div class="action-cell"><button class="view-details" type="button">' +
+            '<svg width="24" height="18" fill="none" stroke="currentColor" stroke-width="2.4" viewBox="0 0 24 24"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6-10-6-10-6z"/><circle cx="12" cy="12" r="3"/></svg>' +
+            'View details</button></div>';
+        transactionTable.appendChild(row);
+      });
+    } catch (err) {
+      document.getElementById('staffChartNote').textContent = 'Unable to load transaction trends.';
+      document.getElementById('staffRecentActivity').textContent = 'Could not load your activity. Refresh the page to try again.';
+      ['overviewTotal', 'overviewVerified', 'overviewDuplicate', 'overviewCashOut'].forEach(function (id) {
+        document.getElementById(id).textContent = '\u2014';
+      });
+      transactionTable.innerHTML = '<div class="transaction-row" style="grid-template-columns:1fr"><div style="color:#DC2626;font-weight:700;">Failed to load transactions: ' + (err.message || err) + '</div></div>';
+    }
+  }
+
+  function updateStats(list) {
+    const verified = list.filter((tx) => tx.status === 'verified');
+    const duplicate = list.filter((tx) => tx.status === 'duplicate');
+    const cashOut = verified.reduce((sum, tx) => sum + (Number(tx.amount) || 0), 0);
+    const cashOutLabel = GcordTransactions.formatAmount(cashOut);
+    document.getElementById('statTotal').textContent = String(list.length);
+    document.getElementById('statVerified').textContent = String(verified.length);
+    document.getElementById('statDuplicate').textContent = String(duplicate.length);
+    document.getElementById('statCashOut').textContent = cashOutLabel;
+    const overviewTotal = document.getElementById('overviewTotal');
+    const overviewVerified = document.getElementById('overviewVerified');
+    const overviewDuplicate = document.getElementById('overviewDuplicate');
+    const overviewCashOut = document.getElementById('overviewCashOut');
+    if (overviewTotal) overviewTotal.textContent = String(list.length);
+    if (overviewVerified) overviewVerified.textContent = String(verified.length);
+    if (overviewDuplicate) overviewDuplicate.textContent = String(duplicate.length);
+    if (overviewCashOut) overviewCashOut.textContent = cashOutLabel;
+
+    const total = list.length || 0;
+    const vPct = total ? Math.round((verified.length / total) * 100) : 0;
+    const dPct = total ? Math.round((duplicate.length / total) * 100) : 0;
+    const usageV = document.getElementById('usageVerifiedLabel');
+    const usageD = document.getElementById('usageDupLabel');
+    const donut = document.getElementById('usageDonut');
+    if (usageV) usageV.textContent = vPct + '%(' + verified.length + ')';
+    if (usageD) usageD.textContent = dPct + '%(' + duplicate.length + ')';
+    if (donut) {
+      donut.style.background = total
+        ? ('conic-gradient(#0052CC 0 ' + vPct + '%, #93C5FD ' + vPct + '% 100%)')
+        : '#E2E8F0';
+    }
+
+    renderStaffOverview(list);
+  }
+
+  async function renderDashboardNotifications() {
+    const listEl = document.getElementById('dashNotifList');
+    if (!listEl || !window.GcordAPI) return;
+    try {
+      const items = await GcordAPI.listNotifications({ limit: 8 });
+      if (!items.length) {
+        listEl.innerHTML = '<article class="notif-card info"><div><strong>No notifications yet</strong><p>Your activity alerts will show here.</p></div></article>';
+        return;
+      }
+      listEl.innerHTML = items.map((n) => {
+        const cls = (n.severity === 'warning' || n.category === 'alerts') ? 'warn'
+          : (n.severity === 'info' || n.category === 'system') ? 'info' : '';
+        const icon = cls === 'warn'
+          ? '<svg class="icon" width="32" height="32" viewBox="0 0 24 24"><path d="M12 2 23 21H1L12 2z" fill="#ffcc22" stroke="#111"/><path d="M12 8v6M12 17h.01" stroke="#111" stroke-width="2"/></svg>'
+          : cls === 'info'
+            ? '<svg class="icon" width="32" height="32" viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="#0fb6b7"/><path d="M12 10v7M12 7h.01" stroke="white" stroke-width="2.6"/></svg>'
+            : '<svg class="icon" width="32" height="32" viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="#02a515"/><path d="M6 12.5l3.7 3.7L18.5 7.5" fill="none" stroke="white" stroke-width="2.7"/></svg>';
+        const body = n.body ? '<p>' + n.body + '</p>' : '';
+        return '<article class="notif-card ' + cls + '">' + icon +
+          '<div><strong>' + n.title + '</strong>' + body + '<time>' + n.timeLabel + '</time></div></article>';
+      }).join('');
+    } catch (err) {
+      listEl.innerHTML = '<article class="notif-card warn"><div><strong>Could not load notifications</strong><p>' + (err.message || err) + '</p></div></article>';
+    }
+  }
+
+  // The topbar bell navigates directly to notification.html.
+  notificationLink?.addEventListener('click', showNotifications);
+  document.querySelectorAll('.transaction-icons .bell').forEach((button) => button.addEventListener('click', showNotifications));
+
+  document.addEventListener('DOMContentLoaded', () => {
+    renderTransactions();
+    renderDashboardNotifications();
+
+    const transactionDetailModal = document.getElementById('transactionDetailModal');
+    const transactionDetailClose = transactionDetailModal?.querySelector('.transaction-detail-close');
+    const detailRef = document.getElementById('detailRef');
+    const detailRecipient = document.getElementById('detailRecipient');
+    const detailNumber = document.getElementById('detailNumber');
+    const detailDate = document.getElementById('detailDate');
+    const detailTime = document.getElementById('detailTime');
+    const detailAmount = document.getElementById('detailAmount');
+    const detailOk = transactionDetailModal?.querySelector('.ok-button');
+    const detailSummary = transactionDetailModal?.querySelector('.transaction-detail-summary');
+
+    function openTransactionDetail(row) {
+      if (!transactionDetailModal) return;
+      detailRef.textContent = row.dataset.ref || '';
+      detailRecipient.textContent = row.dataset.recipient || 'Unknown';
+      detailNumber.textContent = row.dataset.number || '—';
+      detailDate.textContent = row.dataset.date || '—';
+      detailTime.textContent = row.dataset.time || '—';
+      detailAmount.textContent = row.dataset.amount || '—';
+      if (detailSummary) detailSummary.textContent = 'Ref # ' + (row.dataset.ref || '');
+      transactionDetailModal.classList.add('active');
+      transactionDetailModal.setAttribute('aria-hidden', 'false');
+    }
+
+    function closeTransactionDetail() {
+      if (!transactionDetailModal) return;
+      transactionDetailModal.classList.remove('active');
+      transactionDetailModal.setAttribute('aria-hidden', 'true');
+    }
+
+    transactionTable.addEventListener('click', (event) => {
+      const button = event.target.closest('.view-details');
+      if (!button) return;
+      event.preventDefault();
+      const row = button.closest('.transaction-row');
+      if (row) openTransactionDetail(row);
+    });
+
+    transactionDetailClose?.addEventListener('click', closeTransactionDetail);
+    detailOk?.addEventListener('click', closeTransactionDetail);
+    transactionDetailModal?.addEventListener('click', (event) => {
+      if (event.target === transactionDetailModal) closeTransactionDetail();
+    });
+  });
+
+  viewLinks.forEach((link) => {
+    link.addEventListener('click', (event) => {
+      event.preventDefault();
+      showView(link.dataset.viewLink);
+      history.replaceState(null, '', link.getAttribute('href'));
+    });
+  });
+
+  transactionSearch?.addEventListener('input', () => {
+    const query = transactionSearch.value.trim().toLowerCase();
+    transactionTable.querySelectorAll('.transaction-row:not(.head)').forEach((row) => {
+      const hay = row.dataset.search || '';
+      row.hidden = query.length > 0 && !hay.includes(query);
+    });
+  });
+
+  closeButtons.forEach((button) => button.addEventListener('click', hideNotifications));
+
+  if (location.hash === '#transactions') showView('transactions');
+
+  window.addEventListener('hashchange', () => {
+    showView(location.hash === '#transactions' ? 'transactions' : 'dashboard');
+  });
+</script>
+<div class="transaction-detail-backdrop" id="transactionDetailModal" aria-hidden="true">
+  <div class="transaction-detail-modal" role="dialog" aria-modal="true" aria-labelledby="transactionDetailTitle">
+    <div class="transaction-detail-header">
+      <div>
+        <h2 id="transactionDetailTitle">Details</h2>
+        <p class="transaction-detail-summary">Ref # 8042137193203</p>
+      </div>
+      <button type="button" class="transaction-detail-close" aria-label="Close details">×</button>
+    </div>
+    <div class="transaction-detail-list">
+      <div class="transaction-detail-row"><strong>Ref #:</strong><span id="detailRef"></span></div>
+      <div class="transaction-detail-row"><strong>Recipient:</strong><span id="detailRecipient"></span></div>
+      <div class="transaction-detail-row"><strong>Number:</strong><span id="detailNumber"></span></div>
+      <div class="transaction-detail-row"><strong>Date:</strong><span id="detailDate"></span></div>
+      <div class="transaction-detail-row"><strong>Time:</strong><span id="detailTime"></span></div>
+      <div class="transaction-detail-row"><strong>Amount:</strong><span id="detailAmount"></span></div>
+    </div>
+    <div class="transaction-detail-actions">
+      <button type="button" class="ok-button">OK</button>
+    </div>
+  </div>
+</div>
+<script src="staff-account-menu.js"></script>
+</body>
+</html>

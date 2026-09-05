@@ -1,0 +1,32 @@
+﻿<!DOCTYPE html>
+<html><head><meta charset="utf-8"></head><body><div id="loginError"></div><button class="forgot">Forgot</button><button class="btn-google">Google</button><pre id="results">PASS signup sends code before any registration
+PASS wrong code cannot create account
+PASS invalid code shown
+PASS verified signup completes
+FAIL verification dialog closes</pre>
+<script>
+var calls=[], verified=false, saved=null;
+window.GCORD_SUPABASE={url:'https://example.test',anonKey:'test'};
+window.GcordAPI={clearSession:function(){calls.push('clear');},setSession:function(){},isAdmin:function(){return false;}};
+window.supabase={createClient:function(){return {
+ auth:{signOut:async function(){verified=false;return {};},signInWithOtp:async function(args){calls.push('send');return {};},verifyOtp:async function(args){calls.push('verify');if(args.token!=='123456')return {error:{message:'Invalid code'}};verified=true;return {data:{session:{}}};},signInWithOAuth:async function(args){saved=args;return {}; }},
+ rpc:async function(name,args){if(!verified)throw Error('UNVERIFIED RPC');calls.push(name);return {data:42};}
+};}};
+</script><script src="../verified-auth.js"></script><script>
+(async function(){
+ var lines=[];function assert(ok,label){if(!ok)throw Error(label);lines.push('PASS '+label);}
+ async function tick(){await new Promise(r=>setTimeout(r,30));}
+ var payload={email:'staff@example.test',password:'Strong@Test1234',full_name:'Test Staff',age:22,birthday:'2004-01-01',valid_id_url:'test',face_capture_url:'test'};
+ try{
+ var promise=GcordIdentity.signup(payload);await tick();assert(calls.join(',')==='send','signup sends code before any registration');
+ var form=document.querySelector('dialog form');form.elements.code.value='000000';form.requestSubmit();await tick();assert(!calls.includes('app_complete_verified_signup'),'wrong code cannot create account');assert(form.querySelector('.identity-status').textContent==='Invalid code','invalid code shown');
+ form.elements.code.value='123456';form.requestSubmit();await promise;assert(calls.includes('app_complete_verified_signup'),'verified signup completes');assert(!document.querySelector('dialog'),'verification dialog closes');
+ calls=[];var cancel=GcordIdentity.signup(payload).catch(e=>e.name);await tick();document.querySelector('[data-cancel]').click();assert(await cancel==='AbortError','cancel aborts signup');assert(!calls.includes('app_complete_verified_signup'),'cancel never registers');
+ document.querySelector('.forgot').click();form=document.querySelector('dialog form');form.elements.email.value=payload.email;form.elements.password.value=payload.password;form.elements.confirm.value=payload.password;form.requestSubmit();await tick();var forms=document.querySelectorAll('dialog form');assert(forms.length===2,'reset asks for email code');forms[1].elements.code.value='123456';forms[1].requestSubmit();await tick();assert(calls.includes('app_reset_verified_password'),'reset only after verified code');assert(calls.includes('clear'),'reset clears application session');form.querySelector('[data-cancel]').click();
+ document.querySelector('.btn-google').click();await tick();assert(saved.provider==='google'&&saved.options.redirectTo.endsWith('login.html?google=1'),'Google OAuth configured with callback');
+ try{GcordIdentity.checkPassword('weak');throw Error('weak accepted');}catch(e){assert(e.message!=='weak accepted','weak password rejected');}
+ document.getElementById('results').textContent=lines.join('\n');
+ }catch(e){document.getElementById('results').textContent=lines.join('\n')+'\nFAIL '+e.message;}
+})();
+</script><dialog class="identity-dialog" aria-label="Verify your email"><h2>Verify your email</h2><form><p>Enter the code sent to <strong data-email="">staff@example.test</strong>. Check your spam folder too.</p><label>Email code<input name="code" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6,10}" minlength="6" maxlength="10" required=""></label><button type="button" data-resend="">Resend code</button><p class="identity-status" role="status" aria-live="polite">Checking code…</p><div class="identity-actions"><button type="button" data-cancel="">Cancel</button><button type="submit" class="identity-primary">Verify code</button></div></form></dialog>
+</body></html>

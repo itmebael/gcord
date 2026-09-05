@@ -1,0 +1,9 @@
+database/
+tests/
+*.preview.html
+.agents/
+.codex/
+.env
+.env.*
+node_modules/
+*.log

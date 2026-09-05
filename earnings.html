@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Earnings | Gcord</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { min-height: 100vh; font-family: Inter, system-ui, sans-serif; color: #152b53; }
+    .app { display: grid; grid-template-columns: 280px minmax(0, 1fr); min-height: 100vh; }
+    .sidebar { margin: 16px 0 16px 16px; height: calc(100vh - 32px); padding: 22px 18px; display: flex; flex-direction: column; gap: 18px; position: sticky; top: 16px; color: white; border-radius: 22px; }
+    .side-top { display: flex; align-items: center; gap: 12px; padding: 8px 10px 16px; border-bottom: 1px solid #ffffff40; }
+    .brand-mark { display: grid; place-items: center; width: 34px; height: 34px; background: #ffffff25; border-radius: 10px; }
+    .brand-text strong, .brand-text span { display: block; font-size: 13px; line-height: 1.5; }
+    .menu-title { font-size: 13px; opacity: .8; padding: 0 8px; }
+    .menu { display: flex; flex-direction: column; gap: 8px; }
+    .menu a { display: flex; align-items: center; gap: 12px; padding: 11px 12px; color: white; text-decoration: none; font-size: 14px; }
+    .menu svg { flex-shrink: 0; }
+    .main { padding: 22px clamp(18px, 3vw, 42px) 34px; min-width: 0; }
+    .topbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 16px 20px; max-width: 1440px; margin: 0 auto 22px; }
+    .topbar a { color: #2454dc; font-size: 13px; text-decoration: none; }
+    @media(max-width:840px) { .main { padding: 12px; } }
+  </style>
+  <link rel="stylesheet" href="staff-dashboard.css">
+  <link rel="stylesheet" href="staff-glass.css">
+<link rel="stylesheet" href="staff-pages.css" />
+</head>
+<body class="staff-ui">
+<div class="app">
+  <div id="sidebar-root"></div>
+  <main class="main">
+    <header class="topbar staff-topbar"><span>Staff workspace</span><a href="profile.html" id="earningsUser">My profile</a></header>
+    <div class="earnings-page">
+      <header class="staff-banner"><div><p class="staff-eyebrow">YOUR WORK, REWARDED</p><h1>My Earnings</h1><p class="staff-subtitle">Track your earnings. Make every transaction count.</p></div></header>
+      <section class="glass-card earnings-preview" aria-label="Earnings summary">
+        <div class="earnings-summary">
+          <div><span>Overall earnings</span><strong data-earnings="overall_earnings">&mdash;</strong></div>
+          <div><span>Today</span><strong data-earnings="today_earnings">&mdash;</strong></div>
+          <div><span>This week</span><strong data-earnings="weekly_earnings">&mdash;</strong></div>
+          <div><span>This month</span><strong data-earnings="monthly_earnings">&mdash;</strong></div>
+        </div>
+        <p id="earningsSummaryStatus" class="earnings-note" role="status">Loading your earnings...</p>
+      </section>
+      <section class="glass-card commission-editor" aria-labelledby="commissionEditorHeading">
+        <div class="staff-panel-heading"><h2 id="commissionEditorHeading">My Commission Tiers</h2><div class="earnings-actions"><button class="earnings-button primary" id="addCommissionTier" type="button">Add my tier</button><button class="earnings-button" id="reloadCommissionTiers" type="button">Reload tiers</button></div></div>
+        <p class="earnings-note">Create and edit your personal tiers for future claims. Existing earnings stay unchanged. Shared defaults remain read-only. Lower priority numbers take precedence when ranges overlap.</p>
+        <p class="earnings-note" id="commissionEditorStatus" role="status" aria-live="polite">Loading your tiers...</p>
+        <div id="commissionTierForms" class="commission-tier-forms"></div>
+      </section>
+      <section class="glass-card" aria-labelledby="reportHeading">
+        <div class="staff-panel-heading"><h2 id="reportHeading">Earnings Report</h2><span>Philippine time · Weeks start Monday</span></div>
+        <form id="earningsFilters" class="earnings-filters">
+          <label>Period<select id="earningsPeriod"><option value="day">Day</option><option value="week">Week</option><option value="month" selected>Month</option><option value="year">Year</option><option value="custom">Custom range</option></select></label>
+          <label id="earningsAnchorLabel">Date in selected period<input id="earningsAnchor" type="date" required></label>
+          <label id="earningsFromLabel" hidden>From<input id="earningsFrom" type="date" disabled></label>
+          <label id="earningsToLabel" hidden>To<input id="earningsTo" type="date" disabled></label>
+          <button class="earnings-button primary" id="generateEarnings" type="submit">Generate report</button>
+        </form>
+        <p class="earnings-note" id="earningsReportStatus" role="status" aria-live="polite">Choose a period to generate your report.</p>
+        <div id="earningsReport" hidden>
+          <div class="staff-panel-heading" style="margin-top:24px"><div><h2 id="earningsReportTotal"></h2><p class="earnings-note" id="earningsReportCount"></p></div><div class="earnings-actions"><button class="earnings-button" type="button" id="exportEarnings">Download CSV</button><button class="earnings-button" type="button" id="printEarnings">Print / Save PDF</button></div></div>
+          <div class="earnings-table-wrap"><table class="earnings-table"><caption id="earningsReportCaption"></caption><thead><tr><th scope="col">Claimed at</th><th scope="col">Reference number</th><th scope="col" class="money">Transaction</th><th scope="col" class="money">Commission tier</th><th scope="col" class="money">Earnings</th></tr></thead><tbody id="earningsRows"></tbody></table></div>
+          <div class="earnings-pagination"><button type="button" class="earnings-button" id="earningsPrevious">Previous</button><span id="earningsPageLabel"></span><button type="button" class="earnings-button" id="earningsNext">Next</button></div>
+        </div>
+      </section>
+    </div>
+  </main>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase-config.js"></script>
+<script src="supabase-api.js"></script>
+<script src="sidebar.js"></script>
+<script src="export-preview.js"></script><script src="staff-earnings.js"></script>
+<script src="staff-commission-editor.js"></script>
+<script src="staff-account-menu.js"></script>
+</body>
+</html>

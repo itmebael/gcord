@@ -1,0 +1,8 @@
+<!doctype html><meta charset="utf-8"><script src="../transactions.js"></script><script src="../scanner-auto-capture.js"></script><script>
+try {
+const receipt='GCash\nAmount PHP 500.00\nReference No. 1234567890123\nSep 5, 2026\n10:30 AM';
+const cases=[['valid receipt',receipt,90,true],['blank frame','',90,false],['ordinary scene','Person sitting in a room',90,false],['GCash advertisement','GCash Send money now PHP 500.00',90,false],['no reference',receipt.replace('Reference No. 1234567890123',''),90,false],['uncertain OCR',receipt,30,false],['no date',receipt.replace('Sep 5, 2026',''),90,false]];
+for(const [name,text,confidence,expected] of cases)if(isAutoCaptureReceipt({text,confidence})!==expected)throw Error(name);
+document.documentElement.dataset.result='PASS: 7 receipt gate checks';
+}catch(e){document.documentElement.dataset.result='FAIL: '+e.message;}
+</script>

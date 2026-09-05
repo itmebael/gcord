@@ -1,0 +1,1039 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Gcord Admin Management</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --blue: #0052CC;
+    --blue-soft: #3D8BFF;
+    --ink: #0A2540;
+    --muted: #5C7088;
+    --line: #E3E8F0;
+    --success: #00B67A;
+    --danger: #D64545;
+    --warning: #D97706;
+  }
+  body {
+    min-height: 100vh;
+    font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    color: var(--ink);
+    background:
+      radial-gradient(circle at 8% 6%, rgba(61,139,255,0.24), transparent 30%),
+      radial-gradient(circle at 92% 18%, rgba(0,182,122,0.16), transparent 28%),
+      linear-gradient(135deg, #F7FBFF 0%, #EEF5FF 48%, #F9FBFE 100%);
+  }
+  .app {
+    min-height: 100vh;
+    display: grid;
+    grid-template-columns: 280px minmax(0, 1fr);
+  }
+  .sidebar {
+    margin: 16px 0 16px 16px;
+    height: calc(100vh - 32px);
+    padding: 22px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    position: sticky;
+    top: 16px;
+    color: white;
+    border: 1px solid rgba(255,255,255,0.28);
+    border-radius: 22px;
+    background: linear-gradient(155deg, rgba(0,82,204,0.88), rgba(0,54,140,0.78));
+    box-shadow: 0 24px 54px -28px rgba(0,52,140,0.62);
+    backdrop-filter: blur(18px);
+  }
+  .side-top {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 10px 16px;
+    border-bottom: 1px solid rgba(255,255,255,0.24);
+  }
+  .brand-mark {
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    background: rgba(255,255,255,0.18);
+    display: grid;
+    place-items: center;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.24);
+  }
+  .brand-text strong { display: block; font-size: 14px; font-weight: 700; }
+  .brand-text span { display: block; font-size: 13px; line-height: 1.3; }
+  .menu-title { font-size: 14px; opacity: 0.78; padding: 0 8px; }
+  .menu { display: flex; flex-direction: column; gap: 8px; }
+  .menu a {
+    min-height: 42px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 11px 12px;
+    color: white;
+    text-decoration: none;
+    border: 1px solid transparent;
+    border-radius: 12px;
+    font-size: 15px;
+    line-height: 1.25;
+    transition: background 0.18s ease, border-color 0.18s ease, transform 0.18s ease;
+  }
+  .menu a:hover {
+    background: rgba(255,255,255,0.12);
+    border-color: rgba(255,255,255,0.18);
+    transform: translateX(2px);
+  }
+  .menu a.active {
+    background: rgba(255,255,255,0.18);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.24);
+  }
+  .menu svg { flex: 0 0 auto; }
+  .main { min-width: 0; padding: 22px clamp(20px, 3vw, 42px) 34px; }
+  .page { max-width: 1440px; margin: 0 auto; }
+  .toolbar {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 14px;
+  }
+  .add-user {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 42px;
+    padding: 0 16px;
+    border: 1px solid rgba(10,37,64,0.12);
+    border-radius: 12px;
+    background: #fff;
+    color: var(--ink);
+    font: inherit;
+    font-weight: 700;
+    box-shadow: 0 10px 24px -18px rgba(10,37,64,0.55);
+    cursor: pointer;
+  }
+  .page-banner {
+    background: rgba(255,255,255,0.82);
+    border: 1px solid rgba(10,37,64,0.18);
+    border-radius: 14px;
+    padding: 16px 18px;
+    margin-bottom: 22px;
+    box-shadow: 0 18px 48px -34px rgba(10,37,64,0.5);
+  }
+  .page-banner h1 {
+    font-size: clamp(18px, 2vw, 26px);
+    font-weight: 800;
+  }
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+    margin-bottom: 28px;
+  }
+  .stat-card {
+    min-height: 110px;
+    background: rgba(255,255,255,0.82);
+    border: 1px solid rgba(255,255,255,0.8);
+    border-radius: 16px;
+    padding: 18px 16px;
+    box-shadow: 0 18px 42px -32px rgba(10,37,64,0.55);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 10px;
+  }
+  .stat-head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .stat-icon {
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    display: grid;
+    place-items: center;
+  }
+  .stat-icon.admins { background: #E8F1FF; color: #1D5BD6; }
+  .stat-icon.active { background: #E4F8EF; color: #0F9B6A; }
+  .stat-icon.inactive { background: #FDEAEA; color: #DC2626; }
+  .stat-icon.super { background: #FFF4E0; color: #D97706; }
+  .stat-label {
+    font-size: 12px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+  }
+  .stat-value {
+    font-size: clamp(28px, 3vw, 38px);
+    font-weight: 800;
+    line-height: 1;
+  }
+  .section-title {
+    font-size: 16px;
+    font-weight: 800;
+    margin-bottom: 14px;
+  }
+  .filters {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+  }
+  .search-box {
+    flex: 1;
+    min-width: 200px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 0 14px;
+    background: rgba(255,255,255,0.9);
+    border: 1px solid rgba(10,37,64,0.14);
+    border-radius: 12px;
+  }
+  .search-box input {
+    border: 0;
+    outline: 0;
+    width: 100%;
+    font: inherit;
+    font-size: 14px;
+    background: transparent;
+    color: var(--ink);
+  }
+  .role-filter {
+    min-height: 44px;
+    padding: 0 14px;
+    border: 0;
+    border-radius: 12px;
+    background: #D9EAFF;
+    color: #0A2540;
+    font: inherit;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  .table-shell {
+    background: rgba(234,245,255,0.72);
+    border: 1px solid rgba(125,145,239,0.28);
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 18px 48px -34px rgba(10,37,64,0.5);
+  }
+  .table-head,
+  .table-row {
+    display: grid;
+    grid-template-columns: 1.1fr 1.25fr 0.7fr 0.65fr 0.85fr;
+    gap: 10px;
+    align-items: center;
+    padding: 14px 16px;
+  }
+  .table-head {
+    background: rgba(226,232,240,0.9);
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: #334155;
+  }
+  .table-row {
+    background: rgba(255,255,255,0.88);
+    border-top: 1px solid rgba(125,145,239,0.22);
+  }
+  .name { font-weight: 700; }
+  .email { color: #475569; font-size: 14px; overflow-wrap: anywhere; }
+  .role-pill {
+    width: max-content;
+    min-width: 72px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 5px 12px;
+    border-radius: 999px;
+    background: #1D5BD6;
+    color: white;
+    font-size: 12px;
+    font-weight: 700;
+  }
+  .actions {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+  }
+  .action-btn {
+    width: 34px;
+    height: 34px;
+    border: 0;
+    border-radius: 8px;
+    display: grid;
+    place-items: center;
+    cursor: pointer;
+  }
+  .action-btn.edit { background: #DCEBFF; color: #1D5BD6; }
+  .action-btn.delete { background: #FDEAEA; color: #DC2626; }
+  .action-btn.deactivate { background: #FFF4E0; color: #D97706; }
+  .action-btn.activate { background: #E4F8EF; color: #0F9B6A; }
+  .status-pill {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 5px 12px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 700;
+  }
+  .status-pill.active { background: #E4F8EF; color: #0F9B6A; }
+  .status-pill.inactive { background: #FDEAEA; color: #DC2626; }
+  .status-pill.pending { background: #FFF4E0; color: #D97706; }
+  .status-pill.rejected { background: #FDEAEA; color: #DC2626; }
+  .status-pill.verified { background: #E8F1FF; color: #1D5BD6; }
+  .table-row { cursor: pointer; }
+  .table-row:hover { background: #F8FBFF; }
+  .table-row.inactive-row { opacity: 0.72; }
+
+  .detail-modal {
+    width: min(720px, calc(100vw - 28px));
+    max-height: min(90vh, 860px);
+    overflow: auto;
+    background: #fff;
+    border-radius: 20px;
+    padding: 22px;
+    box-shadow: 0 28px 80px rgba(15,23,42,.18);
+  }
+  .detail-modal h2 { margin: 0 0 4px; font-size: 22px; font-weight: 900; }
+  .detail-modal .sub { margin: 0 0 16px; color: #64748B; font-size: 13px; font-weight: 600; }
+  .detail-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    margin-bottom: 16px;
+  }
+  .photo-card {
+    border: 1px solid #E2E8F0;
+    border-radius: 14px;
+    padding: 12px;
+    background: #F8FAFC;
+    min-height: 220px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .photo-card strong {
+    font-size: 12px;
+    font-weight: 800;
+    color: #64748B;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  .photo-card img,
+  .photo-card .photo-empty {
+    width: 100%;
+    flex: 1;
+    min-height: 180px;
+    max-height: 260px;
+    object-fit: cover;
+    border-radius: 12px;
+    background: #E2E8F0;
+  }
+  .photo-empty {
+    display: grid;
+    place-items: center;
+    color: #94A3B8;
+    font-weight: 700;
+    font-size: 13px;
+  }
+  .info-list {
+    display: grid;
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+  .info-row {
+    display: grid;
+    grid-template-columns: 140px 1fr;
+    gap: 10px;
+    padding: 10px 12px;
+    border-radius: 12px;
+    background: #F8FAFC;
+    border: 1px solid #EEF2F7;
+  }
+  .info-row b { font-size: 12px; color: #64748B; font-weight: 800; }
+  .info-row span { font-size: 14px; font-weight: 700; color: #0F172A; overflow-wrap: anywhere; }
+  .detail-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  @media (max-width: 640px) {
+    .detail-grid { grid-template-columns: 1fr; }
+    .info-row { grid-template-columns: 1fr; gap: 4px; }
+  }
+  @media (max-width: 900px) {
+    .table-head { display: none; }
+    .table-row {
+      grid-template-columns: 1fr;
+      gap: 8px;
+    }
+    .table-row > *::before {
+      display: block;
+      margin-bottom: 2px;
+      color: var(--muted);
+      font-size: 10px;
+      font-weight: 800;
+      text-transform: uppercase;
+    }
+    .name::before { content: "Admin Name"; }
+    .email::before { content: "Email Address"; }
+    .role-cell::before { content: "Role"; }
+    .status-cell::before { content: "Verification"; }
+    .actions::before { content: "Actions"; }
+    .actions { justify-content: flex-start; }
+  }
+  @media (max-width: 840px) {
+    .app { grid-template-columns: 1fr; }
+    .sidebar {
+      position: static;
+      height: auto;
+      margin: 12px;
+      border-radius: 18px;
+    }
+    .main { padding: 12px; }
+  }
+  @media (max-width: 520px) {
+    .stats { grid-template-columns: 1fr; }
+  }
+
+  .backdrop {
+    position: fixed; inset: 0; display: none; align-items: center; justify-content: center;
+    background: rgba(10,25,48,.45); backdrop-filter: blur(4px); z-index: 120; padding: 20px;
+  }
+  .backdrop.active { display: flex; }
+  .modal {
+    width: min(480px, 100%); background: #fff; border-radius: 20px; padding: 22px;
+    box-shadow: 0 28px 80px rgba(15,23,42,.18); max-height: calc(100vh - 40px); overflow: auto;
+  }
+  .modal h2 { font-size: 18px; font-weight: 900; margin-bottom: 6px; }
+  .modal .sub { color: #64748B; font-size: 13px; margin-bottom: 16px; }
+  .form-grid { display: grid; gap: 12px; }
+  .form-grid.two { grid-template-columns: 1fr 1fr; gap: 12px; }
+  .field { display: grid; gap: 6px; }
+  .field label { font-size: 12px; font-weight: 700; color: #475569; }
+  .field input, .field select {
+    height: 44px; border: 1px solid rgba(10,37,64,.14); border-radius: 12px;
+    padding: 0 14px; font: inherit; font-size: 14px; outline: 0; background: #fff;
+  }
+  .field.invalid input, .field.invalid select { border-color: #DC2626; }
+  .modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 16px; }
+  .btn {
+    min-height: 42px; padding: 0 16px; border: 0; border-radius: 12px;
+    font: inherit; font-weight: 700; cursor: pointer;
+  }
+  .btn.primary { background: #1D5BD6; color: #fff; }
+  .btn.ghost { background: #F1F5F9; color: #475569; }
+  .toast {
+    position: fixed; right: 20px; bottom: 20px; z-index: 200; display: none;
+    padding: 14px 16px; border-radius: 12px; background: #0F9B6A; color: #fff;
+    font-size: 13px; font-weight: 700;
+  }
+  .toast.show { display: block; }
+  .toast.err { background: #DC2626; }
+  .loading-note { color: #64748B; font-weight: 600; padding: 16px; }
+
+  /* Staff dashboard visual language for account administration. */
+  body {
+    background:
+      radial-gradient(ellipse at 12% 0%, rgba(184,206,255,0.5), transparent 50%),
+      radial-gradient(ellipse at 95% 35%, rgba(169,195,255,0.4), transparent 45%),
+      linear-gradient(130deg, #F2F6FF, #E7EEFF 60%, #F6F8FF);
+    background-attachment: fixed;
+  }
+  .main { background: transparent; }
+  .sidebar {
+    background: linear-gradient(155deg, rgba(40,91,233,0.93), rgba(23,57,156,0.87));
+    border-color: rgba(255,255,255,0.31);
+    box-shadow: 0 22px 50px -24px rgba(23,57,156,0.56);
+    backdrop-filter: blur(22px);
+    -webkit-backdrop-filter: blur(22px);
+  }
+  .page { max-width: 1440px; }
+  .admin-topbar { min-height: 74px; margin-bottom: 22px; border-radius: 20px; }
+  .toolbar { justify-content: flex-end; margin-bottom: 14px; }
+  .add-user {
+    min-height: 44px;
+    border: 1px solid rgba(255,255,255,0.85);
+    border-radius: 12px;
+    background: rgba(255,255,255,0.76);
+    color: #214BC2;
+    box-shadow: 0 10px 24px -18px rgba(40,73,136,0.5);
+  }
+  .add-user:hover { background: #fff; transform: translateY(-1px); }
+  .page-banner {
+    position: relative;
+    overflow: hidden;
+    padding: 24px;
+    margin-bottom: 22px;
+    border-radius: 22px;
+    border-color: rgba(255,255,255,0.44);
+    color: white;
+    background: linear-gradient(115deg, rgba(40,91,233,0.93), rgba(25,60,178,0.9));
+    box-shadow: 0 18px 40px -20px rgba(32,77,192,0.5);
+  }
+  .page-banner::before { content: 'ACCOUNT OPERATIONS'; display: block; margin-bottom: 8px; color: #DCE8FF; font-size: 10px; font-weight: 800; letter-spacing: .13em; }
+  .page-banner::after { content: ''; position: absolute; width: 220px; height: 220px; right: 8%; top: -112px; border: 1px solid rgba(255,255,255,.18); border-radius: 50%; box-shadow: 0 0 0 24px rgba(255,255,255,.05), 0 0 0 48px rgba(255,255,255,.035); pointer-events: none; }
+  .page-banner h1 { position: relative; z-index: 1; color: white; font-size: clamp(22px, 2.3vw, 32px); letter-spacing: -.035em; }
+  .stats { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; margin-bottom: 22px; }
+  .stat-card { min-height: 154px; padding: 20px; border-radius: 22px; background: rgba(233,247,255,.82); border-color: rgba(255,255,255,.93); box-shadow: 0 14px 32px -24px rgba(49,94,141,.38), inset 0 1px 0 rgba(255,255,255,.68); }
+  .stat-label { color: #56718B; font-size: 11px; letter-spacing: .045em; }
+  .stat-value { margin-top: 10px; font-size: clamp(23px, 2.4vw, 34px); letter-spacing: -.035em; }
+  .section-title { margin: 0 0 12px; font-size: 15px; letter-spacing: -.015em; }
+  .filters { padding: 14px; margin-bottom: 16px; border: 1px solid rgba(255,255,255,.86); border-radius: 18px; background: rgba(255,255,255,.66); box-shadow: 0 15px 45px -28px rgba(40,73,136,.4), inset 0 1px 0 rgba(255,255,255,.7); backdrop-filter: blur(22px); -webkit-backdrop-filter: blur(22px); }
+  .search-box { height: 46px; border-color: rgba(255,255,255,.88); background: rgba(249,252,255,.86); border-radius: 12px; }
+  .role-filter { min-height: 46px; border: 1px solid #D5E4FF; background: #E8F1FF; color: #214BC2; }
+  .table-shell { border: 1px solid rgba(255,255,255,.88); border-radius: 22px; background: rgba(234,246,255,.74); box-shadow: 0 15px 45px -28px rgba(40,73,136,.4), inset 0 1px 0 rgba(255,255,255,.66); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px); }
+  .table-head { background: rgba(226,237,250,.72); color: #56718B; }
+  .table-row { background: rgba(249,252,255,.84); border-color: #E3EDF6; }
+  .table-row:hover { background: rgba(255,255,255,.96); }
+  @media (max-width: 1050px) { .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  @media (max-width: 520px) { .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; } .stat-card { padding: 15px; border-radius: 18px; } }
+  @media (max-width: 360px) { .stats { grid-template-columns: minmax(0, 1fr); } }
+</style>
+</head>
+<body>
+<div class="app">
+  <div id="sidebar-root"></div>
+
+  <main class="main">
+    <div id="admin-topbar-root"></div>
+
+    <div class="page">
+      <div class="toolbar">
+        <button class="add-user" id="addUserBtn" type="button">
+          <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.4" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+          Add user
+        </button>
+      </div>
+
+      <div class="page-banner">
+        <h1>Admin Management</h1>
+      </div>
+
+      <section class="stats" aria-label="Account statistics">
+        <article class="stat-card">
+          <div class="stat-head">
+            <div class="stat-icon admins" aria-hidden="true">
+              <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <circle cx="9" cy="8" r="3"/><circle cx="16" cy="9" r="2.5"/>
+                <path d="M2.5 19c0-3 2.5-5 6.5-5s6.5 2 6.5 5"/>
+                <path d="M15 14.5c2.4.3 4.5 1.7 4.5 4.5"/>
+              </svg>
+            </div>
+            <span class="stat-label">Total Super Admins</span>
+          </div>
+          <strong class="stat-value" id="statTotalAdmins">0</strong>
+        </article>
+
+        <article class="stat-card">
+          <div class="stat-head">
+            <div class="stat-icon active" aria-hidden="true">
+              <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" viewBox="0 0 24 24">
+                <circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.8 2.8L16.5 9"/>
+              </svg>
+            </div>
+            <span class="stat-label">Active Account</span>
+          </div>
+          <strong class="stat-value" id="statActive">0</strong>
+        </article>
+
+        <article class="stat-card">
+          <div class="stat-head">
+            <div class="stat-icon inactive" aria-hidden="true">
+              <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" viewBox="0 0 24 24">
+                <circle cx="12" cy="12" r="9"/><path d="M8 8l8 8"/>
+              </svg>
+            </div>
+            <span class="stat-label">Inactive Account</span>
+          </div>
+          <strong class="stat-value" id="statInactive">0</strong>
+        </article>
+
+        <article class="stat-card">
+          <div class="stat-head">
+            <div class="stat-icon super" aria-hidden="true">
+              <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path d="M12 3l7 4v5c0 5-3 8-7 9-4-1-7-4-7-9V7l7-4z"/>
+                <circle cx="12" cy="10" r="2.2"/>
+              </svg>
+            </div>
+            <span class="stat-label">Super Admin</span>
+          </div>
+          <strong class="stat-value" id="statSuper">0</strong>
+        </article>
+      </section>
+
+      <h2 class="section-title">All Accounts</h2>
+
+      <div class="filters">
+        <label class="search-box">
+          <svg width="18" height="18" fill="none" stroke="#64748B" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
+            <circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/>
+          </svg>
+          <input id="adminSearch" type="search" placeholder="Search name" />
+        </label>
+        <select class="role-filter" id="roleFilter" aria-label="Filter by role">
+          <option value="all">All Roles</option>
+          <option value="super_admin">Super Admin</option>
+          <option value="staff">Staff</option>
+        </select>
+      </div>
+
+      <div class="table-shell">
+        <div class="table-head">
+          <span>Admin Name</span>
+          <span>Email Address</span>
+          <span>Role</span>
+          <span>Verification</span>
+          <span style="text-align:right;">Actions</span>
+        </div>
+        <div id="adminTable"><div class="loading-note">Loading accounts from database…</div></div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<div class="backdrop" id="addUserModal" aria-hidden="true">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="addUserTitle">
+    <h2 id="addUserTitle">Create Account</h2>
+    <p class="sub">New account will be saved to Supabase.</p>
+    <form id="addUserForm" class="form-grid" novalidate>
+      <div class="form-grid two">
+        <div class="field">
+          <label for="firstName">First Name</label>
+          <input id="firstName" name="first_name" required />
+        </div>
+        <div class="field">
+          <label for="lastName">Last Name</label>
+          <input id="lastName" name="last_name" required />
+        </div>
+      </div>
+      <div class="field">
+        <label for="email">Email Address</label>
+        <input id="email" name="email" type="email" required />
+      </div>
+      <div class="field">
+        <label for="phone">Phone Number</label>
+        <input id="phone" name="phone" type="tel" placeholder="09171234567" />
+      </div>
+      <div class="form-grid two">
+        <div class="field">
+          <label for="role">Role</label>
+          <select id="role" name="role" required>
+            <option value="staff">Staff</option>
+            <option value="super_admin">Super Admin</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="status">Status</label>
+          <select id="status" name="status">
+            <option value="active">Active</option>
+            <option value="inactive">Inactive</option>
+          </select>
+        </div>
+      </div>
+      <div class="field">
+        <label for="password">Temporary Password</label>
+        <input id="password" name="password" type="password" minlength="8" required placeholder="Min. 8 characters" />
+      </div>
+      <div class="modal-actions">
+        <button class="btn ghost" type="button" id="cancelAddUser">Cancel</button>
+        <button class="btn primary" type="submit" id="saveAddUser">Create Account</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<div class="backdrop" id="userDetailModal" aria-hidden="true">
+  <div class="detail-modal" role="dialog" aria-modal="true" aria-labelledby="userDetailTitle">
+    <h2 id="userDetailTitle">Account Details</h2>
+    <p class="sub" id="userDetailSub">Review ID and face capture before verifying access.</p>
+
+    <div class="detail-grid">
+      <div class="photo-card">
+        <strong>Face Capture</strong>
+        <img id="detailFace" alt="Face capture" hidden />
+        <div class="photo-empty" id="detailFaceEmpty">No face photo</div>
+      </div>
+      <div class="photo-card">
+        <strong>Valid ID</strong>
+        <img id="detailId" alt="Valid ID" hidden />
+        <div class="photo-empty" id="detailIdEmpty">No ID uploaded</div>
+      </div>
+    </div>
+
+    <div class="info-list" id="detailInfo"></div>
+
+    <div class="detail-actions">
+      <button class="btn ghost" type="button" id="closeUserDetail">Close</button>
+      <button class="btn" type="button" id="rejectUserBtn" style="background:#FDEAEA;color:#DC2626;">Reject</button>
+      <button class="btn primary" type="button" id="verifyUserBtn">Verify Account</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/bcryptjs@2.4.3/dist/bcrypt.min.js"></script>
+<script src="supabase-config.js"></script>
+<script src="supabase-api.js"></script>
+<script src="admin-sidebar.js"></script>
+<script src="admin-topbar.js"></script>
+<script src="sidebar.js"></script>
+<script>
+(function () {
+  if (!GcordAPI.requireAuth({ adminOnly: true })) return;
+
+  var users = [];
+  var table = document.getElementById('adminTable');
+  var search = document.getElementById('adminSearch');
+  var roleFilter = document.getElementById('roleFilter');
+  var modal = document.getElementById('addUserModal');
+  var form = document.getElementById('addUserForm');
+  var toast = document.getElementById('toast');
+
+  function showToast(msg, err) {
+    toast.textContent = msg;
+    toast.className = 'toast show' + (err ? ' err' : '');
+    clearTimeout(showToast._t);
+    showToast._t = setTimeout(function () { toast.className = 'toast'; }, 2800);
+  }
+
+  function roleLabel(role) {
+    if (role === 'super_admin') return 'Super Admin';
+    return 'Staff';
+  }
+
+  function updateStats(list) {
+    document.getElementById('statTotalAdmins').textContent = String(
+      list.filter(function (u) { return u.role === 'super_admin'; }).length
+    );
+    document.getElementById('statActive').textContent = String(
+      list.filter(function (u) { return u.status === 'active'; }).length
+    );
+    document.getElementById('statInactive').textContent = String(
+      list.filter(function (u) { return u.status === 'inactive'; }).length
+    );
+    document.getElementById('statSuper').textContent = String(
+      list.filter(function (u) { return u.role === 'super_admin'; }).length
+    );
+  }
+
+  function verificationLabel(v) {
+    if (v === 'verified') return 'Verified';
+    if (v === 'rejected') return 'Rejected';
+    return 'Pending';
+  }
+
+  function verificationClass(v) {
+    if (v === 'verified') return 'verified';
+    if (v === 'rejected') return 'rejected';
+    return 'pending';
+  }
+
+  var selectedUserId = null;
+  var detailModal = document.getElementById('userDetailModal');
+
+  function setPhoto(imgEl, emptyEl, url) {
+    if (url) {
+      imgEl.src = url;
+      imgEl.hidden = false;
+      emptyEl.hidden = true;
+    } else {
+      imgEl.removeAttribute('src');
+      imgEl.hidden = true;
+      emptyEl.hidden = false;
+    }
+  }
+
+  function openUserDetail(user) {
+    selectedUserId = user.id;
+    var name = user.full_name || ((user.first_name || '') + ' ' + (user.last_name || '')).trim();
+    document.getElementById('userDetailTitle').textContent = name || 'Account Details';
+    document.getElementById('userDetailSub').textContent =
+      user.verification_status === 'verified'
+        ? 'This account is verified and can use the system.'
+        : 'User cannot use the system until this account is verified.';
+
+    setPhoto(
+      document.getElementById('detailFace'),
+      document.getElementById('detailFaceEmpty'),
+      user.face_capture_url
+    );
+    setPhoto(
+      document.getElementById('detailId'),
+      document.getElementById('detailIdEmpty'),
+      user.valid_id_url
+    );
+
+    var rows = [
+      ['Email', user.email || '—'],
+      ['Phone', user.phone || '—'],
+      ['Role', roleLabel(user.role)],
+      ['Account Status', user.status === 'inactive' ? 'Inactive' : 'Active'],
+      ['Verification', verificationLabel(user.verification_status)],
+      ['Age', user.age != null ? String(user.age) : '—'],
+      ['Birthday', user.birthday || '—'],
+      ['Created', user.created_at ? new Date(user.created_at).toLocaleString() : '—'],
+      ['Last Login', user.last_login_at ? new Date(user.last_login_at).toLocaleString() : 'Never']
+    ];
+
+    document.getElementById('detailInfo').innerHTML = rows.map(function (r) {
+      return '<div class="info-row"><b>' + r[0] + '</b><span>' + r[1] + '</span></div>';
+    }).join('');
+
+    var verifyBtn = document.getElementById('verifyUserBtn');
+    var rejectBtn = document.getElementById('rejectUserBtn');
+    var alreadyVerified = user.verification_status === 'verified';
+    verifyBtn.disabled = alreadyVerified;
+    verifyBtn.textContent = alreadyVerified ? 'Already Verified' : 'Verify Account';
+    rejectBtn.disabled = user.verification_status === 'rejected';
+
+    detailModal.classList.add('active');
+    detailModal.setAttribute('aria-hidden', 'false');
+  }
+
+  function closeUserDetail() {
+    selectedUserId = null;
+    detailModal.classList.remove('active');
+    detailModal.setAttribute('aria-hidden', 'true');
+  }
+
+  function render() {
+    var q = (search.value || '').trim().toLowerCase();
+    var role = roleFilter.value;
+    var rows = users.filter(function (u) {
+      var name = (u.full_name || (u.first_name + ' ' + u.last_name)).toLowerCase();
+      var matchName = !q || name.indexOf(q) !== -1 || String(u.email || '').toLowerCase().indexOf(q) !== -1;
+      var matchRole = role === 'all' || u.role === role;
+      return matchName && matchRole;
+    });
+
+    table.innerHTML = rows.map(function (u) {
+      var name = u.full_name || ((u.first_name || '') + ' ' + (u.last_name || '')).trim();
+      var active = u.status !== 'inactive';
+      var v = u.verification_status || 'pending';
+      var statusPill = '<span class="status-pill ' + verificationClass(v) + '">' + verificationLabel(v) + '</span>';
+      var actionBtn;
+
+      if (active) {
+        actionBtn =
+          '<button class="action-btn deactivate" type="button" data-action="deactivate" title="Deactivate" aria-label="Deactivate ' + name + '">' +
+            '<svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M8 12h8"/></svg>' +
+          '</button>';
+      } else {
+        actionBtn =
+          '<button class="action-btn activate" type="button" data-action="activate" title="Activate" aria-label="Activate ' + name + '">' +
+            '<svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.4" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.8 2.8L16.5 9"/></svg>' +
+          '</button>';
+      }
+
+      var editTitle = u.role === 'super_admin' ? 'Change to Staff' : 'Promote to Super Admin';
+
+      return '' +
+        '<div class="table-row' + (active ? '' : ' inactive-row') + '" data-id="' + u.id + '">' +
+          '<div class="name">' + name + '</div>' +
+          '<div class="email">' + u.email + '</div>' +
+          '<div class="role-cell"><span class="role-pill">' + roleLabel(u.role) + '</span></div>' +
+          '<div class="status-cell">' + statusPill + '</div>' +
+          '<div class="actions">' +
+            '<button class="action-btn edit" type="button" data-action="edit" title="' + editTitle + '" aria-label="Edit role for ' + name + '">' +
+              '<svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3l1 1a2.1 2.1 0 0 1 0 3L8 20l-4 1 1-4 11.5-13.5z"/></svg>' +
+            '</button>' +
+            actionBtn +
+          '</div>' +
+        '</div>';
+    }).join('') || '<div class="table-row"><div style="grid-column:1/-1;color:#64748B;">No accounts found.</div></div>';
+  }
+
+  async function loadUsers() {
+    try {
+      users = await GcordAPI.listUsers();
+      updateStats(users);
+      render();
+    } catch (err) {
+      table.innerHTML = '<div class="loading-note">Failed to load users: ' + (err.message || err) + '</div>';
+      showToast('Failed to fetch users from database.', true);
+    }
+  }
+
+  function openModal() {
+    form.reset();
+    document.getElementById('status').value = 'active';
+    document.getElementById('role').value = 'staff';
+    modal.classList.add('active');
+    modal.setAttribute('aria-hidden', 'false');
+  }
+
+  function closeModal() {
+    modal.classList.remove('active');
+    modal.setAttribute('aria-hidden', 'true');
+  }
+
+  document.getElementById('addUserBtn').addEventListener('click', openModal);
+  document.getElementById('cancelAddUser').addEventListener('click', closeModal);
+  modal.addEventListener('click', function (e) {
+    if (e.target === modal) closeModal();
+  });
+
+  form.addEventListener('submit', async function (e) {
+    e.preventDefault();
+    var btn = document.getElementById('saveAddUser');
+    var payload = {
+      first_name: document.getElementById('firstName').value.trim(),
+      last_name: document.getElementById('lastName').value.trim(),
+      email: document.getElementById('email').value.trim(),
+      phone: document.getElementById('phone').value.trim(),
+      role: document.getElementById('role').value,
+      status: document.getElementById('status').value,
+      password: document.getElementById('password').value
+    };
+
+    if (!payload.first_name || !payload.last_name || !payload.email || payload.password.length < 8) {
+      showToast('Please complete all required fields.', true);
+      return;
+    }
+
+    btn.disabled = true;
+    btn.textContent = 'Saving…';
+    try {
+      await GcordAPI.createUser(payload);
+      closeModal();
+      showToast('Account created successfully.');
+      await loadUsers();
+    } catch (err) {
+      showToast(err.message || 'Failed to create account.', true);
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Create Account';
+    }
+  });
+
+  table.addEventListener('click', async function (e) {
+    var btn = e.target.closest('[data-action]');
+    var row = e.target.closest('[data-id]');
+    if (!row) return;
+    var id = Number(row.getAttribute('data-id'));
+    var user = users.find(function (u) { return u.id === id; });
+    if (!user) return;
+
+    // Row click opens account verification popup (ignore action buttons)
+    if (!btn) {
+      openUserDetail(user);
+      return;
+    }
+
+    e.stopPropagation();
+
+    if (btn.dataset.action === 'delete') {
+      showToast('Accounts cannot be deleted. Deactivate instead.', true);
+      return;
+    }
+
+    if (btn.dataset.action === 'deactivate') {
+      var session = GcordAPI.getSession();
+      if (session && Number(session.id) === id) {
+        showToast('You cannot deactivate your own account.', true);
+        return;
+      }
+      var roleName = roleLabel(user.role);
+      if (!confirm('Deactivate ' + roleName + ' account for ' + (user.full_name || user.email) + '?\nThey will no longer be able to log in.')) return;
+      try {
+        await GcordAPI.setUserActiveStatus(id, 'inactive');
+        showToast(roleName + ' account deactivated.');
+        await loadUsers();
+      } catch (err) {
+        showToast(err.message || 'Deactivate failed.', true);
+      }
+    }
+
+    if (btn.dataset.action === 'activate') {
+      try {
+        await GcordAPI.setUserActiveStatus(id, 'active');
+        showToast(roleLabel(user.role) + ' account activated.');
+        await loadUsers();
+      } catch (err) {
+        showToast(err.message || 'Activate failed.', true);
+      }
+    }
+
+    if (btn.dataset.action === 'edit') {
+      var me = GcordAPI.getSession();
+      if (me && Number(me.id) === id) {
+        showToast('You cannot change your own role.', true);
+        return;
+      }
+
+      if (user.role === 'super_admin') {
+        if (!confirm('Change ' + (user.full_name || user.email) + ' from Super Admin to Staff?')) return;
+        try {
+          await GcordAPI.updateUser(id, { role: 'staff' });
+          showToast('Role updated to Staff.');
+          await loadUsers();
+        } catch (err) {
+          showToast(err.message || 'Update failed.', true);
+        }
+        return;
+      }
+
+      if (user.role === 'staff') {
+        if (!confirm('Promote ' + (user.full_name || user.email) + ' to Super Admin?')) return;
+        try {
+          await GcordAPI.updateUser(id, { role: 'super_admin' });
+          showToast('Role updated to Super Admin.');
+          await loadUsers();
+        } catch (err) {
+          showToast(err.message || 'Update failed.', true);
+        }
+      }
+    }
+  });
+
+  search.addEventListener('input', render);
+  roleFilter.addEventListener('change', render);
+
+  document.getElementById('closeUserDetail').addEventListener('click', closeUserDetail);
+  detailModal.addEventListener('click', function (e) {
+    if (e.target === detailModal) closeUserDetail();
+  });
+
+  document.getElementById('verifyUserBtn').addEventListener('click', async function () {
+    if (!selectedUserId) return;
+    try {
+      await GcordAPI.setUserVerification(selectedUserId, 'verified');
+      showToast('Account verified. User can now log in.');
+      closeUserDetail();
+      await loadUsers();
+    } catch (err) {
+      showToast(err.message || 'Verify failed.', true);
+    }
+  });
+
+  document.getElementById('rejectUserBtn').addEventListener('click', async function () {
+    if (!selectedUserId) return;
+    if (!confirm('Reject this account verification?')) return;
+    try {
+      await GcordAPI.setUserVerification(selectedUserId, 'rejected');
+      showToast('Account verification rejected.');
+      closeUserDetail();
+      await loadUsers();
+    } catch (err) {
+      showToast(err.message || 'Reject failed.', true);
+    }
+  });
+
+  loadUsers();
+})();
+</script>
+</body>
+</html>

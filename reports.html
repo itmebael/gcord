@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Gcord Reports and Analytics</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --sidebar: #0052CC;
+    --panel: #EAF5FF;
+    --active: #00368C;
+    --ink: #0A2540;
+    --muted: #5C7088;
+    --primary: #0052CC;
+    --status: #E4F8EF;
+    --danger-bg: #FDEAEA;
+  }
+  body {
+    min-height: 100vh;
+    font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    color: var(--ink);
+    background: #F7F9FC;
+  }
+  .app {
+    min-height: 100vh;
+    display: grid;
+    grid-template-columns: 260px minmax(0, 1fr);
+  }
+  .sidebar {
+    background: var(--sidebar);
+    color: white;
+    padding: 22px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    position: sticky;
+    top: 0;
+  }
+  .side-top {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 4px 8px 12px;
+    border-bottom: 2px solid rgba(255,255,255,0.35);
+  }
+  .brand-mark {
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    background: rgba(255,255,255,0.18);
+    display: grid;
+    place-items: center;
+  }
+  .brand-text strong { display: block; font-size: 14px; font-weight: 700; }
+  .brand-text span { display: block; font-size: 13px; line-height: 1.3; }
+  .menu-title { font-size: 14px; opacity: 0.78; padding: 0 8px; }
+  .menu { display: flex; flex-direction: column; gap: 10px; }
+  .menu a {
+    min-height: 42px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 9px 10px;
+    color: white;
+    text-decoration: none;
+    border-radius: 8px;
+    font-size: 15px;
+    line-height: 1.25;
+  }
+  .menu a.active {
+    background: var(--active);
+    box-shadow: 0 3px 7px rgba(30, 55, 120, 0.26);
+  }
+  .menu svg { flex: 0 0 auto; }
+  .main {
+    min-width: 0;
+    padding: 5px clamp(18px, 3vw, 42px) 0;
+  }
+  .page {
+    max-width: 1440px;
+    margin: 0 auto;
+  }
+  .report-shell {
+    min-height: calc(100vh - 5px);
+    background: var(--panel);
+    padding: 26px 14px 40px;
+  }
+  .eyebrow {
+    color: #000000;
+    font-size: 19px;
+    font-weight: 800;
+    line-height: 1.2;
+    margin-bottom: 14px;
+  }
+  .section-title {
+    color: #000000;
+  }
+  .topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 68px;
+  }
+  .icon-button {
+    width: 38px;
+    height: 38px;
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    color: #172241;
+    display: grid;
+    place-items: center;
+    cursor: pointer;
+  }
+  .avatar {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    color: white;
+    background: linear-gradient(155deg, #2485FF 0%, #0052CC 100%);
+  }
+  .content {
+    width: min(760px, 100%);
+    margin: 0 auto;
+  }
+  .summary-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(190px, 1fr));
+    gap: 18px;
+    margin-bottom: 32px;
+  }
+  .summary-card {
+    min-height: 82px;
+    display: grid;
+    place-items: center;
+    text-align: center;
+    background: #ffffff;
+    border: 1.5px solid #D3DDEA;
+    border-radius: 13px;
+    box-shadow: 7px 8px 0 rgba(55, 67, 96, 0.28);
+    padding: 12px;
+  }
+  .summary-card span {
+    display: block;
+    color: #2d3748;
+    font-size: 13px;
+    font-weight: 500;
+    margin-bottom: 8px;
+  }
+  .summary-card strong {
+    font-size: 16px;
+    font-weight: 900;
+  }
+  .content {
+    position: relative;
+  }
+  .date-select {
+    width: 181px;
+    height: 42px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    border: 1.5px solid #2b2d36;
+    border-radius: 7px;
+    background: #ffffff;
+    color: #0f172a;
+    font: inherit;
+    font-size: 13px;
+    font-weight: 800;
+    padding: 0 12px;
+    margin-bottom: 32px;
+    cursor: pointer;
+  }
+  .date-select:hover {
+    background: #f4f7ff;
+  }
+  .date-select svg:last-child {
+    margin-left: auto;
+  }
+  .date-popup {
+    position: absolute;
+    z-index: 10;
+    width: 300px;
+    background: white;
+    border: 1px solid rgba(15,23,42,0.08);
+    border-radius: 16px;
+    box-shadow: 0 24px 64px rgba(15,23,42,0.16);
+    padding: 10px;
+    display: grid;
+    gap: 8px;
+    top: 90px;
+    left: 0;
+  }
+  .date-option {
+    width: 100%;
+    text-align: left;
+    padding: 10px 14px;
+    border: 1px solid transparent;
+    border-radius: 12px;
+    background: #f8fbff;
+    color: #0f172a;
+    font: inherit;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  .date-option.custom-option {
+    border-color: rgba(0,82,204,0.16);
+    background: #eef4ff;
+  }
+  .date-option:hover {
+    background: #e2e8f0;
+  }
+  .calendar-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 14px;
+    background: #f8fbff;
+    border: 1px solid rgba(15,23,42,0.08);
+    border-radius: 16px;
+  }
+  .calendar-header {
+    display: flex;
+    gap: 10px;
+    align-items: flex-end;
+    justify-content: space-between;
+  }
+  .calendar-header label {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    font-size: 12px;
+    font-weight: 700;
+    color: #1c345f;
+  }
+  .calendar-header select {
+    min-width: 120px;
+    padding: 10px 12px;
+    border: 1px solid rgba(15,23,42,0.12);
+    border-radius: 12px;
+    background: white;
+    color: #0f172a;
+    font: inherit;
+    cursor: pointer;
+  }
+  .calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 6px;
+    text-align: center;
+  }
+  .calendar-weekday,
+  .calendar-day {
+    padding: 8px 6px;
+    border-radius: 10px;
+    font-size: 12px;
+    font-weight: 700;
+  }
+  .calendar-weekday {
+    color: #64748b;
+  }
+  .calendar-day {
+    min-height: 36px;
+    border: 1px solid transparent;
+    background: transparent;
+    color: #0f172a;
+    cursor: pointer;
+  }
+  .calendar-day:hover {
+    background: rgba(0,82,204,0.08);
+  }
+  .calendar-day.selected {
+    background: #0052CC;
+    color: white;
+    border-color: transparent;
+  }
+  .calendar-day.disabled {
+    visibility: hidden;
+    cursor: default;
+  }
+  .calendar-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+  }
+  .calendar-button {
+    min-width: 90px;
+    border: 0;
+    border-radius: 12px;
+    padding: 10px 14px;
+    font: inherit;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  .calendar-button.cancel {
+    background: #e2e8f0;
+    color: #0f172a;
+  }
+  .calendar-button.apply {
+    background: #0052CC;
+    color: white;
+  }
+  .section-title {
+    text-align: center;
+    font-size: 20px;
+    font-weight: 600;
+    margin-bottom: 8px;
+  }
+  .chart-card {
+    position: relative;
+    height: 183px;
+    background: #ffffff;
+    border: 1.5px solid #D3DDEA;
+    border-radius: 14px;
+    box-shadow: 5px 6px 0 rgba(55, 67, 96, 0.25);
+    padding: 22px 26px 18px 52px;
+    margin-bottom: 16px;
+  }
+  .chart-card svg {
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+    display: block;
+  }
+  .axis-labels {
+    position: absolute;
+    left: 20px;
+    top: 36px;
+    bottom: 22px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    color: #3d4658;
+    font-size: 12px;
+  }
+  .table-card {
+    overflow: hidden;
+    border: 1.5px solid #1f2937;
+    border-radius: 8px;
+    background: white;
+  }
+  .report-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr 0.85fr;
+    align-items: center;
+    min-height: 84px;
+    gap: 10px;
+    padding: 10px 16px;
+    border-top: 1px solid #dde4ff;
+  }
+  .report-row.head {
+    min-height: 42px;
+    border-top: 0;
+    font-size: 11px;
+    font-weight: 800;
+    text-transform: uppercase;
+  }
+  .ref-code {
+    font-size: 13px;
+    line-height: 1.1;
+  }
+  .amount { font-size: 14px; }
+  .status-pill {
+    width: max-content;
+    min-width: 82px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    border-radius: 999px;
+    padding: 4px 9px;
+    font-size: 11px;
+    font-weight: 800;
+  }
+  .status-pill::before {
+    content: "";
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: currentColor;
+  }
+  .status-pill.verified {
+    color: #1e9b72;
+    background: var(--status);
+  }
+  .status-pill.duplicate {
+    color: #ea4f54;
+    background: var(--danger-bg);
+  }
+  .view-details {
+    border: 0;
+    background: transparent;
+    color: #1c347e;
+    display: inline-flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+    font: inherit;
+    font-size: 13px;
+    font-weight: 800;
+    line-height: 1.05;
+    cursor: pointer;
+    text-align: left;
+  }
+  .download-wrap {
+    display: flex;
+    justify-content: center;
+    margin-top: 22px;
+  }
+  .download-button {
+    min-width: 194px;
+    min-height: 39px;
+    border: 0;
+    border-radius: 14px;
+    background: var(--primary);
+    color: white;
+    font: inherit;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  .date-popup[hidden] {
+    display: none;
+  }
+  @media (max-width: 840px) {
+    .app { grid-template-columns: 1fr; }
+    .sidebar { position: static; height: auto; }
+    .menu { display: grid; grid-template-columns: repeat(2, 1fr); }
+    .main { padding: 16px; }
+    .report-shell { min-height: auto; padding: 20px 14px; }
+    .topbar { margin-bottom: 42px; }
+  }
+  @media (max-width: 560px) {
+    .menu { grid-template-columns: 1fr; }
+    .summary-grid { grid-template-columns: 1fr; }
+    .chart-card { padding-left: 46px; }
+    .report-row {
+      grid-template-columns: 1fr 1fr;
+      min-height: auto;
+      padding: 12px;
+    }
+    .report-row.head { display: none; }
+    .view-details { justify-content: flex-start; }
+  }
+
+  /* ============ GLASS UI REFRESH ============ */
+  body {
+    background:
+      radial-gradient(circle at 8% 6%, rgba(61,139,255,0.24), transparent 30%),
+      radial-gradient(circle at 92% 18%, rgba(0,182,122,0.16), transparent 28%),
+      linear-gradient(135deg, #F7FBFF 0%, #EEF5FF 48%, #F9FBFE 100%);
+  }
+  .app { grid-template-columns: 280px minmax(0, 1fr); }
+  .sidebar {
+    margin: 16px 0 16px 16px;
+    height: calc(100vh - 32px);
+    border: 1px solid rgba(255,255,255,0.28);
+    border-radius: 22px;
+    background: linear-gradient(155deg, rgba(0,82,204,0.88), rgba(0,54,140,0.78));
+    box-shadow: 0 24px 54px -28px rgba(0,52,140,0.62);
+    backdrop-filter: blur(18px);
+  }
+  .side-top {
+    border-bottom: 1px solid rgba(255,255,255,0.24);
+    padding: 8px 10px 16px;
+  }
+  .brand-mark, .menu a.active {
+    background: rgba(255,255,255,0.18);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.24);
+  }
+  .menu { gap: 8px; }
+  .menu a {
+    border: 1px solid transparent;
+    border-radius: 12px;
+    padding: 11px 12px;
+    transition: background 0.18s ease, border-color 0.18s ease, transform 0.18s ease;
+  }
+  .menu a:hover {
+    background: rgba(255,255,255,0.12);
+    border-color: rgba(255,255,255,0.18);
+    transform: translateX(2px);
+  }
+  .main { padding: 22px clamp(20px, 3vw, 42px) 34px; }
+  .report-shell {
+    min-height: calc(100vh - 56px);
+    border-radius: 22px;
+    padding: 22px;
+    background: rgba(234,245,255,0.68);
+    border: 1px solid rgba(255,255,255,0.72);
+    box-shadow: 0 18px 48px -34px rgba(10,37,64,0.5);
+    backdrop-filter: blur(18px);
+  }
+  .topbar {
+    margin-bottom: 28px;
+    padding: 12px 14px;
+    border-radius: 16px;
+    background: rgba(255,255,255,0.64);
+    border: 1px solid rgba(255,255,255,0.72);
+  }
+  .content { width: min(920px, 100%); }
+  .summary-grid { gap: 16px; margin-bottom: 24px; }
+  .summary-card,
+  .date-select,
+  .chart-card,
+  .table-card {
+    background: rgba(255,255,255,0.72);
+    border: 1px solid rgba(255,255,255,0.74);
+    box-shadow: 0 18px 42px -34px rgba(10,37,64,0.54);
+    backdrop-filter: blur(18px);
+  }
+  .summary-card, .chart-card, .table-card { border-radius: 18px; }
+  .summary-card { box-shadow: 0 18px 42px -34px rgba(10,37,64,0.54); }
+  .chart-card { height: 220px; margin-bottom: 22px; }
+  .date-select { margin-bottom: 22px; border-radius: 12px; }
+  .report-row { border-top: 1px solid rgba(211,221,234,0.78); }
+  .report-row.head { background: rgba(234,245,255,0.68); }
+  .icon-button {
+    background: rgba(255,255,255,0.62);
+    border: 1px solid rgba(211,221,234,0.78);
+  }
+  @media (max-width: 840px) {
+    .app { grid-template-columns: 1fr; }
+    .sidebar {
+      position: static;
+      height: auto;
+      margin: 12px;
+      border-radius: 18px;
+    }
+    .main { padding: 12px; }
+    .report-shell { min-height: auto; }
+  }
+</style>
+<link rel="stylesheet" href="staff-glass.css" />
+<link rel="stylesheet" href="staff-pages.css" />
+</head>
+<body class="staff-ui">
+<div class="app">
+  <div id="sidebar-root"></div>
+
+  <main class="main"><header class="staff-page-topbar"><span>Staff workspace</span><nav aria-label="Account shortcuts"><a href="notification.html" aria-label="Notifications"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/></svg></a><a href="profile.html" aria-label="Your profile"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="3"/><path d="M5 21c0-8 14-8 14 0"/></svg></a></nav></header>
+    <div class="page">
+      <header class="staff-page-banner"><p class="staff-page-kicker">YOUR WORKSPACE</p><h1>Reports &amp; Analytics</h1><p>Explore your transaction activity and download a report.</p></header>
+      <section class="report-shell report-bento">
+        <form id="reportFilters" class="report-filter-card earnings-filters">
+          <label>Reporting period<select id="reportPeriod"><option>Today</option><option selected>Last 7 Days</option><option>This Month</option><option>Custom</option></select></label>
+          <label id="reportFromLabel" hidden>From<input id="reportFrom" type="date" disabled></label>
+          <label id="reportToLabel" hidden>To<input id="reportTo" type="date" disabled></label>
+          <button class="earnings-button primary" type="submit">Apply filter</button>
+          <p id="reportFilterStatus" role="status">Receipt dates · Philippine calendar</p>
+        </form>
+        <div class="summary-grid" aria-label="Selected period totals">
+          <article class="summary-card"><span>Total transactions</span><strong id="reportTotal">—</strong><small>In the selected period</small></article>
+          <article class="summary-card"><span>Verified</span><strong id="reportVerified">—</strong><small>Successfully recorded</small></article>
+          <article class="summary-card"><span>Duplicates</span><strong id="reportDuplicates">—</strong><small>Flagged transactions</small></article>
+          <article class="summary-card"><span>Verified amount</span><strong id="reportAmount">—</strong><small>Duplicates excluded</small></article>
+        </div>
+        <section class="chart-card report-trend" aria-label="Daily transaction counts"><div class="trend-heading"><div><h2>Transactions by day</h2><p id="trendPeriod">Last 7 days</p></div><button type="button" id="refreshTrend" class="earnings-button">Refresh chart</button></div><div class="trend-legend"><span><i></i>Verified</span><span><i class="duplicate"></i>Duplicate</span><span>Numbers show transaction counts</span></div><p id="trendStatus" role="status" aria-live="polite">Loading your transactions...</p><div id="trendDays"></div><p class="trend-footnote">Each row is one receipt date (Philippine calendar). Longer bars mean more transactions, not higher amounts.</p></section>
+        <section class="report-list-card">
+          <div class="trend-heading"><div><h2>Transactions</h2><p id="reportListCaption">Selected period</p></div><button class="earnings-button" id="downloadStaffReport" type="button" disabled>Download CSV</button></div>
+          <div class="report-table-scroll"><table class="staff-report-table"><thead><tr><th scope="col">Reference</th><th scope="col">Amount</th><th scope="col">Status</th><th scope="col">Details</th></tr></thead><tbody id="staffReportRows"></tbody></table></div>
+          <div class="earnings-pagination"><button class="earnings-button" id="reportPrev" type="button" disabled>Previous</button><span id="reportPage">Page 1</span><button class="earnings-button" id="reportNext" type="button" disabled>Next</button></div>
+        </section>
+      </section>
+    </div></main></div>
+<dialog id="staffReportDetails" class="staff-report-dialog" aria-labelledby="staffReportDetailsTitle">
+  <div class="trend-heading"><h2 id="staffReportDetailsTitle">Transaction details</h2><button type="button" id="closeReportDetails" class="earnings-button" autofocus>Close</button></div>
+  <dl id="staffReportDetailFields"></dl>
+</dialog>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase-config.js"></script>
+<script src="supabase-api.js"></script>
+<script src="sidebar.js"></script>
+<script src="export-preview.js"></script><script src="staff-reports.js"></script>
+<script src="report-trend.js"></script>
+
+<script src="staff-account-menu.js"></script>
+</body>
+</html>
