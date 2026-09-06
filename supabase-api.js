@@ -299,7 +299,7 @@
     if (!user) throw new Error(rpc.error ? ('Login failed. Run database/rls_privacy.sql in Supabase. (' + rpc.error.message + ')') : 'Account not found.');
     if (user.status !== 'active') throw new Error('This account is inactive.');
     if (user.verification_status && user.verification_status !== 'verified') {
-      throw new Error('Account is not verified yet. Wait for Super Admin approval.');
+      throw new Error('Account is not verified yet. Wait for Admin approval.');
     }
 
     var ok = await verifyPassword(pwd, user.password_hash);
@@ -356,11 +356,11 @@
   async function getUserStats() {
     var users = await listUsers();
     return {
-      totalAdmins: users.filter(function (u) { return u.role === 'super_admin'; }).length,
+      totalAdmins: users.filter(function (u) { return u.role === 'admin' || u.role === 'super_admin'; }).length,
       totalStaff: users.filter(function (u) { return u.role === 'staff'; }).length,
       activeAccounts: users.filter(function (u) { return u.status === 'active'; }).length,
       inactiveAccounts: users.filter(function (u) { return u.status === 'inactive'; }).length,
-      superAdmin: users.filter(function (u) { return u.role === 'super_admin'; }).length,
+      admin: users.filter(function (u) { return u.role === 'admin' || u.role === 'super_admin'; }).length,
       users: users
     };
   }
@@ -373,8 +373,8 @@
     if (password.length < 8) throw new Error('Password must be at least 8 characters.');
 
     var role = payload.role || 'staff';
-    if (role !== 'staff' && role !== 'super_admin') {
-      throw new Error('Role must be Staff or Super Admin.');
+    if (role !== 'staff' && role !== 'admin') {
+      throw new Error('Role must be Staff or Admin.');
     }
 
     var passwordHash = await hashPassword(password);
@@ -411,8 +411,8 @@
     var actor = getSession();
     await sb.from('system_logs').insert({
       actor_user_id: actor ? actor.id : null,
-      actor_name: actor ? actor.full_name : 'Super Admin',
-      actor_role: actor ? actor.role : 'super_admin',
+      actor_name: actor ? actor.full_name : 'Admin',
+      actor_role: actor ? actor.role : 'admin',
       action_code: 'create_admin',
       message: 'Account created: ' + (res.data.full_name || res.data.email),
       status: 'success',
@@ -430,8 +430,8 @@
     if (patch.email != null) data.email = String(patch.email).trim().toLowerCase();
     if (patch.phone != null) data.phone = normalizeNumber(patch.phone);
     if (patch.role != null) {
-      if (patch.role !== 'staff' && patch.role !== 'super_admin') {
-        throw new Error('Role must be Staff or Super Admin.');
+      if (patch.role !== 'staff' && patch.role !== 'admin') {
+        throw new Error('Role must be Staff or Admin.');
       }
       data.role = patch.role;
     }
@@ -536,7 +536,7 @@
     if (verificationStatus !== 'verified' && verificationStatus !== 'rejected' && verificationStatus !== 'pending') {
       throw new Error('Invalid verification status.');
     }
-    if (!isAdmin()) throw new Error('Only Super Admin can verify accounts.');
+    if (!isAdmin()) throw new Error('Only Admin can verify accounts.');
     var sb = requireClient();
     var session = getSession();
     var data = {
@@ -551,8 +551,8 @@
 
     await sb.from('system_logs').insert({
       actor_user_id: session ? session.id : null,
-      actor_name: session ? session.full_name : 'Super Admin',
-      actor_role: session ? session.role : 'super_admin',
+      actor_name: session ? session.full_name : 'Admin',
+      actor_role: session ? session.role : 'admin',
       action_code: 'verify_account',
       message: 'Account ' + verificationStatus + ': ' + (res.data.full_name || res.data.email),
       status: verificationStatus === 'verified' ? 'success' : 'warning',
@@ -569,7 +569,7 @@
   /**
    * Privacy rule:
    * - Staff see ONLY their own transactions (created_by_user_id = session.id)
-   * - Admin / Super Admin see ALL transactions
+  * - Admin sees ALL transactions
    * Duplicate-ref checks remain global for fraud protection.
    */
   async function listTransactions(options) {
@@ -600,7 +600,7 @@
     if (options.status === 'verified' || options.status === 'duplicate') {
       q = q.eq('status', options.status);
     }
-    // admin / super_admin → all rows
+    // admin → all rows
 
     var res = await q;
     if (res.error) throw res.error;
@@ -865,7 +865,7 @@
 
   async function getTopUsers(limit) {
     var sb = requireClient();
-    var usersRes = await sb.from('users').select('id,full_name,role,first_name,last_name').in('role', ['staff', 'super_admin']);
+    var usersRes = await sb.from('users').select('id,full_name,role,first_name,last_name').in('role', ['staff', 'admin', 'super_admin']);
     if (usersRes.error) throw usersRes.error;
     var txnRes = await sb.from('transactions').select('created_by_user_id,amount,status');
     if (txnRes.error) throw txnRes.error;
@@ -875,7 +875,7 @@
       map[u.id] = {
         id: u.id,
         name: u.full_name || ((u.first_name || '') + ' ' + (u.last_name || '')).trim(),
-        role: u.role === 'super_admin' ? 'Super Admin' : 'Staff',
+        role: (u.role === 'admin' || u.role === 'super_admin') ? 'Admin' : 'Staff',
         count: 0,
         amount: 0
       };
@@ -1012,18 +1012,17 @@
     var res = await q;
     if (res.error) throw res.error;
 
+    var todayKey = manilaDateKey(new Date());
+    var yesterdayKey = manilaDateKey(new Date(Date.now() - 24 * 60 * 60 * 1000));
     var mapped = (res.data || []).map(function (n) {
-      var created = n.created_at ? new Date(n.created_at) : null;
+      var created = n.created_at ? parseDatabaseTimestamp(n.created_at) : null;
       var timeLabel = '—';
       var dayKey = 'older';
       if (created && !isNaN(created.getTime())) {
-        timeLabel = created.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
-        var now = new Date();
-        var startToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-        var startYesterday = new Date(startToday);
-        startYesterday.setDate(startYesterday.getDate() - 1);
-        if (created >= startToday) dayKey = 'today';
-        else if (created >= startYesterday) dayKey = 'yesterday';
+        timeLabel = formatRecordedTime(n.created_at);
+        var createdDayKey = manilaDateKey(created);
+        if (createdDayKey === todayKey) dayKey = 'today';
+        else if (createdDayKey === yesterdayKey) dayKey = 'yesterday';
         else dayKey = 'older';
       }
       return {
@@ -1047,9 +1046,9 @@
       try {
         var logs = await listSystemLogs();
         return (logs || []).slice(0, options.limit || 12).map(function (log, i) {
-          var created = log.created_at ? new Date(log.created_at) : null;
+          var created = log.created_at ? parseDatabaseTimestamp(log.created_at) : null;
           var timeLabel = created && !isNaN(created.getTime())
-            ? created.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
+            ? formatRecordedTime(log.created_at)
             : '—';
           var sev = log.status === 'warning' || log.status === 'error' ? 'warning' : 'info';
           if (log.action_code === 'create_transaction') sev = 'success';

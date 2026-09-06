@@ -698,16 +698,6 @@
         <div><p class="staff-eyebrow">YOUR WORKSPACE</p><h1 id="staffGreeting">Welcome back!</h1><p class="staff-subtitle">Your transactions, at a glance.</p></div>
         <a class="staff-scan-link" href="scan.html">+ Scan a receipt</a>
       </header>
-      <section class="earnings-preview glass-card" aria-labelledby="earningsPreviewTitle">
-        <div class="staff-panel-heading"><h2 id="earningsPreviewTitle">My Earnings</h2><a href="earnings.html">View earnings &amp; reports &rarr;</a></div>
-        <div class="earnings-summary">
-          <div><span>Overall earnings</span><strong data-earnings="overall_earnings">&mdash;</strong></div>
-          <div><span>Today</span><strong data-earnings="today_earnings">&mdash;</strong></div>
-          <div><span>This week</span><strong data-earnings="weekly_earnings">&mdash;</strong></div>
-          <div><span>This month</span><strong data-earnings="monthly_earnings">&mdash;</strong></div>
-        </div>
-        <p id="earningsSummaryStatus" class="earnings-note" role="status">Loading your earnings...</p>
-      </section>
       <div class="overview">
         <section class="stats" aria-label="Your transaction summary">
           <article class="stat-card"><span>TOTAL TRANSACTIONS</span><strong id="overviewTotal">0</strong><div class="staff-meter"><i id="staffTotalBar"></i></div><small>All your recorded transactions</small></article>
@@ -788,7 +778,6 @@
 <script src="supabase-api.js"></script>
 <script src="transactions.js"></script>
 <script src="staff-dashboard.js"></script>
-<script src="staff-earnings.js"></script>
 <script src="sidebar.js"></script>
 <script>
   // Active sidebar link is set by sidebar.js

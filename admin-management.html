@@ -529,7 +529,7 @@
                 <path d="M15 14.5c2.4.3 4.5 1.7 4.5 4.5"/>
               </svg>
             </div>
-            <span class="stat-label">Total Super Admins</span>
+            <span class="stat-label">Total Admins</span>
           </div>
           <strong class="stat-value" id="statTotalAdmins">0</strong>
         </article>
@@ -566,7 +566,7 @@
                 <circle cx="12" cy="10" r="2.2"/>
               </svg>
             </div>
-            <span class="stat-label">Super Admin</span>
+            <span class="stat-label">Admin</span>
           </div>
           <strong class="stat-value" id="statSuper">0</strong>
         </article>
@@ -583,7 +583,7 @@
         </label>
         <select class="role-filter" id="roleFilter" aria-label="Filter by role">
           <option value="all">All Roles</option>
-          <option value="super_admin">Super Admin</option>
+          <option value="admin">Admin</option>
           <option value="staff">Staff</option>
         </select>
       </div>
@@ -630,7 +630,7 @@
           <label for="role">Role</label>
           <select id="role" name="role" required>
             <option value="staff">Staff</option>
-            <option value="super_admin">Super Admin</option>
+            <option value="admin">Admin</option>
           </select>
         </div>
         <div class="field">
@@ -710,13 +710,13 @@
   }
 
   function roleLabel(role) {
-    if (role === 'super_admin') return 'Super Admin';
+    if (role === 'admin' || role === 'super_admin') return 'Admin';
     return 'Staff';
   }
 
   function updateStats(list) {
     document.getElementById('statTotalAdmins').textContent = String(
-      list.filter(function (u) { return u.role === 'super_admin'; }).length
+      list.filter(function (u) { return u.role === 'admin' || u.role === 'super_admin'; }).length
     );
     document.getElementById('statActive').textContent = String(
       list.filter(function (u) { return u.status === 'active'; }).length
@@ -725,7 +725,7 @@
       list.filter(function (u) { return u.status === 'inactive'; }).length
     );
     document.getElementById('statSuper').textContent = String(
-      list.filter(function (u) { return u.role === 'super_admin'; }).length
+      list.filter(function (u) { return u.role === 'admin' || u.role === 'super_admin'; }).length
     );
   }
 
@@ -815,7 +815,8 @@
     var rows = users.filter(function (u) {
       var name = (u.full_name || (u.first_name + ' ' + u.last_name)).toLowerCase();
       var matchName = !q || name.indexOf(q) !== -1 || String(u.email || '').toLowerCase().indexOf(q) !== -1;
-      var matchRole = role === 'all' || u.role === role;
+      var matchRole = role === 'all' || u.role === role ||
+        (role === 'admin' && u.role === 'super_admin');
       return matchName && matchRole;
     });
 
@@ -838,7 +839,7 @@
           '</button>';
       }
 
-      var editTitle = u.role === 'super_admin' ? 'Change to Staff' : 'Promote to Super Admin';
+      var editTitle = (u.role === 'admin' || u.role === 'super_admin') ? 'Change to Staff' : 'Promote to Admin';
 
       return '' +
         '<div class="table-row' + (active ? '' : ' inactive-row') + '" data-id="' + u.id + '">' +
@@ -974,8 +975,8 @@
         return;
       }
 
-      if (user.role === 'super_admin') {
-        if (!confirm('Change ' + (user.full_name || user.email) + ' from Super Admin to Staff?')) return;
+      if (user.role === 'admin' || user.role === 'super_admin') {
+        if (!confirm('Change ' + (user.full_name || user.email) + ' from Admin to Staff?')) return;
         try {
           await GcordAPI.updateUser(id, { role: 'staff' });
           showToast('Role updated to Staff.');
@@ -987,10 +988,10 @@
       }
 
       if (user.role === 'staff') {
-        if (!confirm('Promote ' + (user.full_name || user.email) + ' to Super Admin?')) return;
+        if (!confirm('Promote ' + (user.full_name || user.email) + ' to Admin?')) return;
         try {
-          await GcordAPI.updateUser(id, { role: 'super_admin' });
-          showToast('Role updated to Super Admin.');
+          await GcordAPI.updateUser(id, { role: 'admin' });
+          showToast('Role updated to Admin.');
           await loadUsers();
         } catch (err) {
           showToast(err.message || 'Update failed.', true);

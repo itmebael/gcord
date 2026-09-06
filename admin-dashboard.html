@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Gcord Super Admin Dashboard</title>
+<title>Gcord Admin Dashboard</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
@@ -527,7 +527,7 @@
                   <path d="M15 14.5c2.4.3 4.5 1.7 4.5 4.5"/>
                 </svg>
               </div>
-              <span class="stat-label">Total Super Admins</span>
+              <span class="stat-label">Total Admins</span>
             </div>
             <strong class="stat-value" id="dashTotalAdmins">0</strong>
           </article>
@@ -604,7 +604,7 @@
   var user = GcordAPI.getSession();
   var titleEl = document.getElementById('adminDashTitle');
   if (titleEl && user) {
-    titleEl.textContent = 'Super Admin Dashboard';
+    titleEl.textContent = 'Admin Dashboard';
   }
 
   function peso(n) {

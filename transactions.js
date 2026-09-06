@@ -123,22 +123,31 @@
     }
 
     function acceptName(value) {
-      var name = value.trim().replace(/[\u2217\u2022\u25cf\uff0a]/g, '*').replace(/[\u2018\u2019]/g, "'").replace(/\s+/g, ' ');
+      var name = value.trim().replace(/[\u2217\u2022\u25cf\uff0a\u00b7\u2027\u2219]/g, '*').replace(/[\u2018\u2019]/g, "'").replace(/\s+/g, ' ');
+      // OCR can render the receipt's mask dots as ordinary periods.
+      // A repeated run identifies masking; retain single dotted initials otherwise.
+      if (/\.(?:[ \t]*\.)+/.test(name)) {
+        name = name.replace(/\.(?:[ \t]*\.)+/g, function (mask) {
+          return mask.replace(/[ \t]/g, '');
+        }).replace(/\./g, '*');
+      }
       // OCR often merges the name and mobile number into one line.
       name = name.replace(/\s*\(?\+?(?:63\s*9|09|9\d{2})[\d *xX()-]{6,}\)?\s*$/, '').trim();
+      // Accept masked initials and dotted/asterisked separators that OCR commonly produces.
+      name = name.replace(/\s+/g, ' ').trim();
       if (!/^[A-Za-z\u00c0-\u024f][A-Za-z\u00c0-\u024f *\u2022.'-]{1,79}$/.test(name)) return false;
       if (/\b(?:reference|amount|gcash|success(?:ful(?:ly)?)?|total|date|time|php|sent|received|payment|receipt|number|send|money|express|transfer|thank|you|from|balance|mobile|phone|account)\b/i.test(name)) return false;
       result.recipient = name.toUpperCase(); return true;
     }
     // Names can follow a label or appear on its next line, including masked names.
     lines.some(function (line, index) {
-      var match = /^\s*(?:(?:you\s+(?:have\s+)?)?sent to|send to|paid to|recipient(?:['’]s)?(?: name)?|receiver(?:['’]s)?(?: name)?|name|to)\b\s*[:.-]?\s*(.*)$/i.exec(line);
+      var match = /^\s*(?:(?:you\s+(?:have\s+)?)?sent to|send to|paid to|received by|cash\s*out\s*to|cashout to|beneficiary|recipient(?:['’]s)?(?: name)?|receiver(?:['’]s)?(?: name)?|name|to)\b\s*[:.-]?\s*(.*)$/i.exec(line);
       if (!match) return false;
       return acceptName(match[1]) || (!match[1].trim() && acceptName(lines[index + 1] || ''));
     });
     if (!result.recipient) {
       lines.some(function (line) {
-        return /[*\u2022\u2217\u25cf\uff0a]/.test(line) && acceptName(line);
+        return /[*\u2022\u2217\u25cf\uff0a\u00b7\u2027\u2219]|\.(?:[ \t]*\.)+/.test(line) && acceptName(line);
       });
     }
     // Common receipt layout: an unlabelled recipient name directly above their phone.
@@ -152,6 +161,38 @@
     }
 
     return result;
+  }
+
+  function normalizeReceiptAmount(value) {
+    if (typeof value !== 'string' && typeof value !== 'number') return '';
+    var amount = String(value).trim().replace(/^(?:PHP|\u20b1|P)\s*/i, '').trim();
+    // Validate grouping before removing it; never join unrelated OCR numbers.
+    if (!/^(?:\d+|\d{1,3}(?:,\d{3})+)(?:\.\d{1,2})?$/.test(amount)) return '';
+    amount = amount.replace(/,/g, '');
+    return Number.isFinite(Number(amount)) && Number(amount) > 0 ? amount : '';
+  }
+
+  function parseRoboflowResult(payload) {
+    var outputs = payload && payload.outputs;
+    var output = Array.isArray(payload) ? payload[0]
+      : Array.isArray(outputs) ? outputs[0] : outputs || payload;
+    if (!output || typeof output !== 'object' || output.fallback ||
+        !['name', 'number', 'amount', 'reference_number', 'parse_error'].some(function (key) {
+          return Object.prototype.hasOwnProperty.call(output, key);
+        })) return null;
+    function field(key) {
+      return typeof output[key] === 'string' ? output[key].trim() : '';
+    }
+    // Structured workflow fields are authoritative. Raw OCR is debugging data only.
+    var parsed = {
+      recipient: field('name'), number: field('number'), amount: normalizeReceiptAmount(output.amount),
+      ref: field('reference_number'), date: field('date'), time: field('time'),
+      workflow: true, reviewRequired: output.parse_error !== false
+    };
+    if (['recipient', 'number', 'amount', 'ref', 'date', 'time'].some(function (key) {
+      return !parsed[key];
+    })) parsed.reviewRequired = true;
+    return parsed;
   }
 
   async function getAll() {
@@ -184,6 +225,7 @@
     normalizeRef: normalizeRef,
     normalizeNumber: normalizeNumber,
     parseGCashText: parseGCashText,
+    parseRoboflowResult: parseRoboflowResult,
     formatDate: formatDate,
     formatTime: formatTime
   };

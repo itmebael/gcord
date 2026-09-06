@@ -16,7 +16,6 @@
   var MENU = [
     { page: 'dashboard', href: 'dashboard.html', label: 'Dashboard', icon: ICON.dashboard },
     { page: 'transactions', href: 'dashboard.html#transactions', label: 'My Transactions', icon: ICON.transactions },
-    { page: 'earnings', href: 'earnings.html', label: 'My Earnings', icon: ICON.reports },
     { page: 'scan', href: 'scan.html', label: 'Scan &amp; Record', icon: ICON.scan },
     { page: 'duplicate', href: 'duplicate.html', label: 'Duplicate Management', icon: ICON.duplicate },
     { page: 'reports', href: 'reports.html', label: 'Reports &amp; Analytics', icon: ICON.reports },
@@ -62,7 +61,7 @@
     'overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.5) transparent}' +
     '.sidebar .menu a{flex-shrink:0;min-width:0}' +
     '.sidebar .menu a span{min-width:0;overflow-wrap:break-word}' +
-    '.nav-burger{display:none;position:fixed;top:16px;left:16px;z-index:210;' +
+    '.nav-burger{display:none;position:fixed;top:16px;left:16px;right:auto;z-index:210;' +
     'width:46px;height:46px;border:1px solid rgba(211,221,234,.9);border-radius:14px;' +
     'background:rgba(255,255,255,.92);color:#0A2540;box-shadow:0 12px 28px -18px rgba(10,37,64,.45);' +
     'place-items:center;cursor:pointer;backdrop-filter:blur(10px)}' +

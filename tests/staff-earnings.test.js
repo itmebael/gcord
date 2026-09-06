@@ -48,7 +48,7 @@
     assert(document.querySelectorAll('#earningsRows tr').length === 31, 'Print contains all report rows');
     window.dispatchEvent(new Event('afterprint'));
     assert(document.querySelectorAll('#earningsRows tr').length === 6, 'Pagination restored after printing');
-    assert(document.querySelector('.menu a[data-page="earnings"]').textContent.includes('My Earnings'), 'Sidebar destination exists');
+    assert(!document.querySelector('.menu a[data-page="earnings"]'), 'My Earnings is removed from staff navigation');
     var period = document.getElementById('earningsPeriod');
     period.value = 'custom'; period.dispatchEvent(new Event('input', { bubbles: true }));
     assert(document.getElementById('earningsReport').hidden && !document.getElementById('earningsFrom').disabled, 'Filter change invalidates stale export and enables custom dates');

@@ -9,7 +9,7 @@
     'position:relative;z-index:80;overflow:visible}' +
     '.admin-topbar.has-welcome{justify-content:space-between}' +
     '.admin-topbar .welcome{flex:1;text-align:center;font-size:clamp(15px,2vw,20px);font-weight:700;color:#0A2540}' +
-    '.admin-topbar .top-icons{display:flex;align-items:center;gap:12px;position:relative;overflow:visible}' +
+    '.admin-topbar .top-icons{display:flex;align-items:center;gap:12px;position:relative;margin-left:auto;overflow:visible}' +
     '.admin-topbar .bell,.admin-topbar .avatar-btn{' +
     'width:38px;height:38px;border:1px solid rgba(211,221,234,.78);border-radius:8px;' +
     'background:rgba(255,255,255,.62);color:#0A2540;display:grid;place-items:center;cursor:pointer;position:relative}' +
@@ -61,6 +61,7 @@
     '.settings-item strong{display:block;font-size:13px;font-weight:700}' +
     '.settings-item small{display:block;font-size:11px;color:#64748B;margin-top:2px}' +
     '.settings-item .chev{margin-left:auto;color:#94A3B8;flex:0 0 auto}' +
+    '@media (max-width:840px){.admin-topbar{min-height:68px;padding-left:76px;padding-right:18px;justify-content:flex-end}}' +
     '@media (max-width:520px){.admin-topbar .welcome{display:none}}';
 
   function ensureStyles() {
@@ -80,7 +81,7 @@
   }
 
   function roleLabel(role) {
-    if (role === 'super_admin') return 'Super Admin';
+    if (role === 'admin' || role === 'super_admin') return 'Admin';
     return 'Admin';
   }
 

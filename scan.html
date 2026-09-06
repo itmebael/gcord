@@ -504,6 +504,7 @@
   <div class="result-modal" role="dialog" aria-modal="true" aria-labelledby="resultTitle">
     <h2 id="resultTitle">Confirm Transaction</h2>
     <p class="sub">Review the extracted GCash details, then save to Transaction Management.</p>
+    <p id="resultReviewWarning" class="earnings-note" role="status" hidden>Some receipt fields could not be extracted. Check the original receipt and complete or correct the fields before saving.</p>
     <div class="dup-banner" id="dupBanner">This reference number already exists. Saving will mark it as Duplicate.</div>
     <form id="resultForm" class="form-grid" novalidate>
       <div class="field">
@@ -553,7 +554,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="supabase-config.js"></script>
 <script src="supabase-api.js"></script>
-<script src="transactions.js"></script>
+<script src="transactions.js?v=20260907-amount-6"></script>
 <script src="sidebar.js"></script>
 <script src="scanner-auto-capture.js"></script>
 <script>
@@ -641,6 +642,8 @@
   }
 
   function fillResultForm(data) {
+    document.getElementById('resultReviewWarning').hidden = !data.reviewRequired;
+    document.getElementById('resultReviewWarning').textContent = data.reviewMessage || 'Some receipt fields could not be extracted. Check the original receipt and complete or correct the fields before saving.';
     document.getElementById('resultClaimer').value = '';
     document.getElementById('resultName').value = data.recipient || '';
     document.getElementById('resultNumber').value = data.number || '';
@@ -650,8 +653,8 @@
       : 'No complete mobile number was read. Include it in the camera frame, upload the full receipt, or enter it manually.';
     document.getElementById('resultAmount').value = data.amount || '';
     document.getElementById('resultRef').value = data.ref || '';
-    document.getElementById('resultDate').value = data.date || GcordTransactions.formatDate(new Date());
-    document.getElementById('resultTime').value = data.time || GcordTransactions.formatTime(new Date());
+    document.getElementById('resultDate').value = data.date || '';
+    document.getElementById('resultTime').value = data.time || '';
     return checkDuplicatePreview();
   }
 
@@ -773,19 +776,53 @@
   }
 
   function validatePayload(data, form) {
-    var ok = true;
+    var firstInvalid = null;
+    var firstMessage = '';
+    var labels = { recipient: 'Recipient Name', claimant: 'Claimed by (customer name)',
+      number: 'GCash / Phone Number', amount: 'Amount', ref: 'Reference Number', date: 'Date', time: 'Time' };
     form.querySelectorAll('.field').forEach(function (field) {
       var input = field.querySelector('input');
       if (!input) return;
       if (input.readOnly && !input.name) return;
-      var invalid = !String(input.value || '').trim();
-      if (input.name === 'ref' && GcordTransactions.normalizeRef(input.value).length < 13) invalid = true;
-      if (input.name === 'number' && !/^09\d{9}$/.test(GcordTransactions.normalizeNumber(input.value))) invalid = true;
-      if (input.name === 'amount' && !(Number(input.value) > 0)) invalid = true;
+      var value = String(input.value || '').trim();
+      if (input.name === 'number' && value) {
+        value = value.replace(/\s+/g, '');
+        var normalized = GcordTransactions.normalizeNumber(value);
+        if (/^09\d{9}$/.test(normalized) && /^[+\d()-]+$/.test(value)) value = normalized;
+        input.value = value;
+        data.number = value;
+      }
+      var message = !value ? 'Enter ' + (labels[input.name] || 'this field') + '.' : '';
+      if (value && input.name === 'ref' && GcordTransactions.normalizeRef(value).length < 13) message = 'Reference Number must contain at least 13 digits. Check it against the receipt.';
+      if (value && input.name === 'number' && !/^09\d{9}$/.test(value)) {
+        var digits = value.replace(/\D/g, '');
+        message = /^\+?63/.test(value)
+          ? 'Spaces removed. This number has ' + digits.slice(2).length + ' digits after +63; it needs 10. Check the full number.'
+          : 'Spaces removed. Enter an 11-digit GCash number starting with 09, or +63 followed by 10 digits.';
+      }
+      if (value && input.name === 'amount' && !(Number(value) > 0)) message = 'Amount must be greater than zero.';
+      var invalid = !!message;
       field.classList.toggle('invalid', invalid);
-      if (invalid) ok = false;
+      input.setAttribute('aria-invalid', String(invalid));
+      var error = field.querySelector('.validation-message');
+      if (!error) {
+        error = document.createElement('small');
+        error.className = 'validation-message';
+        error.id = input.id + 'Error';
+        error.style.color = '#b42318';
+        field.appendChild(error);
+        var describedBy = input.getAttribute('aria-describedby');
+        input.setAttribute('aria-describedby', (describedBy ? describedBy + ' ' : '') + error.id);
+      }
+      error.textContent = message;
+      error.hidden = !invalid;
+      if (invalid && !firstInvalid) { firstInvalid = input; firstMessage = message; }
     });
-    return ok;
+    if (firstInvalid) {
+      firstInvalid.focus();
+      showToast(firstMessage, 'err');
+    }
+    return !firstInvalid;
   }
 
   async function savePayload(data, source) {
@@ -868,6 +905,42 @@
     return dataUrl;
   }
 
+  function imageToDataUrl(imageSource) {
+    if (typeof imageSource === 'string' && /^https?:\/\//i.test(imageSource)) return Promise.resolve(imageSource);
+    if (typeof imageSource === 'string' && imageSource.indexOf('data:image/') === 0) return Promise.resolve(imageSource);
+    return new Promise(function (resolve, reject) {
+      var image = new Image();
+      image.onload = function () {
+        var imageCanvas = document.createElement('canvas');
+        imageCanvas.width = image.naturalWidth;
+        imageCanvas.height = image.naturalHeight;
+        imageCanvas.getContext('2d').drawImage(image, 0, 0);
+        resolve(imageCanvas.toDataURL('image/jpeg', 0.92));
+      };
+      image.onerror = reject;
+      image.src = URL.createObjectURL(imageSource);
+    });
+  }
+
+  async function runRoboflow(imageDataUrl) {
+    try {
+      var response = await fetch('/api/roboflow-workflow', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ image: imageDataUrl })
+      });
+      if (response.status === 501 && /^(localhost|127\.0\.0\.1)$/.test(window.location.hostname)) {
+        return { fallback: true, reviewMessage: 'This local server cannot run cloud scanning. Open http://localhost:8001/scan.html with the app server running, then scan again.' };
+      }
+      var result = await response.json().catch(function () { return {}; });
+      if (result && result.fallback) return result;
+      if (!response.ok) throw new Error(result.error || 'Roboflow scan failed');
+      return result;
+    } catch (error) {
+      return { fallback: true, warning: String(error && error.message ? error.message : error) };
+    }
+  }
+
   async function runOcr(imageSource) {
     if (busy) return;
     busy = true;
@@ -879,18 +952,37 @@
     document.getElementById('captureBtn').disabled = true;
 
     try {
-      var result = await Tesseract.recognize(imageSource, 'eng', {
-        logger: function (m) {
-          if (m.status === 'recognizing text' && m.progress != null) {
-            ocrProgress.textContent = 'Reading GCash receipt… ' + Math.round(m.progress * 100) + '%';
-          }
+      var imageDataUrl = await imageToDataUrl(imageSource);
+      ocrProgress.textContent = 'Checking receipt with Roboflow...';
+      var roboflowResult = await runRoboflow(imageDataUrl);
+      var parsed = GcordTransactions.parseRoboflowResult(roboflowResult);
+      if (roboflowResult && roboflowResult.fallback) {
+        ocrProgress.textContent = 'Roboflow unavailable — reading receipt locally...';
+      }
+      if (!parsed) {
+        ocrProgress.textContent = 'Reading receipt text... 0%';
+        try {
+          if (typeof Tesseract === 'undefined') throw new Error('Local text reader did not load');
+          var result = await Tesseract.recognize(imageSource, 'eng', {
+            logger: function (m) {
+              if (m.status === 'recognizing text' && m.progress != null) {
+                ocrProgress.textContent = 'Reading GCash receipt... ' + Math.round(m.progress * 100) + '%';
+              }
+            }
+          });
+          parsed = GcordTransactions.parseGCashText(result.data && result.data.text ? result.data.text : '');
+          parsed.reviewRequired = true;
+          parsed.reviewMessage = roboflowResult && roboflowResult.reviewMessage || 'Cloud scanning was unavailable. These details came from local OCR; check them against the receipt before saving.';
+        } catch (localError) {
+          throw new Error('The receipt reader is unavailable. Check your connection and try again, or use Manual Entry.');
         }
-      });
-      var parsed = GcordTransactions.parseGCashText(result.data && result.data.text ? result.data.text : '');
+      }
       ocrProgress.textContent = 'Checking receipt reference...';
       await openResult(parsed);
     } catch (err) {
-      showToast('Scan failed. Try again or use Manual Entry.', 'err');
+      console.error('Receipt scan failed:', err);
+      showToast(err && err.message === 'The receipt reader is unavailable. Check your connection and try again, or use Manual Entry.'
+        ? err.message : 'Could not finish scanning. Reload the page and try again, or use Manual Entry.', 'err');
     } finally {
       busy = false;
       ocrProgress.classList.remove('show');
@@ -948,7 +1040,6 @@
     var form = e.target;
     var data = readPayloadFromForm(form);
     if (!validatePayload(data, form)) {
-      showToast('Please complete all GCash fields.', 'err');
       return;
     }
     try {
@@ -978,7 +1069,6 @@
     }
 
     if (!validatePayload(data, form)) {
-      showToast('Please complete all fields.', 'err');
       return;
     }
     try {

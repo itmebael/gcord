@@ -7,3 +7,4 @@ tests/
 .env.*
 node_modules/
 *.log
+local-server.js

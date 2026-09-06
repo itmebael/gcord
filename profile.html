@@ -469,7 +469,7 @@
     var user = GcordAPI.requireAuth();
     if (!user) return;
 
-    var roleLabel = user.role === 'super_admin' ? 'Super Admin' : 'Staff';
+    var roleLabel = (user.role === 'admin' || user.role === 'super_admin') ? 'Admin' : 'Staff';
     var first = user.first_name || '';
     var last = user.last_name || '';
     if (!first && user.full_name) {
