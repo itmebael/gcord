@@ -20,8 +20,10 @@ window.createScannerAutoCapture = function(video, frame, hint, toggle, capture, 
     try{
       var shot=document.createElement('canvas'),scale=Math.min(1,1400/h);
       shot.width=Math.max(1,Math.round(w*scale));shot.height=Math.max(1,Math.round(h*scale));
-      shot.getContext('2d').drawImage(video,(video.videoWidth-w)/2,(video.videoHeight-h)/2,w,h,0,0,shot.width,shot.height);
-      var image=shot.toDataURL('image/jpeg',.95),result=await Tesseract.recognize(image,'eng');
+      var shotContext=shot.getContext('2d');
+      shotContext.imageSmoothingEnabled=true;shotContext.imageSmoothingQuality='high';
+      shotContext.drawImage(video,(video.videoWidth-w)/2,(video.videoHeight-h)/2,w,h,0,0,shot.width,shot.height);
+      var image=shot.toDataURL('image/png'),result=await Tesseract.recognize(image,'eng');
       if(token!==generation||!toggle.checked||!available()||document.hidden||fired)return;
       if(window.isAutoCaptureReceipt(result.data)){
         approved={image:image,at:performance.now()};frame.classList.add('capture-ready');hint.textContent='Receipt detected — hold still to capture.';

@@ -608,8 +608,10 @@
       return;
     }
     try {
+      var frameRatio = document.getElementById('scannerFrame').clientWidth / document.getElementById('scannerFrame').clientHeight;
+      if (!Number.isFinite(frameRatio) || frameRatio <= 0) frameRatio = 9 / 16;
       stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: { ideal: 'environment' }, width: { ideal: 1920 }, height: { ideal: 1080 } },
+        video: { facingMode: { ideal: 'environment' }, aspectRatio: { ideal: frameRatio }, width: { ideal: 1920 }, height: { ideal: 1920 / frameRatio } },
         audio: false
       });
       video.srcObject = stream;
@@ -906,8 +908,10 @@
     canvas.width = Math.max(1, Math.round(sourceWidth));
     canvas.height = Math.max(1, Math.round(sourceHeight));
     var ctx = canvas.getContext('2d');
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
     ctx.drawImage(video, sourceX, sourceY, sourceWidth, sourceHeight, 0, 0, canvas.width, canvas.height);
-    var dataUrl = canvas.toDataURL('image/jpeg', 0.92);
+    var dataUrl = canvas.toDataURL('image/png');
     showCaptured(dataUrl);
     return dataUrl;
   }
@@ -941,7 +945,11 @@
       }
       var result = await response.json().catch(function () { return {}; });
       var receipt = Array.isArray(result) ? result[0] : result;
-      if (receipt && receipt.fallback) return receipt;
+      if (receipt && receipt.fallback) {
+        return Object.assign({}, receipt, {
+          reviewMessage: receipt.reviewMessage || receipt.warning || 'Cloud scanning was unavailable. These details came from local OCR; check them against the receipt before saving.'
+        });
+      }
       if (!response.ok) throw new Error(receipt && receipt.error || 'Roboflow scan failed');
       // Keep the structured name intact, including masked Unicode characters.
       // parseRoboflowResult maps receipt.name to the resultName input's value.
@@ -966,6 +974,8 @@
       ocrProgress.textContent = 'Checking receipt with Roboflow...';
       var roboflowResult = await runRoboflow(imageDataUrl);
       var parsed = GcordTransactions.parseRoboflowResult(roboflowResult);
+      var fallbackReviewMessage = roboflowResult && (roboflowResult.reviewMessage || roboflowResult.warning)
+        || 'Cloud scanning was unavailable. These details came from local OCR; check them against the receipt before saving.';
       if (roboflowResult && roboflowResult.fallback) {
         ocrProgress.textContent = 'Roboflow unavailable — reading receipt locally...';
       }
@@ -985,17 +995,17 @@
             parsed.recipient = localParsed.recipient;
             parsed.reviewRequired = true;
             parsed.reviewMessage = localParsed.recipient
-              ? 'Recipient Name was read with local OCR. Check it against the receipt before saving.'
-              : 'Recipient Name could not be read. Enter the name shown on the receipt before saving.';
+              ? fallbackReviewMessage || 'Recipient Name was read with local OCR. Check it against the receipt before saving.'
+              : fallbackReviewMessage || 'Recipient Name could not be read. Enter the name shown on the receipt before saving.';
           } else {
             parsed = localParsed;
             parsed.reviewRequired = true;
-            parsed.reviewMessage = roboflowResult && roboflowResult.reviewMessage || 'Cloud scanning was unavailable. These details came from local OCR; check them against the receipt before saving.';
+            parsed.reviewMessage = fallbackReviewMessage;
           }
         } catch (localError) {
           if (!parsed) throw new Error('The receipt reader is unavailable. Check your connection and try again, or use Manual Entry.');
           parsed.reviewRequired = true;
-          parsed.reviewMessage = 'Recipient Name could not be read. Enter the name shown on the receipt before saving.';
+          parsed.reviewMessage = fallbackReviewMessage || 'Recipient Name could not be read. Enter the name shown on the receipt before saving.';
         }
       }
       ocrProgress.textContent = 'Checking receipt reference...';

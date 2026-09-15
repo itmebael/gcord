@@ -120,9 +120,10 @@ async function scan(output, localReader) {
   assert.strictEqual(fields.resultName.value, '');
   assert.strictEqual(fields.resultDate.value, '', 'Do not fabricate the transaction date');
   assert.strictEqual(fields.resultReviewWarning.hidden, false);
-  const fallback = await scan({ fallback: true }, { recognize: async () => ({ data: { text: 'GCash\nJU** CR**\nAmount PHP 500.00' } }) });
+  const fallback = await scan({ fallback: true, warning: 'Roboflow API key is not configured. Add ROBOFLOW_API_KEY in Vercel and redeploy.' }, { recognize: async () => ({ data: { text: 'GCash\nJU** CR**\nAmount PHP 500.00' } }) });
   assert.strictEqual(fallback.opened[0].recipient, 'JU** CR**');
   assert.strictEqual(fallback.opened[0].reviewRequired, true);
+  assert.match(fallback.opened[0].reviewMessage || '', /ROBOFLOW_API_KEY|Roboflow/);
   const failed = await scan({ fallback: true }, undefined);
   assert.strictEqual(failed.opened.length, 0);
   assert.ok(failed.messages[0].includes('receipt reader is unavailable'));
