@@ -59,8 +59,11 @@ module.exports = async function handler(request, response) {
     });
     const result = await roboflowResponse.json();
     if (!roboflowResponse.ok) {
+      const message = roboflowResponse.status === 401
+        ? 'Receipt extraction failed (HTTP 401): Roboflow rejected the API key. Check ROBOFLOW_API_KEY in Vercel Project Settings > Environment Variables for the deployed environment, then redeploy.'
+        : 'Receipt extraction failed (HTTP ' + roboflowResponse.status + ').';
       response.status(roboflowResponse.status).json({
-        error: 'Receipt extraction failed (HTTP ' + roboflowResponse.status + ').'
+        error: message
       });
       return;
     }
