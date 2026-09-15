@@ -30,7 +30,7 @@ module.exports = async function handler(request, response) {
   if (!process.env.ROBOFLOW_API_KEY) {
     response.status(200).json({
       fallback: true,
-      warning: 'Roboflow API key is not configured; continuing with local OCR fallback.'
+      warning: 'Roboflow API key is not configured on Vercel. Add ROBOFLOW_API_KEY under Project Settings > Environment Variables, then redeploy.'
     });
     return;
   }
