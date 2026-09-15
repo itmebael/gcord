@@ -7,7 +7,7 @@
 .staff-ui #cameraPane .capture-ready .scanner-help { background:#065f46e8;color:white;border-radius:8px;padding:8px; }
 .staff-ui #cameraPane .receipt-title { text-align:center; margin:0 0 18px; }
 .staff-ui #cameraPane .scanner-frame { width:min(100%,300px); height:auto; aspect-ratio:9 / 16; margin:0 auto; border:6px solid #263b65; border-radius:32px; background:#0b1220; box-shadow:0 16px 36px -12px #152b5360,0 0 0 1px #91a8dc; }
-.staff-ui #cameraPane .scanner-frame video { object-fit:cover; object-position:center; }
+.staff-ui #cameraPane .scanner-frame video { object-fit:contain; object-position:center; }
 .staff-ui #cameraPane .scanner-help { top:54px;left:16px;right:16px;font-size:11px;line-height:1.5;text-align:center; }
 .staff-ui #cameraPane .camera-status { top:14px;right:12px;font-size:10px; }
 .staff-ui #cameraPane .scan-area { inset:100px 18px 32px; }

@@ -893,24 +893,13 @@
       showToast('Camera is not ready yet.', 'err');
       return null;
     }
-    // Match the centered object-fit: cover live preview, at source resolution.
-    var frameRatio = video.clientWidth / video.clientHeight;
-    var sourceWidth = video.videoWidth;
-    var sourceHeight = video.videoHeight;
-    if (!Number.isFinite(frameRatio) || frameRatio <= 0) return null;
-    if (sourceWidth / sourceHeight > frameRatio) {
-      sourceWidth = sourceHeight * frameRatio;
-    } else {
-      sourceHeight = sourceWidth / frameRatio;
-    }
-    var sourceX = (video.videoWidth - sourceWidth) / 2;
-    var sourceY = (video.videoHeight - sourceHeight) / 2;
-    canvas.width = Math.max(1, Math.round(sourceWidth));
-    canvas.height = Math.max(1, Math.round(sourceHeight));
+    // Preserve the full camera frame so receipt fields at the sides are not cropped.
+    canvas.width = Math.max(1, Math.round(video.videoWidth));
+    canvas.height = Math.max(1, Math.round(video.videoHeight));
     var ctx = canvas.getContext('2d');
     ctx.imageSmoothingEnabled = true;
     ctx.imageSmoothingQuality = 'high';
-    ctx.drawImage(video, sourceX, sourceY, sourceWidth, sourceHeight, 0, 0, canvas.width, canvas.height);
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
     var dataUrl = canvas.toDataURL('image/png');
     showCaptured(dataUrl);
     return dataUrl;
@@ -979,7 +968,7 @@
       if (roboflowResult && roboflowResult.fallback) {
         ocrProgress.textContent = 'Roboflow unavailable — reading receipt locally...';
       }
-      if (!parsed || !parsed.recipient) {
+      if (!parsed || !parsed.recipient || !parsed.number) {
         ocrProgress.textContent = 'Reading receipt text... 0%';
         try {
           if (typeof Tesseract === 'undefined') throw new Error('Local text reader did not load');
@@ -992,11 +981,13 @@
           });
           var localParsed = GcordTransactions.parseGCashText(result.data && result.data.text ? result.data.text : '');
           if (parsed) {
-            parsed.recipient = localParsed.recipient;
+            if (!parsed.recipient) parsed.recipient = localParsed.recipient;
+            if (!parsed.number) parsed.number = localParsed.number;
+            if (!parsed.maskedNumber) parsed.maskedNumber = localParsed.maskedNumber;
             parsed.reviewRequired = true;
-            parsed.reviewMessage = localParsed.recipient
-              ? fallbackReviewMessage || 'Recipient Name was read with local OCR. Check it against the receipt before saving.'
-              : fallbackReviewMessage || 'Recipient Name could not be read. Enter the name shown on the receipt before saving.';
+            parsed.reviewMessage = (localParsed.recipient || localParsed.number)
+              ? fallbackReviewMessage || 'Some receipt fields were read with local OCR. Check them against the receipt before saving.'
+              : fallbackReviewMessage || 'Recipient Name and phone number could not be read. Enter them from the receipt before saving.';
           } else {
             parsed = localParsed;
             parsed.reviewRequired = true;

@@ -60,6 +60,11 @@ async function scan(output, localReader) {
   assert.strictEqual(recovered.opened[0].ref, receipt.reference_number);
   assert.strictEqual(recovered.opened[0].reviewRequired, true);
   assert.match(recovered.opened[0].reviewMessage, /local OCR/);
+  const recoveredNumber = await scan({ ...receipt, number: '' }, {
+    recognize: async () => ({ data: { text: 'GCash\nRecipient Name: JU** CR**\nAmount PHP 999.00\n09 795 076 921' } })
+  });
+  assert.strictEqual(recoveredNumber.opened[0].number, '09795076921', 'Recover a missing phone number with local OCR');
+  assert.strictEqual(recoveredNumber.opened[0].reviewRequired, true);
   const unreadable = await scan({ ...receipt, name: '' }, {
     recognize: async () => ({ data: { text: 'GCash\nAmount PHP 150.00' } })
   });
