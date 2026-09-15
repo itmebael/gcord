@@ -189,7 +189,7 @@
         '<a class="notif-item" href="' + href + '">' +
           '<div class="n-icon ' + cls + '">' + iconSvg(cls) + '</div>' +
           '<div class="n-copy"><strong>' + escapeHtml(n.title) + '</strong><p>' + escapeHtml(n.body) + '</p></div>' +
-          '<time>' + escapeHtml(n.timeLabel) + '</time>' +
+          '<time>' + escapeHtml(n.dateTimeLabel || n.timeLabel) + '</time>' +
         '</a>';
     }).join('');
   }

@@ -38,7 +38,7 @@
           var icon=document.createElement('span');icon.className='account-notice-icon';icon.setAttribute('aria-hidden','true');icon.textContent=row.severity==='warning'||row.severity==='error'?'!':'✓';
           var content=document.createElement('div'),title=document.createElement('strong'),body=document.createElement('p'),time=document.createElement('span');
           title.textContent=row.title;body.textContent=row.body || '';time.className='account-notice-time';
-          var date=new Date(row.createdAt);time.textContent=(row.isRead?'':'Unread · ')+(!isNaN(date.getTime())?date.toLocaleString('en-PH',{timeZone:'Asia/Manila',month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):'');
+          time.textContent=(row.isRead?'':'Unread · ')+(row.dateTimeLabel || row.timeLabel || '');
           content.append(title,body,time);item.append(icon,content);list.appendChild(item);
         });
       } catch(e) { if(token===request)list.textContent='Could not load notifications. Open all notifications to try again.'; }

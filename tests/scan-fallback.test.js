@@ -32,8 +32,8 @@ const handler = require('../api/roboflow-workflow');
     let upstreamStatus = 200;
     global.fetch = async function (url, options) {
       assert.strictEqual(url, process.env.ROBOFLOW_WORKFLOW_URL || 'https://serverless.roboflow.com/bael/workflows/custom-workflow-5');
-      assert.strictEqual(options.headers.Authorization, 'Bearer test-key');
-      assert.deepStrictEqual(JSON.parse(options.body), { inputs: { image: expectedImage } });
+      assert.strictEqual(options.headers.Authorization, undefined);
+      assert.deepStrictEqual(JSON.parse(options.body), { api_key: 'test-key', inputs: { image: expectedImage } });
       return { status: upstreamStatus, ok: upstreamStatus === 200, json: async () => upstream };
     };
     await handler({ method: 'POST', body: { image: 'data:image/jpeg;base64,abcd' } }, response);
@@ -43,11 +43,17 @@ const handler = require('../api/roboflow-workflow');
     assert.strictEqual(statusCode, 200);
     await handler({ method: 'POST', body: { image: expectedImage.value } }, response);
     assert.strictEqual(statusCode, 200);
-    for (const format of [[receipt], receipt, { outputs: [receipt] }]) {
+    for (const format of [[receipt], receipt, { outputs: [receipt] },
+      { outputs: [{ receipt: receipt }] },
+      { outputs: [{ model: { output: JSON.stringify(receipt) } }] },
+      { outputs: [{ result: '```json\n' + JSON.stringify(receipt) + '\n```' }] }]) {
       upstream = format;
       await handler({ method: 'POST', body: { imageUrl: expectedImage.value } }, response);
       assert.deepStrictEqual(body, receipt);
     }
+    upstream = { outputs: [{ raw_extraction: JSON.stringify(receipt) }] };
+    await handler({ method: 'POST', body: { imageUrl: expectedImage.value } }, response);
+    assert.strictEqual(statusCode, 502, 'Do not mistake raw OCR text for structured workflow output');
     upstream = [{ name: null, parse_error: null }];
     await handler({ method: 'POST', body: { imageUrl: expectedImage.value } }, response);
     assert.deepStrictEqual(body, { name: '', number: '', amount: '', reference_number: '', date: '', time: '', raw_extraction: '', parse_error: true });

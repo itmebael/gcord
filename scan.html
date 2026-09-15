@@ -4,6 +4,12 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Gcord Scan and Records</title>
+<script>
+  // Receipt scanning needs the Node API; opening the HTML file bypasses it.
+  if (window.location.protocol === 'file:') {
+    window.location.replace('http://localhost:8001/scan.html');
+  }
+</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
@@ -510,7 +516,7 @@
       <div class="field">
         <label for="resultClaimer">Claimed by (customer name)</label>
         <input id="resultClaimer" name="claimant" type="text" maxlength="160" placeholder="Enter the name of the person receiving the cash" required aria-describedby="resultClaimerHint" />
-        <small id="resultClaimerHint" class="earnings-note">Enter the customer's name, not the staff member's name.</small>
+        <small id="resultClaimerHint" class="earnings-note">Enter the name of the customer receiving the cash. This is entered manually; the receipt provides the GCash recipient name below.</small>
       </div>
       <div class="field">
         <label for="resultName">Recipient Name</label>
@@ -554,11 +560,12 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="supabase-config.js"></script>
 <script src="supabase-api.js"></script>
-<script src="transactions.js?v=20260907-amount-6"></script>
+<script src="transactions.js?v=20260915-recipient-7"></script>
 <script src="sidebar.js"></script>
 <script src="scanner-auto-capture.js"></script>
 <script>
 (function () {
+  if (window.location.protocol === 'file:') return;
   if (!GcordAPI.requireAuth()) return;
 
   var video = document.getElementById('cameraVideo');
@@ -933,9 +940,12 @@
         return { fallback: true, reviewMessage: 'This local server cannot run cloud scanning. Open http://localhost:8001/scan.html with the app server running, then scan again.' };
       }
       var result = await response.json().catch(function () { return {}; });
-      if (result && result.fallback) return result;
-      if (!response.ok) throw new Error(result.error || 'Roboflow scan failed');
-      return result;
+      var receipt = Array.isArray(result) ? result[0] : result;
+      if (receipt && receipt.fallback) return receipt;
+      if (!response.ok) throw new Error(receipt && receipt.error || 'Roboflow scan failed');
+      // Keep the structured name intact, including masked Unicode characters.
+      // parseRoboflowResult maps receipt.name to the resultName input's value.
+      return receipt;
     } catch (error) {
       return { fallback: true, warning: String(error && error.message ? error.message : error) };
     }
@@ -959,7 +969,7 @@
       if (roboflowResult && roboflowResult.fallback) {
         ocrProgress.textContent = 'Roboflow unavailable — reading receipt locally...';
       }
-      if (!parsed) {
+      if (!parsed || !parsed.recipient) {
         ocrProgress.textContent = 'Reading receipt text... 0%';
         try {
           if (typeof Tesseract === 'undefined') throw new Error('Local text reader did not load');
@@ -970,11 +980,22 @@
               }
             }
           });
-          parsed = GcordTransactions.parseGCashText(result.data && result.data.text ? result.data.text : '');
-          parsed.reviewRequired = true;
-          parsed.reviewMessage = roboflowResult && roboflowResult.reviewMessage || 'Cloud scanning was unavailable. These details came from local OCR; check them against the receipt before saving.';
+          var localParsed = GcordTransactions.parseGCashText(result.data && result.data.text ? result.data.text : '');
+          if (parsed) {
+            parsed.recipient = localParsed.recipient;
+            parsed.reviewRequired = true;
+            parsed.reviewMessage = localParsed.recipient
+              ? 'Recipient Name was read with local OCR. Check it against the receipt before saving.'
+              : 'Recipient Name could not be read. Enter the name shown on the receipt before saving.';
+          } else {
+            parsed = localParsed;
+            parsed.reviewRequired = true;
+            parsed.reviewMessage = roboflowResult && roboflowResult.reviewMessage || 'Cloud scanning was unavailable. These details came from local OCR; check them against the receipt before saving.';
+          }
         } catch (localError) {
-          throw new Error('The receipt reader is unavailable. Check your connection and try again, or use Manual Entry.');
+          if (!parsed) throw new Error('The receipt reader is unavailable. Check your connection and try again, or use Manual Entry.');
+          parsed.reviewRequired = true;
+          parsed.reviewMessage = 'Recipient Name could not be read. Enter the name shown on the receipt before saving.';
         }
       }
       ocrProgress.textContent = 'Checking receipt reference...';

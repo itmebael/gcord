@@ -3,7 +3,7 @@ const fs = require('fs');
 const vm = require('vm');
 const path = require('path');
 const source = fs.readFileSync(path.join(__dirname, '../scan.html'), 'utf8');
-const start = source.indexOf('  async function runOcr(imageSource) {');
+const start = source.indexOf('  async function runRoboflow(imageDataUrl) {');
 const end = source.indexOf("  document.querySelectorAll('.mode-tab')", start);
 
 async function scan(output, localReader) {
@@ -16,7 +16,7 @@ async function scan(output, localReader) {
     document: { getElementById() { return button; } },
     showToast(message) { messages.push(message); },
     imageToDataUrl: async image => image,
-    runRoboflow: async () => output,
+    fetch: async () => ({ ok: true, status: 200, json: async () => output }),
     openResult: async result => opened.push(result),
     console: { error() {} }, Tesseract: localReader
   };
@@ -50,7 +50,21 @@ async function scan(output, localReader) {
   assert.strictEqual(partial.opened[0].recipient, '');
   assert.strictEqual(partial.opened[0].date, '');
   assert.strictEqual(partial.opened[0].reviewRequired, true);
-  assert.strictEqual(localCalls, 0, 'Never substitute local OCR for structured workflow fields');
+  assert.strictEqual(localCalls, 1, 'Retry local OCR only when the workflow name is missing');
+  const recovered = await scan({ ...receipt, name: '' }, {
+    recognize: async () => ({ data: { text: 'GCash\nRecipient Name: JU** CR**\nAmount PHP 999.00' } })
+  });
+  assert.strictEqual(recovered.opened[0].recipient, 'JU** CR**');
+  assert.strictEqual(recovered.opened[0].amount, receipt.amount, 'Name recovery preserves cloud amount');
+  assert.strictEqual(recovered.opened[0].number, receipt.number);
+  assert.strictEqual(recovered.opened[0].ref, receipt.reference_number);
+  assert.strictEqual(recovered.opened[0].reviewRequired, true);
+  assert.match(recovered.opened[0].reviewMessage, /local OCR/);
+  const unreadable = await scan({ ...receipt, name: '' }, {
+    recognize: async () => ({ data: { text: 'GCash\nAmount PHP 150.00' } })
+  });
+  assert.strictEqual(unreadable.opened[0].recipient, '', 'Do not invent an unreadable name');
+  assert.strictEqual(unreadable.opened[0].amount, receipt.amount);
   const fields = {};
   const formContext = {
     document: { getElementById(id) { return fields[id] || (fields[id] = {}); } },
@@ -65,6 +79,37 @@ async function scan(output, localReader) {
   assert.strictEqual(fields.resultName.value, receipt.name, 'Preserve Unicode through the review form');
   assert.strictEqual(fields.resultNumber.value, receipt.number);
   assert.strictEqual(fields.resultReviewWarning.hidden, true);
+  // Regression: run the reported Roboflow response through the real API adapter,
+  // scanner parser, and form assignment, with only the upstream HTTP call mocked.
+  const reported = [{
+    name: 'PE\u2022\u2022\u2022E Y.', number: '00132229112', amount: '50,000.00',
+    reference_number: '0013222911269', date: '2023-11-13', time: '2:19 PM',
+    raw_extraction: 'PE...E Y.\n09...6020\nSent via GCash\nAmount 50,000.00\nTotal Amount Sent \u20b150,000.00\nRef No. 0013222911269\nNov 13, 2023 2:19 PM\nproof release today',
+    parse_error: false
+  }];
+  const previousKey = process.env.ROBOFLOW_API_KEY;
+  const previousFetch = global.fetch;
+  try {
+    process.env.ROBOFLOW_API_KEY = 'test-key';
+    global.fetch = async () => ({ ok: true, json: async () => reported });
+    let responseBody;
+    await require('../api/roboflow-workflow')(
+      { method: 'POST', body: { image: 'data:image/png;base64,test' } },
+      { status(code) { assert.equal(code, 200); return this; }, json(body) { responseBody = body; } }
+    );
+    const cloudOnly = await scan(responseBody, {
+      recognize: async () => { throw new Error('Cloud name should not need local OCR'); }
+    });
+    formContext.fillResultForm(cloudOnly.opened[0]);
+    assert.strictEqual(fields.resultName.value, reported[0].name);
+    assert.strictEqual(fields.resultAmount.value, '50000.00');
+    assert.strictEqual(fields.resultRef.value, reported[0].reference_number);
+    assert.strictEqual(fields.resultReviewWarning.hidden, true);
+  } finally {
+    global.fetch = previousFetch;
+    if (previousKey === undefined) delete process.env.ROBOFLOW_API_KEY;
+    else process.env.ROBOFLOW_API_KEY = previousKey;
+  }
   for (const amount of ['1,500.00', 'PHP 1,500.00', '\u20b11,500.00', 1500]) {
     const scanned = await scan([{ ...receipt, amount }], reader);
     formContext.fillResultForm(scanned.opened[0]);

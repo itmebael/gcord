@@ -1036,6 +1036,8 @@
         isRead: !!n.is_read,
         createdAt: n.created_at,
         timeLabel: timeLabel,
+        dateTimeLabel: created && !isNaN(created.getTime())
+          ? formatRecordedDate(n.created_at) + ' · ' + timeLabel + ' PHT' : '—',
         dayKey: dayKey,
         href: n.category === 'alerts' ? 'system-logs.html' : 'system-logs.html'
       };
@@ -1064,7 +1066,12 @@
             isRead: false,
             createdAt: log.created_at,
             timeLabel: timeLabel,
-            dayKey: 'today',
+            dateTimeLabel: created && !isNaN(created.getTime())
+              ? formatRecordedDate(log.created_at) + ' · ' + timeLabel + ' PHT' : '—',
+            dayKey: created && !isNaN(created.getTime())
+              ? (manilaDateKey(created) === todayKey ? 'today'
+                : (manilaDateKey(created) === yesterdayKey ? 'yesterday' : 'older'))
+              : 'older',
             href: 'system-logs.html'
           };
         });

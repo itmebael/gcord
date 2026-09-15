@@ -1,5 +1,27 @@
 const WORKFLOW_URL = process.env.ROBOFLOW_WORKFLOW_URL || 'https://serverless.roboflow.com/bael/workflows/custom-workflow-5';
 
+// Workflow outputs can contain named blocks or JSON text from a model step.
+// Read structured fields only; raw_extraction is OCR text, not a receipt object.
+function receiptOutput(value, depth = 0) {
+  if (depth > 8 || value == null) return null;
+  if (typeof value === 'string') {
+    const json = value.trim().replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '');
+    try { return receiptOutput(JSON.parse(json), depth + 1); }
+    catch { return null; }
+  }
+  if (typeof value !== 'object') return null;
+  const fields = ['name', 'number', 'amount', 'reference_number', 'date', 'time', 'parse_error'];
+  const isReceipt = fields.some(key => Object.prototype.hasOwnProperty.call(value, key));
+  if (isReceipt && typeof value.name === 'string' && value.name.trim() &&
+      fields.slice(1).some(key => Object.prototype.hasOwnProperty.call(value, key))) return value;
+  for (const key of Object.keys(value)) {
+    if (key === 'raw_extraction' || fields.includes(key)) continue;
+    const found = receiptOutput(value[key], depth + 1);
+    if (found) return found;
+  }
+  return isReceipt ? value : null;
+}
+
 module.exports = async function handler(request, response) {
   if (request.method !== 'POST') {
     response.status(405).json({ error: 'Method not allowed' });
@@ -28,10 +50,10 @@ module.exports = async function handler(request, response) {
     const roboflowResponse = await fetch(WORKFLOW_URL, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
-        Authorization: 'Bearer ' + process.env.ROBOFLOW_API_KEY
+        'Content-Type': 'application/json'
       },
       body: JSON.stringify({
+        api_key: process.env.ROBOFLOW_API_KEY,
         inputs: { image: { type: isUrl ? 'url' : 'base64', value: value } }
       })
     });
@@ -42,10 +64,8 @@ module.exports = async function handler(request, response) {
       });
       return;
     }
-    // Serverless responses can wrap the same receipt array in `outputs`.
-    const results = result && result.outputs !== undefined ? result.outputs : result;
-    const output = Array.isArray(results) ? results[0] : results;
-    if (!output || typeof output !== 'object') {
+    const output = receiptOutput(result);
+    if (!output) {
       response.status(502).json({ error: 'The Workflow returned no data.' });
       return;
     }
