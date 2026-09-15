@@ -893,14 +893,15 @@
       showToast('Camera is not ready yet.', 'err');
       return null;
     }
-    // Preserve the full camera frame so receipt fields at the sides are not cropped.
-    canvas.width = Math.max(1, Math.round(video.videoWidth));
-    canvas.height = Math.max(1, Math.round(video.videoHeight));
+    // Preserve the full camera frame, but keep the request small enough for Vercel.
+    var captureScale = Math.min(1, 1600 / Math.max(video.videoWidth, video.videoHeight));
+    canvas.width = Math.max(1, Math.round(video.videoWidth * captureScale));
+    canvas.height = Math.max(1, Math.round(video.videoHeight * captureScale));
     var ctx = canvas.getContext('2d');
     ctx.imageSmoothingEnabled = true;
     ctx.imageSmoothingQuality = 'high';
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-    var dataUrl = canvas.toDataURL('image/png');
+    var dataUrl = canvas.toDataURL('image/jpeg', 0.9);
     showCaptured(dataUrl);
     return dataUrl;
   }

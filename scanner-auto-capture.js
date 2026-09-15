@@ -20,12 +20,12 @@ window.createScannerAutoCapture = function(video, frame, hint, toggle, capture, 
     try{
       // OCR the full sensor frame so portrait preview cropping cannot hide fields.
       w=video.videoWidth;h=video.videoHeight;
-      var shot=document.createElement('canvas'),scale=Math.min(1,1800/Math.max(w,h));
+      var shot=document.createElement('canvas'),scale=Math.min(1,1600/Math.max(w,h));
       shot.width=Math.max(1,Math.round(w*scale));shot.height=Math.max(1,Math.round(h*scale));
       var shotContext=shot.getContext('2d');
       shotContext.imageSmoothingEnabled=true;shotContext.imageSmoothingQuality='high';
       shotContext.drawImage(video,0,0,w,h,0,0,shot.width,shot.height);
-      var image=shot.toDataURL('image/png'),result=await Tesseract.recognize(image,'eng');
+      var image=shot.toDataURL('image/jpeg',.9),result=await Tesseract.recognize(image,'eng');
       if(token!==generation||!toggle.checked||!available()||document.hidden||fired)return;
       if(window.isAutoCaptureReceipt(result.data)){
         approved={image:image,at:performance.now()};frame.classList.add('capture-ready');hint.textContent='Receipt detected — hold still to capture.';
