@@ -14,7 +14,7 @@ const timestamps = ['2026-09-15T16:01:00', '2026-09-15T16:01:00Z',
 let feed = 'notifications';
 const context = {
   Date: Clock, Intl,
-  localStorage: { getItem: () => JSON.stringify({ id: 1, role: 'admin' }) },
+  localStorage: { getItem: key => key === 'gcord_session' ? JSON.stringify({ id: 1, role: 'admin' }) : null },
   supabase: {}, GCORD_SUPABASE: {},
   __gcordSb: { from(table) {
     const query = {

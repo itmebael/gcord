@@ -405,6 +405,9 @@
     cursor: pointer;
   }
   .filter {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
     height: 27px;
     background: white;
     border: 1.4px solid #4a4f5c;
@@ -412,6 +415,15 @@
     margin-bottom: 16px;
     padding: 3px 8px;
   }
+  .clear-notifications {
+    border: 0;
+    background: transparent;
+    color: #0052CC;
+    font-size: 11px;
+    font-weight: 800;
+    cursor: pointer;
+  }
+  .clear-notifications:hover { text-decoration: underline; }
   .pill {
     width: 48px; height: 19px; border-radius: 4px;
     background: #0052CC; color: white; font-size: 12px;
@@ -728,7 +740,7 @@
             <button class="close" aria-label="Close notifications"><svg width="18" height="18" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path d="M5 5l14 14M19 5 5 19"/></svg></button>
             <p>Stay updated with your transaction activities.</p>
           </div>
-          <div class="filter"><div class="pill">All</div></div>
+          <div class="filter"><div class="pill">All</div><button type="button" class="clear-notifications" id="dashClearNotifs">Clear all</button></div>
           <div class="day">Today</div>
           <div class="notif-list" id="dashNotifList">
             <article class="notif-card info">
@@ -940,13 +952,27 @@
             ? '<svg class="icon" width="32" height="32" viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="#0fb6b7"/><path d="M12 10v7M12 7h.01" stroke="white" stroke-width="2.6"/></svg>'
             : '<svg class="icon" width="32" height="32" viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="#02a515"/><path d="M6 12.5l3.7 3.7L18.5 7.5" fill="none" stroke="white" stroke-width="2.7"/></svg>';
         const body = n.body ? '<p>' + n.body + '</p>' : '';
-        return '<article class="notif-card ' + cls + '">' + icon +
+        return '<article class="notif-card ' + cls + '" data-notification-id="' + n.id + '">' + icon +
           '<div><strong>' + n.title + '</strong>' + body + '<time>' + n.timeLabel + '</time></div></article>';
       }).join('');
     } catch (err) {
       listEl.innerHTML = '<article class="notif-card warn"><div><strong>Could not load notifications</strong><p>' + (err.message || err) + '</p></div></article>';
     }
   }
+
+  document.getElementById('dashClearNotifs')?.addEventListener('click', async () => {
+    if (!window.GcordAPI?.clearNotifications) return;
+    await GcordAPI.clearNotifications();
+    renderDashboardNotifications();
+  });
+
+  document.getElementById('dashNotifList')?.addEventListener('click', async (event) => {
+    const card = event.target.closest('.notif-card[data-notification-id]');
+    if (!card || !window.GcordAPI?.removeNotification) return;
+    await GcordAPI.removeNotification(card.dataset.notificationId);
+    card.remove();
+    if (!document.querySelector('#dashNotifList .notif-card')) renderDashboardNotifications();
+  });
 
   // The topbar bell navigates directly to notification.html.
   notificationLink?.addEventListener('click', showNotifications);

@@ -311,8 +311,9 @@
       actor_name: user.full_name || (user.first_name + ' ' + user.last_name).trim(),
       actor_role: user.role,
       action_code: 'login',
-      message: (user.role === 'staff' ? 'Staff ' : 'Admin ') +
-        (user.full_name || user.first_name) + ' logged in',
+      message: user.role === 'staff'
+        ? 'Staff ' + (user.full_name || user.first_name) + ' logged in'
+        : 'Admin logged in',
       status: 'success',
       icon: 'login'
     });
@@ -860,7 +861,12 @@
     }
     var res = await q;
     if (res.error) throw res.error;
-    return res.data || [];
+    return (res.data || []).map(function (row) {
+      if (row.action_code === 'login' && (row.actor_role === 'admin' || row.actor_role === 'super_admin')) {
+        return Object.assign({}, row, { message: 'Admin logged in' });
+      }
+      return row;
+    });
   }
 
   async function getTopUsers(limit) {
@@ -913,7 +919,7 @@
             refLabel: 'REF' + normalizeRef(t.ref),
             amount: t.amount,
             amountLabel: t.amountLabel,
-            detectedAt: t.date + (t.time && t.time !== '—' ? ' • ' + t.time : ''),
+            detectedAt: fmtDetected(t.createdAt),
             statusLabel: 'Blocked',
             origRef: 'REF' + normalizeRef(t.ref),
             origAmount: t.amountLabel,
@@ -948,16 +954,13 @@
       }
     }
 
+    function fmtDetected(timestamp) {
+      if (!timestamp || isNaN(parseDatabaseTimestamp(timestamp).getTime())) return '—';
+      return formatRecordedDate(timestamp) + ' • ' + formatRecordedTime(timestamp) + ' PHT';
+    }
+
     function fmtWhen(isoOrDate, timeStr) {
-      if (isoOrDate && String(isoOrDate).indexOf('T') >= 0) {
-        var d = new Date(isoOrDate);
-        if (!isNaN(d.getTime())) {
-          return d.toLocaleString('en-US', {
-            month: 'long', day: 'numeric', year: 'numeric',
-            hour: 'numeric', minute: '2-digit'
-          }).replace(',', ' •');
-        }
-      }
+      if (isoOrDate && /[T ]\d{2}:/.test(String(isoOrDate))) return fmtDetected(isoOrDate);
       var datePart = formatDate(isoOrDate);
       var timePart = formatTime(timeStr);
       if (datePart === '—' && timePart === '—') return '—';
@@ -970,7 +973,7 @@
       var dup = txnMap[r.duplicate_transaction_id];
       var refDigits = normalizeRef(r.ref_no);
       var amountLabel = formatAmount(r.amount);
-      var when = fmtWhen(r.detected_at);
+      var when = fmtDetected(r.detected_at);
       var statusLabel = r.resolved_status === 'blocked' ? 'Blocked'
         : (r.resolved_status === 'reviewed' ? 'Reviewed' : 'Ignored');
 
@@ -994,6 +997,15 @@
         matchDate: dup ? fmtWhen(dup.txn_date, dup.txn_time) : 'Not available'
       };
     });
+  }
+
+  function logDismissals(user) {
+    var raw = localStorage.getItem('gcord_log_dismissals_' + user.id);
+    return raw ? JSON.parse(raw) : { clearedAt: null, ids: [] };
+  }
+
+  function saveLogDismissals(user, state) {
+    localStorage.setItem('gcord_log_dismissals_' + user.id, JSON.stringify(state));
   }
 
   async function listNotifications(options) {
@@ -1047,7 +1059,13 @@
     if (isAdmin(user) && options.adminFeed && !mapped.length) {
       try {
         var logs = await listSystemLogs();
-        return (logs || []).slice(0, options.limit || 12).map(function (log, i) {
+        var dismissed = logDismissals(user);
+        return (logs || []).filter(function (log) {
+          if (dismissed.ids.indexOf('log-' + log.id) >= 0) return false;
+          if (!dismissed.clearedAt) return true;
+          var created = parseDatabaseTimestamp(log.created_at);
+          return !isNaN(created.getTime()) && created.getTime() > dismissed.clearedAt;
+        }).slice(0, options.limit || 12).map(function (log, i) {
           var created = log.created_at ? parseDatabaseTimestamp(log.created_at) : null;
           var timeLabel = created && !isNaN(created.getTime())
             ? formatRecordedTime(log.created_at)
@@ -1081,6 +1099,38 @@
     }
 
     return mapped;
+  }
+
+  async function removeNotification(id) {
+    var sb = requireClient();
+    var user = getSession();
+    if (!user || !id) return;
+
+    if (String(id).indexOf('log-') === 0) {
+      var dismissed = logDismissals(user);
+      if (dismissed.ids.indexOf(String(id)) < 0) dismissed.ids.push(String(id));
+      saveLogDismissals(user, dismissed);
+      return;
+    }
+
+    var res = await sb.from('notifications')
+      .delete()
+      .eq('id', id)
+      .eq('user_id', user.id);
+    if (res.error) throw res.error;
+  }
+
+  async function clearNotifications() {
+    var sb = requireClient();
+    var user = getSession();
+    if (!user) return;
+    var clearedAt = Date.now();
+
+    var res = await sb.from('notifications')
+      .delete()
+      .eq('user_id', user.id);
+    if (res.error) throw res.error;
+    saveLogDismissals(user, { clearedAt: clearedAt, ids: [] });
   }
 
   async function getDashboardSummary() {
@@ -1133,12 +1183,16 @@
     listSystemLogs: listSystemLogs,
     listDuplicateEvents: listDuplicateEvents,
     listNotifications: listNotifications,
+    removeNotification: removeNotification,
+    clearNotifications: clearNotifications,
     getTopUsers: getTopUsers,
     getDashboardSummary: getDashboardSummary,
     getAdminReport: getAdminReport,
     formatAmount: formatAmount,
     formatDate: formatDate,
     formatTime: formatTime,
+    parseDatabaseTimestamp: parseDatabaseTimestamp,
+    manilaDateKey: manilaDateKey,
     formatRefDisplay: formatRefDisplay,
     normalizeRef: normalizeRef,
     normalizeNumber: normalizeNumber,

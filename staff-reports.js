@@ -6,10 +6,16 @@
   var filter = document.getElementById('reportPeriod'), form = document.getElementById('reportFilters');
   var from = document.getElementById('reportFrom'), to = document.getElementById('reportTo');
   var notice = document.getElementById('reportFilterStatus'), dialog = document.getElementById('staffReportDetails');
+  function recordedAt(row) {
+    var date = GcordAPI.parseDatabaseTimestamp(row.created_at);
+    return isNaN(date.getTime()) ? 'Unavailable' : date.toLocaleString('en-PH', {
+      timeZone: 'Asia/Manila', year: 'numeric', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit'
+    }) + ' PHT';
+  }
   function empty(message) { body.replaceChildren(); var tr=document.createElement('tr'),td=document.createElement('td'); td.colSpan=4;td.textContent=message;tr.appendChild(td);body.appendChild(tr); }
   function details(row) {
     var fields = document.getElementById('staffReportDetailFields'); fields.replaceChildren();
-    [['Reference number',row.ref_no],['Recipient',row.recipient_name],['GCash number',row.recipient_number],['Amount',money.format(row.amount)],['Receipt date',row.txn_date],['Receipt time',row.txn_time],['Status',row.status === 'duplicate' ? 'Duplicate' : 'Verified'],['Source',row.source]].forEach(function(item){
+    [['Reference number',row.ref_no],['Recipient',row.recipient_name],['GCash number',row.recipient_number],['Amount',money.format(row.amount)],['Recorded at',recordedAt(row)],['Receipt date',row.txn_date],['Receipt time',row.txn_time],['Status',row.status === 'duplicate' ? 'Duplicate' : 'Verified'],['Source',row.source]].forEach(function(item){
       var term=document.createElement('dt'), value=document.createElement('dd'); term.textContent=item[0];value.textContent=item[1] || 'Unavailable';fields.append(term,value);
     });
     dialog.showModal();
@@ -39,9 +45,9 @@
     document.getElementById('reportVerified').textContent=verified.length;
     document.getElementById('reportDuplicates').textContent=rows.filter(function(row){return row.status==='duplicate';}).length;
     document.getElementById('reportAmount').textContent=money.format(verified.reduce(function(sum,row){return sum+Math.round(Number(row.amount)*100);},0)/100);
-    notice.textContent=dates.start+' to '+dates.end+' · Receipt dates';
+    notice.textContent=dates.start+' to '+dates.end+' · Recorded dates (PHT)';
     document.getElementById('reportListCaption').textContent=rows.length+' transactions · '+dates.start+' to '+dates.end;
-    if(!from.value) {from.value=dates.start;to.value=dates.end;}
+    if(filter.value!=='Custom') {from.value=dates.start;to.value=dates.end;}
     download.disabled=false;render();
   });
   window.addEventListener('staff-report-error',function(event){empty(event.detail);notice.textContent=event.detail;});
@@ -62,7 +68,7 @@
   download.addEventListener('click',function(){
     if(!dates||download.disabled)return;
     function cell(value){var text=String(value==null?'':value);if(/^\s*[=+@-]/.test(text))text="'"+text;return '"'+text.replace(/"/g,'""')+'"';}
-    var data=[['Reference','Receipt date','Receipt time','Amount (PHP)','Status']].concat(rows.map(function(row){return [row.ref_no,row.txn_date,row.txn_time,row.amount,row.status];}));
+    var data=[['Reference','Recorded at (PHT)','Receipt date','Receipt time','Amount (PHP)','Status']].concat(rows.map(function(row){return [row.ref_no,recordedAt(row),row.txn_date,row.txn_time,row.amount,row.status];}));
     var filename='transactions-'+dates.start+'-to-'+dates.end+'.csv';
     GcordExportPreview(data, filename, function () {
     var url=URL.createObjectURL(new Blob(['\uFEFF'+data.map(function(row){return row.map(cell).join(',');}).join('\r\n')],{type:'text/csv;charset=utf-8'}));

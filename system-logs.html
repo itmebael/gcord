@@ -514,9 +514,9 @@
   var MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
   var LOGS = [];
   var selectedDate = null;
-  var now = new Date();
-  var viewYear = now.getFullYear();
-  var viewMonth = now.getMonth();
+  var todayParts = GcordAPI.manilaDateKey().split('-');
+  var viewYear = Number(todayParts[0]);
+  var viewMonth = Number(todayParts[1]) - 1;
 
   var calendarBtn = document.getElementById('calendarBtn');
   var calendarBtnLabel = document.getElementById('calendarBtnLabel');
@@ -536,17 +536,18 @@
   }
 
   function mapLog(row) {
-    var created = new Date(row.created_at);
+    var created = GcordAPI.parseDatabaseTimestamp(row.created_at);
     var dateKey = isNaN(created.getTime())
       ? String(row.created_at).slice(0, 10)
-      : toKey(created.getFullYear(), created.getMonth(), created.getDate());
+      : GcordAPI.manilaDateKey(created);
     var iconKey = row.icon || 'info';
     var icon = ICONS[iconKey] || ICONS.info;
     return {
       date: dateKey,
       timeLabel: isNaN(created.getTime()) ? row.created_at : created.toLocaleString('en-US', {
+        timeZone: 'Asia/Manila',
         month: '2-digit', day: '2-digit', year: 'numeric', hour: 'numeric', minute: '2-digit'
-      }),
+      }) + ' PHT',
       message: row.message || row.action_code,
       status: row.status === 'warning' || row.status === 'error' ? 'warning' : 'success',
       icon: icon.cls,
@@ -577,8 +578,7 @@
     calMonthLabel.textContent = MONTHS[viewMonth] + ' ' + viewYear;
     var firstDay = new Date(viewYear, viewMonth, 1).getDay();
     var daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
-    var today = new Date();
-    var todayKey = toKey(today.getFullYear(), today.getMonth(), today.getDate());
+    var todayKey = GcordAPI.manilaDateKey();
     var html = '';
     for (var i = 0; i < firstDay; i++) html += '<button type="button" disabled></button>';
     for (var day = 1; day <= daysInMonth; day++) {

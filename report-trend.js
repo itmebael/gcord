@@ -1,6 +1,6 @@
 (function () {
   'use strict';
-  var version = 0, selected = 'Last 7 Days', customDate;
+  var version = 0, selected = 'Today', customDate;
   var status = document.getElementById('trendStatus'), root = document.getElementById('trendDays');
   var label = new Intl.DateTimeFormat('en-PH', { month: 'short', day: 'numeric', weekday: 'short', timeZone: 'UTC' });
   function range(period, custom) {
@@ -19,7 +19,7 @@
     while (date.toISOString().slice(0,10) <= dates.end) {
       days.push({key:date.toISOString().slice(0,10), verified:0, duplicate:0}); date.setUTCDate(date.getUTCDate()+1);
     }
-    rows.forEach(function (row) { var day = days.find(function (d) { return d.key === row.txn_date; }); if(day && (row.status === 'verified' || row.status === 'duplicate')) day[row.status]++; });
+    rows.forEach(function (row) { var recorded = GcordAPI.parseDatabaseTimestamp(row.created_at); var key = isNaN(recorded.getTime()) ? null : GcordAPI.manilaDateKey(recorded); var day = days.find(function (d) { return d.key === key; }); if(day && (row.status === 'verified' || row.status === 'duplicate')) day[row.status]++; });
     var max = Math.max(1, ...days.map(function(d){return Math.max(d.verified,d.duplicate);}));
     days.forEach(function(day) {
       var row = document.createElement('div'); row.className = 'trend-day';
@@ -44,14 +44,16 @@
     try {
       var user = GcordAPI.requireAuth(); if (!user) return;
       var dates = range(selected,customDate), client = GcordAPI.client();
+      var startUtc = new Date(dates.start + 'T00:00:00+08:00').toISOString();
+      var endUtc = new Date(Date.parse(dates.end + 'T00:00:00+08:00') + 86400000).toISOString();
       document.getElementById('trendPeriod').textContent = dates.start + ' to ' + dates.end;
       var session = await client.rpc('app_current_user_id');
       if (session.error) throw session.error;
       if(String(session.data)!==String(user.id)) throw new Error('Please sign in again to view your transactions.');
       var rows = [], offset = 0;
       while(token === version) {
-        var result = await client.from('transactions').select('id,ref_no,recipient_name,recipient_number,amount,txn_date,txn_time,status,source').eq('created_by_user_id',user.id)
-          .gte('txn_date',dates.start).lte('txn_date',dates.end).order('txn_date',{ascending:false}).order('id',{ascending:false}).range(offset,offset+499);
+        var result = await client.from('transactions').select('id,ref_no,recipient_name,recipient_number,amount,txn_date,txn_time,status,source,created_at').eq('created_by_user_id',user.id)
+          .gte('created_at',startUtc).lt('created_at',endUtc).order('created_at',{ascending:false}).order('id',{ascending:false}).range(offset,offset+499);
         if(result.error) throw result.error;
         if(!result.data || !result.data.length) break;
         rows = rows.concat(result.data); offset += result.data.length;
@@ -61,5 +63,5 @@
   }
   window.GcordReportTrend = {load:load,draw:draw};
   document.getElementById('refreshTrend').addEventListener('click',function(){load(selected,customDate);});
-  load('Last 7 Days');
+  load('Today');
 })();

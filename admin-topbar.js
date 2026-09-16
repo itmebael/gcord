@@ -28,6 +28,9 @@
     'padding:6px 8px 12px;border-bottom:1px solid rgba(10,37,64,.08);margin-bottom:8px;flex:0 0 auto}' +
     '.admin-dropdown .drop-title strong{font-size:14px;font-weight:800;color:#0A2540}' +
     '.admin-dropdown .drop-title span{font-size:12px;font-weight:700;color:#1D5BD6}' +
+    '.admin-dropdown .drop-actions{display:flex;align-items:center;gap:8px}' +
+    '.admin-dropdown .drop-actions button{border:0;background:transparent;color:#1D5BD6;font:inherit;font-size:11px;font-weight:800;cursor:pointer;padding:2px 0}' +
+    '.admin-dropdown .drop-actions button:hover{text-decoration:underline}' +
     '.admin-dropdown .notif-scroll{overflow:auto;max-height:min(52vh,360px);padding-right:2px}' +
     '.admin-dropdown .notif-empty{padding:18px 10px;text-align:center;color:#64748B;font-size:13px;font-weight:600}' +
     '.notif-item{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:10px;align-items:start;' +
@@ -110,7 +113,7 @@
           '</button>' +
 
           '<div class="admin-dropdown" id="adminNotifDropdown" role="menu" aria-label="Notifications">' +
-            '<div class="drop-title"><strong>Notifications</strong><span id="adminNotifCountLabel">0 new</span></div>' +
+            '<div class="drop-title"><strong>Notifications</strong><div class="drop-actions"><span id="adminNotifCountLabel">0 new</span><button type="button" id="adminClearNotifs">Clear all</button></div></div>' +
             '<div class="notif-scroll" id="adminNotifList">' +
               '<div class="notif-empty">Loading notifications…</div>' +
             '</div>' +
@@ -186,7 +189,7 @@
       var cls = iconClass(n);
       var href = n.href || 'system-logs.html';
       return '' +
-        '<a class="notif-item" href="' + href + '">' +
+        '<a class="notif-item" href="' + href + '" data-notification-id="' + escapeHtml(n.id) + '">' +
           '<div class="n-icon ' + cls + '">' + iconSvg(cls) + '</div>' +
           '<div class="n-copy"><strong>' + escapeHtml(n.title) + '</strong><p>' + escapeHtml(n.body) + '</p></div>' +
           '<time>' + escapeHtml(n.dateTimeLabel || n.timeLabel) + '</time>' +
@@ -202,6 +205,18 @@
     var settingsBtn = document.getElementById('adminSettingsBtn');
     if (notifBtn) notifBtn.setAttribute('aria-expanded', 'false');
     if (settingsBtn) settingsBtn.setAttribute('aria-expanded', 'false');
+  }
+
+  function removeRenderedNotification(item) {
+    var id = item.getAttribute('data-notification-id');
+    var remove = window.GcordAPI && GcordAPI.removeNotification;
+    var done = remove && id
+      ? remove(id)
+      : Promise.reject(new Error('Notification removal unavailable'));
+    return done.then(function () {
+      item.remove();
+      if (!document.querySelector('#adminNotifList .notif-item')) renderNotifs([]);
+    });
   }
 
   function toggleDropdown(btn, dropdown) {
@@ -232,6 +247,7 @@
     var notifDrop = document.getElementById('adminNotifDropdown');
     var settingsDrop = document.getElementById('adminSettingsDropdown');
     var logoutBtn = document.getElementById('adminLogoutBtn');
+    var clearNotifs = document.getElementById('adminClearNotifs');
     if (!notifBtn || !settingsBtn) return;
 
     notifBtn.addEventListener('click', function (e) {
@@ -253,6 +269,26 @@
         openLogoutModal();
       });
     }
+
+    if (clearNotifs) {
+      clearNotifs.addEventListener('click', function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        var clear = window.GcordAPI && GcordAPI.clearNotifications;
+        var done = clear ? clear() : Promise.reject(new Error('Notification clearing unavailable'));
+        done.then(function () { renderNotifs([]); }).catch(function () {
+          clearNotifs.textContent = 'Try again';
+        });
+      });
+    }
+
+    document.getElementById('adminNotifList').addEventListener('click', function (e) {
+      var item = e.target.closest('.notif-item');
+      if (!item) return;
+      e.preventDefault();
+      e.stopPropagation();
+      removeRenderedNotification(item).catch(function () {});
+    });
 
     document.addEventListener('click', function (e) {
       if (e.target.closest('.admin-dropdown') || e.target.closest('#adminNotifBtn') || e.target.closest('#adminSettingsBtn')) {

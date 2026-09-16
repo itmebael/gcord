@@ -548,11 +548,11 @@
       <header class="staff-page-banner"><p class="staff-page-kicker">YOUR WORKSPACE</p><h1>Reports &amp; Analytics</h1><p>Explore your transaction activity and download a report.</p></header>
       <section class="report-shell report-bento">
         <form id="reportFilters" class="report-filter-card earnings-filters">
-          <label>Reporting period<select id="reportPeriod"><option>Today</option><option selected>Last 7 Days</option><option>This Month</option><option>Custom</option></select></label>
+          <label>Reporting period<select id="reportPeriod"><option selected>Today</option><option>Last 7 Days</option><option>This Month</option><option>Custom</option></select></label>
           <label id="reportFromLabel" hidden>From<input id="reportFrom" type="date" disabled></label>
           <label id="reportToLabel" hidden>To<input id="reportTo" type="date" disabled></label>
           <button class="earnings-button primary" type="submit">Apply filter</button>
-          <p id="reportFilterStatus" role="status">Receipt dates · Philippine calendar</p>
+          <p id="reportFilterStatus" role="status">Recorded dates · Philippine time (PHT)</p>
         </form>
         <div class="summary-grid" aria-label="Selected period totals">
           <article class="summary-card"><span>Total transactions</span><strong id="reportTotal">—</strong><small>In the selected period</small></article>
@@ -560,7 +560,7 @@
           <article class="summary-card"><span>Duplicates</span><strong id="reportDuplicates">—</strong><small>Flagged transactions</small></article>
           <article class="summary-card"><span>Verified amount</span><strong id="reportAmount">—</strong><small>Duplicates excluded</small></article>
         </div>
-        <section class="chart-card report-trend" aria-label="Daily transaction counts"><div class="trend-heading"><div><h2>Transactions by day</h2><p id="trendPeriod">Last 7 days</p></div><button type="button" id="refreshTrend" class="earnings-button">Refresh chart</button></div><div class="trend-legend"><span><i></i>Verified</span><span><i class="duplicate"></i>Duplicate</span><span>Numbers show transaction counts</span></div><p id="trendStatus" role="status" aria-live="polite">Loading your transactions...</p><div id="trendDays"></div><p class="trend-footnote">Each row is one receipt date (Philippine calendar). Longer bars mean more transactions, not higher amounts.</p></section>
+        <section class="chart-card report-trend" aria-label="Daily transaction counts"><div class="trend-heading"><div><h2>Transactions by day</h2><p id="trendPeriod">Today</p></div><button type="button" id="refreshTrend" class="earnings-button">Refresh chart</button></div><div class="trend-legend"><span><i></i>Verified</span><span><i class="duplicate"></i>Duplicate</span><span>Numbers show transaction counts</span></div><p id="trendStatus" role="status" aria-live="polite">Loading your transactions...</p><div id="trendDays"></div><p class="trend-footnote">Each row is one recorded date in Philippine time (PHT). Longer bars mean more transactions, not higher amounts.</p></section>
         <section class="report-list-card">
           <div class="trend-heading"><div><h2>Transactions</h2><p id="reportListCaption">Selected period</p></div><button class="earnings-button" id="downloadStaffReport" type="button" disabled>Download CSV</button></div>
           <div class="report-table-scroll"><table class="staff-report-table"><thead><tr><th scope="col">Reference</th><th scope="col">Amount</th><th scope="col">Status</th><th scope="col">Details</th></tr></thead><tbody id="staffReportRows"></tbody></table></div>
