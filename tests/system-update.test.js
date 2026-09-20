@@ -32,11 +32,13 @@ for (const file of ['supabase-api.js', 'spreadsheet-export.js', 'verified-auth.j
   assert(august.transactions.some(r => r.id === '1203'), 'Start boundary included');
   assert.equal(august.transactions[0].recipient, 'Owner');
   assert.equal(august.transactions[0].claimant, 'Customer');
-  const xml = context.GcordSpreadsheet([['0012345678901', '09123456789', '=1+1', 'A&B <C>', 100]]);
-  assert(xml.includes('ss:Type="String">0012345678901</Data>'));
-  assert(xml.includes('ss:Type="String">=1+1</Data>'));
+  const workbook = context.GcordSpreadsheet([['0012345678901', '09123456789', '=1+1', 'A&B <C>', 100]]);
+  assert.equal(Buffer.from(workbook).readUInt32LE(0), 0x04034b50);
+  const xml = Buffer.from(workbook).toString('utf8');
+  assert(xml.includes('t="inlineStr"><is><t xml:space="preserve">0012345678901</t>'));
+  assert(xml.includes('t="inlineStr"><is><t xml:space="preserve">=1+1</t>'));
   assert(xml.includes('A&amp;B &lt;C&gt;'));
-  assert(xml.includes('ss:Type="Number">100</Data>'));
+  assert(xml.includes('<v>100</v>'));
   context.GcordIdentity.checkPassword('Strong@Test1234');
   assert.throws(() => context.GcordIdentity.checkPassword('weak'));
   assert.throws(() => context.GcordIdentity.checkPassword('A1!' + 'é'.repeat(35)));

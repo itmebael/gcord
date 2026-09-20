@@ -68,9 +68,9 @@
   download.addEventListener('click',function(){
     if(!dates||download.disabled)return;
     var data=[['Reference','Recipient (GCash owner)','Claimed by','Recorded at (PHT)','Receipt date','Receipt time','Amount (PHP)','Status']].concat(rows.map(function(row){return [row.ref_no,row.recipient_name,row.claimant_name,recordedAt(row),row.txn_date,row.txn_time,row.amount,row.status];}));
-    var filename='transactions-'+dates.start+'-to-'+dates.end+'.xml';
+    var filename='transactions-'+dates.start+'-to-'+dates.end+'.xlsx';
     GcordExportPreview(data, filename, function () {
-    var url=URL.createObjectURL(new Blob([GcordSpreadsheet(data)],{type:'application/xml;charset=utf-8'}));
+    var url=URL.createObjectURL(new Blob([GcordSpreadsheet(data)],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}));
     var link=document.createElement('a');link.href=url;link.download=filename;document.body.appendChild(link);link.click();link.remove();setTimeout(function(){URL.revokeObjectURL(url);},1000);
     });
   });

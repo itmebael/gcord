@@ -955,7 +955,7 @@
   function getExportFilename() {
     var stamp = (state.fromDate || 'all') + '_to_' + (state.toDate || 'all');
     var userStamp = state.userId ? '_user_' + state.userId : '';
-    return ('gcord_' + state.type + userStamp + '_' + stamp + '.xml').replace(/\s+/g, '_');
+    return ('gcord_' + state.type + userStamp + '_' + stamp + '.xlsx').replace(/\s+/g, '_');
   }
 
   function getExportRowCount(report) {
@@ -1070,7 +1070,7 @@
 
     var lines = buildExcelLines(report);
     var filename = getExportFilename();
-    var blob = new Blob([GcordSpreadsheet(lines)], { type: 'application/xml;charset=utf-8' });
+    var blob = new Blob([GcordSpreadsheet(lines)], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
     var url = URL.createObjectURL(blob);
     var a = document.createElement('a');
     a.href = url;

@@ -9,7 +9,7 @@ New signups require first and last names; middle and extension names are optiona
 
 Dashboard totals and admin reports use recorded transaction rows: total = verified + duplicate. The admin dashboard and the default admin report both cover all time and all staff. Filtered reports intentionally show only the selected staff, status and period. Staff reports cover that staff member's records and show their applied date range. Recorded dates use Philippine time, with an inclusive start date and end date (through midnight at the start of the following day). Receipt dates do not determine these report periods.
 
-Reports download as Excel-compatible SpreadsheetML `.xml` workbooks. Open them in Excel or import them into a spreadsheet application. Reference and phone numbers are explicit text cells, preserving leading zeroes without formulas. Recipient is the GCash account owner; claimant is a separate field. Historical claimant values are not guessed or copied from recipient names.
+Reports download as Excel `.xlsx` workbooks. Open them in Excel or import them into a spreadsheet application. Reference and phone numbers are explicit text cells, preserving leading zeroes without formulas. Recipient is the GCash account owner; claimant is a separate field. Historical claimant values are not guessed or copied from recipient names.
 
 Automatic receipt capture is already enabled on the scanner. It waits for a stable, readable GCash receipt and then presents the result for review. Real camera testing needs HTTPS (or localhost), camera permission, and access to the OCR service. Capture and Upload remain available.
 
