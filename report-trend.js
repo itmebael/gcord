@@ -52,7 +52,7 @@
       if(String(session.data)!==String(user.id)) throw new Error('Please sign in again to view your transactions.');
       var rows = [], offset = 0;
       while(token === version) {
-        var result = await client.from('transactions').select('id,ref_no,recipient_name,recipient_number,amount,txn_date,txn_time,status,source,created_at').eq('created_by_user_id',user.id)
+        var result = await client.from('transactions').select('id,ref_no,recipient_name,claimant_name,recipient_number,amount,txn_date,txn_time,status,source,created_at').eq('created_by_user_id',user.id)
           .gte('created_at',startUtc).lt('created_at',endUtc).order('created_at',{ascending:false}).order('id',{ascending:false}).range(offset,offset+499);
         if(result.error) throw result.error;
         if(!result.data || !result.data.length) break;

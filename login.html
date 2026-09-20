@@ -403,11 +403,14 @@
   }
   .input-wrap input::placeholder { color: var(--muted-soft); }
   .input-wrap input:focus { border-color: var(--blue); background: white; box-shadow: 0 0 0 3.5px rgba(0,82,204,0.1); }
+  .input-wrap input[aria-invalid="true"] { border-color: #DC2626; background: #FFF5F5; }
+  .input-wrap input[aria-invalid="true"]:focus { box-shadow: 0 0 0 3.5px rgba(220,38,38,.15); }
+  #signupView .password-error { color: #DC2626; font-size: 13px; margin: 8px 0 0; }
   .input-wrap .eye { position:absolute; right:5px; top:50%; transform:translateY(-50%); display:grid; place-items:center; width:44px; height:44px; padding:0; margin:0; border:0; border-radius:8px; background:transparent; cursor:pointer; color:var(--muted-soft); }
   .input-wrap .eye svg { display:block; position:static; transform:none; width:18px; height:18px; pointer-events:none; }
   .input-wrap .eye:hover { color:var(--blue); background:rgba(0,82,204,.05); }
   .input-wrap .eye:focus-visible { outline:2px solid var(--blue); outline-offset:-3px; }
-  .input-wrap #pwd { padding-right:52px; }
+  .input-wrap #pwd, .input-wrap #suPassword, .input-wrap #suConfirmPassword { padding-right:52px; }
   .eye .eye-slash { display:none; }
   .eye[aria-pressed="true"] .eye-slash { display:block; }
   .forgot { text-align: right; font-size: 12px; color: var(--blue); cursor: pointer; margin-top: 7px; font-weight: 600; }
@@ -1235,11 +1238,23 @@
           <p>Register to record G-Cash cash-out transactions.</p>
 
           <div class="form-group">
-            <label>Full Name</label>
-            <div class="input-wrap">
-              <svg class="lead" width="14" height="14" fill="currentColor" viewBox="0 0 16 16"><path d="M8 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm2-3a2 2 0 1 1-4 0 2 2 0 0 1 4 0zm4 8c0 1-1 1-1 1H3s-1 0-1-1 1-4 6-4 6 3 6 4z"/></svg>
-              <input type="text" id="suName" placeholder="Juan Dela Cruz" />
-            </div>
+            <label for="suLastName">Last Name</label>
+            <div class="input-wrap"><input type="text" id="suLastName" autocomplete="family-name" maxlength="80" required placeholder="Last Name" /></div>
+          </div>
+
+          <div class="form-group">
+            <label for="suFirstName">First Name</label>
+            <div class="input-wrap"><input type="text" id="suFirstName" autocomplete="given-name" maxlength="80" required placeholder="First Name" /></div>
+          </div>
+
+          <div class="form-group">
+            <label for="suMiddleName">Middle Name</label>
+            <div class="input-wrap"><input type="text" id="suMiddleName" autocomplete="additional-name" maxlength="80"  placeholder="Middle Name (optional)" /></div>
+          </div>
+
+          <div class="form-group">
+            <label for="suExtensionName">Extension Name (e.g., Sr., Jr.)</label>
+            <div class="input-wrap"><input type="text" id="suExtensionName" autocomplete="honorific-suffix" maxlength="80"  placeholder="Extension Name (e.g., Sr., Jr.) (optional)" /></div>
           </div>
 
           <div class="form-group">
@@ -1254,7 +1269,7 @@
             <label>Password</label>
             <div class="input-wrap">
               <svg class="lead" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.6" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
-              <input type="password" id="suPassword" placeholder="12+ characters, Aa, number, symbol" autocomplete="new-password" />
+              <input type="password" id="suPassword" placeholder="12+ characters, Aa, number, symbol" autocomplete="new-password" /><button class="eye" type="button" aria-label="Show password" aria-controls="suPassword" aria-pressed="false" onclick="const input=document.getElementById('suPassword'); input.type=input.type==='password'?'text':'password'; this.setAttribute('aria-pressed',String(input.type==='text')); this.setAttribute('aria-label',input.type==='text'?'Hide password':'Show password');"><svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/><path class="eye-slash" d="m3 3 18 18"/></svg></button>
             </div>
           </div>
 
@@ -1262,42 +1277,7 @@
             <label>Confirm Password</label>
             <div class="input-wrap">
               <svg class="lead" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.6" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
-              <input type="password" id="suConfirmPassword" placeholder="Re-enter your password" autocomplete="new-password" />
-            </div>
-          </div>
-
-          <div class="form-group">
-            <label>Age</label>
-            <div class="input-wrap">
-              <svg class="lead" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.6" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg>
-              <input type="number" id="suAge" min="0" max="120" placeholder="e.g. 30" />
-            </div>
-          </div>
-
-          <div class="form-group">
-            <label>Birthday</label>
-            <div class="input-wrap">
-              <svg class="lead" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.6" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 9h18M8 3v4M16 3v4"/></svg>
-              <input type="date" id="suBday" />
-            </div>
-          </div>
-
-          <div class="form-group">
-            <label>Valid ID</label>
-            <input type="file" id="suId" class="file-input" accept="image/*" />
-          </div>
-
-          <div class="form-group">
-            <label>Face Capture (for Valid ID verification)</label>
-            <div class="camera-wrap">
-              <video id="suVideo" autoplay playsinline hidden></video>
-              <canvas id="suCanvas" hidden></canvas>
-              <img id="suShot" class="camera-shot" alt="Captured face" hidden />
-              <div class="camera-actions">
-                <button type="button" class="btn-soft" id="suStartCam">Start Camera</button>
-                <button type="button" class="btn-soft" id="suCapture" hidden>Capture</button>
-                <button type="button" class="btn-soft" id="suRetake" hidden>Retake</button>
-              </div>
+              <input type="password" id="suConfirmPassword" placeholder="Re-enter your password" autocomplete="new-password" /><button class="eye" type="button" aria-label="Show password" aria-controls="suConfirmPassword" aria-pressed="false" onclick="const input=document.getElementById('suConfirmPassword'); input.type=input.type==='password'?'text':'password'; this.setAttribute('aria-pressed',String(input.type==='text')); this.setAttribute('aria-label',input.type==='text'?'Hide password':'Show password');"><svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/><path class="eye-slash" d="m3 3 18 18"/></svg></button>
             </div>
           </div>
 
@@ -1721,20 +1701,32 @@ function togglePwd() {
   });
 })();
 
-// Sign up / login toggle + face camera capture for Valid ID verification.
+// Signup with email verification.
 (function () {
   const loginView = document.getElementById('loginView');
   const signupView = document.getElementById('signupView');
   const showSignup = document.getElementById('showSignup');
   const showLogin = document.getElementById('showLogin');
-  const video = document.getElementById('suVideo');
-  const canvas = document.getElementById('suCanvas');
-  const shot = document.getElementById('suShot');
-  const startCam = document.getElementById('suStartCam');
-  const capture = document.getElementById('suCapture');
-  const retake = document.getElementById('suRetake');
   const submit = document.getElementById('suSubmit');
-  let stream = null;
+  const passwordInput = document.getElementById('suPassword');
+  const confirmInput = document.getElementById('suConfirmPassword');
+  const mismatchMessage = document.createElement('p');
+  mismatchMessage.id = 'suPasswordMismatch';
+  mismatchMessage.className = 'password-error';
+  mismatchMessage.setAttribute('aria-live', 'polite');
+  confirmInput.closest('.form-group').appendChild(mismatchMessage);
+  function validatePasswordMatch(force = false) {
+    const mismatch = (force || confirmInput.value.length > 0) && passwordInput.value !== confirmInput.value;
+    [passwordInput, confirmInput].forEach((input) => {
+      input.setAttribute('aria-invalid', String(mismatch));
+    });
+    mismatchMessage.textContent = mismatch ? 'Passwords do not match.' : '';
+    return !mismatch;
+  }
+  [passwordInput, confirmInput].forEach((input) => {
+    input.setAttribute('aria-describedby', mismatchMessage.id);
+    input.addEventListener('input', () => validatePasswordMatch());
+  });
 
   function show(view) {
     const isSignup = view === 'signup';
@@ -1744,80 +1736,32 @@ function togglePwd() {
   if (showSignup) showSignup.addEventListener('click', (e) => { e.preventDefault(); show('signup'); });
   if (showLogin) showLogin.addEventListener('click', (e) => { e.preventDefault(); show('login'); });
 
-  async function startCamera() {
-    try {
-      stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
-      video.srcObject = stream;
-      video.hidden = false;
-      shot.hidden = true;
-      capture.hidden = false;
-      startCam.hidden = true;
-      retake.hidden = true;
-    } catch (err) {
-      alert('Unable to access camera: ' + err.message);
-    }
-  }
-  function takePhoto() {
-    if (!stream) return;
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-    canvas.getContext('2d').drawImage(video, 0, 0);
-    shot.src = canvas.toDataURL('image/png');
-    shot.hidden = false;
-    video.hidden = true;
-    capture.hidden = true;
-    retake.hidden = false;
-  }
-  function resetPhoto() {
-    shot.hidden = true;
-    video.hidden = false;
-    capture.hidden = false;
-    retake.hidden = true;
-  }
-  if (startCam) startCam.addEventListener('click', startCamera);
-  if (capture) capture.addEventListener('click', takePhoto);
-  if (retake) retake.addEventListener('click', resetPhoto);
-
   if (submit) submit.addEventListener('click', async () => {
-    const name = document.getElementById('suName').value.trim();
+    const firstName = document.getElementById('suFirstName').value.trim();
+    const lastName = document.getElementById('suLastName').value.trim();
     const email = (document.getElementById('suEmail') && document.getElementById('suEmail').value.trim()) || '';
     const password = (document.getElementById('suPassword') && document.getElementById('suPassword').value) || '';
     const confirmPassword = (document.getElementById('suConfirmPassword') && document.getElementById('suConfirmPassword').value) || '';
-    const age = document.getElementById('suAge').value.trim();
-    const bday = document.getElementById('suBday').value;
-    const idInput = document.getElementById('suId');
-    const idFile = idInput && idInput.files && idInput.files[0];
-    if (!name || !age || !bday || !email || !password || !confirmPassword) { alert('Please fill in all required fields.'); return; }
-    if (password !== confirmPassword) { alert('Passwords do not match.'); return; }
+    if (!firstName || !lastName || !email || !password || !confirmPassword) { alert('Please fill in all required fields.'); return; }
+    if (!document.getElementById('suEmail').reportValidity()) return;
+    if (!validatePasswordMatch(true)) { confirmInput.focus(); return; }
     try { GcordIdentity.checkPassword(password); } catch (err) { alert(err.message); return; }
-    if (!idFile) { alert('Please attach your Valid ID.'); return; }
-    if (shot.hidden) { alert('Please capture your face for verification.'); return; }
-
     submit.disabled = true;
     try {
-      const faceDataUrl = shot.src || '';
-      const validIdDataUrl = await new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result);
-        reader.onerror = reject;
-        reader.readAsDataURL(idFile);
-      });
-
       if (!window.GcordAPI) throw new Error('API not loaded.');
       await GcordIdentity.signup({
-        full_name: name,
+        first_name: firstName,
+        last_name: lastName,
+        middle_name: document.getElementById('suMiddleName').value.trim(),
+        extension_name: document.getElementById('suExtensionName').value.trim(),
         email: email,
-        password: password,
-        age: Number(age),
-        birthday: bday,
-        valid_id_url: String(validIdDataUrl),
-        face_capture_url: faceDataUrl
+        password: password
       });
 
-      if (stream) stream.getTracks().forEach((t) => t.stop());
       document.getElementById('suPassword').value = '';
       document.getElementById('suConfirmPassword').value = '';
-      alert('Email verified and account created. Wait for your admin to approve your ID before signing in.');
+      validatePasswordMatch();
+      alert('Email verified and account created. You can now sign in.');
       show('login');
     } catch (err) {
       if (err.name !== 'AbortError') alert(err.message || 'Signup failed.');

@@ -11,7 +11,7 @@ window.supabase={createClient:function(){return {
 (async function(){
  var lines=[];function assert(ok,label){if(!ok)throw Error(label);lines.push('PASS '+label);}
  async function tick(){await new Promise(r=>setTimeout(r,30));}
- var payload={email:'staff@example.test',password:'Strong@Test1234',full_name:'Test Staff',age:22,birthday:'2004-01-01',valid_id_url:'test',face_capture_url:'test'};
+ var payload={email:'staff@example.test',password:'Strong@Test1234',first_name:'Test',last_name:'Staff',middle_name:'Middle',extension_name:'Jr.'};
  try{
  var promise=GcordIdentity.signup(payload);await tick();assert(calls.join(',')==='send','signup sends code before any registration');
  var form=document.querySelector('dialog form');form.elements.code.value='000000';form.requestSubmit();await tick();assert(!calls.includes('app_complete_verified_signup'),'wrong code cannot create account');assert(form.querySelector('.identity-status').textContent==='Invalid code','invalid code shown');

@@ -197,6 +197,7 @@
       id: String(row.id),
       ref: row.ref_no,
       recipient: row.recipient_name,
+      claimant: row.claimant_name || null,
       number: row.recipient_number,
       amount: Number(row.amount) || 0,
       amountLabel: formatAmount(row.amount),
@@ -579,8 +580,8 @@
     var user = getSession();
     var q = sb
       .from('transactions')
-      .select('id,ref_no,recipient_name,recipient_number,amount,txn_date,txn_time,status,source,created_by_user_id,created_at')
-      .order('created_at', { ascending: false });
+      .select('id,ref_no,recipient_name,claimant_name,recipient_number,amount,txn_date,txn_time,status,source,created_by_user_id,created_at')
+      .order('created_at', { ascending: false }).order('id', { ascending: false });
 
     if (options.userId) {
       q = q.eq('created_by_user_id', options.userId);
@@ -591,9 +592,9 @@
       q = q.eq('created_by_user_id', user.id);
     }
 
-    if (options.useRecordedDate && options.fromDate && options.toDate) {
-      q = q.gte('created_at', manilaDayStartUtc(options.fromDate));
-      q = q.lt('created_at', manilaDayStartUtc(nextDateKey(options.toDate)));
+    if (options.useRecordedDate) {
+      if (options.fromDate) q = q.gte('created_at', manilaDayStartUtc(options.fromDate));
+      if (options.toDate) q = q.lt('created_at', manilaDayStartUtc(nextDateKey(options.toDate)));
     } else {
       if (options.fromDate) q = q.gte('txn_date', options.fromDate);
       if (options.toDate) q = q.lte('txn_date', options.toDate);
@@ -603,9 +604,15 @@
     }
     // admin → all rows
 
-    var res = await q;
-    if (res.error) throw res.error;
-    return (res.data || []).map(mapTransaction);
+    var rows = [], offset = 0;
+    while (true) {
+      var res = await q.range(offset, offset + 499);
+      if (res.error) throw res.error;
+      if (!res.data || !res.data.length) break;
+      rows = rows.concat(res.data);
+      offset += res.data.length;
+    }
+    return rows.map(mapTransaction);
   }
 
   async function getAdminReport(options) {
@@ -873,8 +880,7 @@
     var sb = requireClient();
     var usersRes = await sb.from('users').select('id,full_name,role,first_name,last_name').in('role', ['staff', 'admin', 'super_admin']);
     if (usersRes.error) throw usersRes.error;
-    var txnRes = await sb.from('transactions').select('created_by_user_id,amount,status');
-    if (txnRes.error) throw txnRes.error;
+    var topTransactions = await listTransactions({all: true});
 
     var map = {};
     (usersRes.data || []).forEach(function (u) {
@@ -886,10 +892,10 @@
         amount: 0
       };
     });
-    (txnRes.data || []).forEach(function (t) {
-      if (!t.created_by_user_id || !map[t.created_by_user_id]) return;
-      map[t.created_by_user_id].count += 1;
-      if (t.status === 'verified') map[t.created_by_user_id].amount += Number(t.amount) || 0;
+    topTransactions.forEach(function (t) {
+      if (!t.createdBy || !map[t.createdBy]) return;
+      map[t.createdBy].count += 1;
+      if (t.status === 'verified') map[t.createdBy].amount += Number(t.amount) || 0;
     });
 
     return Object.keys(map).map(function (k) { return map[k]; })
@@ -929,7 +935,7 @@
             matchRef: 'REF' + normalizeRef(t.ref),
             matchAmount: t.amountLabel,
             matchStatus: 'Duplicate',
-            matchClaimant: t.recipient || 'Not available',
+            matchClaimant: t.claimant || 'Not available',
             matchDate: t.date + (t.time && t.time !== '—' ? ' • ' + t.time : '')
           };
         });
@@ -947,7 +953,7 @@
       var uniq = ids.filter(function (id, i) { return ids.indexOf(id) === i; });
       var txnRes = await sb
         .from('transactions')
-        .select('id,ref_no,recipient_name,amount,txn_date,txn_time,status')
+        .select('id,ref_no,recipient_name,claimant_name,amount,txn_date,txn_time,status')
         .in('id', uniq);
       if (!txnRes.error) {
         (txnRes.data || []).forEach(function (t) { txnMap[t.id] = t; });
@@ -988,12 +994,12 @@
         origRef: 'REF' + normalizeRef((orig && orig.ref_no) || r.ref_no),
         origAmount: orig ? formatAmount(orig.amount) : amountLabel,
         origStatus: orig ? (orig.status === 'duplicate' ? 'Duplicate' : 'Verified') : 'Verified',
-        origClaimant: orig && orig.recipient_name ? orig.recipient_name : 'Not available',
+        origClaimant: orig && orig.claimant_name ? orig.claimant_name : 'Not available',
         origDate: orig ? fmtWhen(orig.txn_date, orig.txn_time) : 'Not available',
         matchRef: 'REF' + normalizeRef((dup && dup.ref_no) || r.ref_no),
         matchAmount: dup ? formatAmount(dup.amount) : amountLabel,
         matchStatus: dup ? (dup.status === 'duplicate' ? 'Duplicate' : 'Verified') : 'Duplicate',
-        matchClaimant: dup && dup.recipient_name ? dup.recipient_name : 'Not available',
+        matchClaimant: dup && dup.claimant_name ? dup.claimant_name : 'Not available',
         matchDate: dup ? fmtWhen(dup.txn_date, dup.txn_time) : 'Not available'
       };
     });
@@ -1143,6 +1149,7 @@
       totalStaff: userStats.totalStaff,
       totalTransactions: txnStats.total,
       duplicateBlocked: txnStats.duplicate,
+      verifiedTransactions: txnStats.verified,
       transactions: txnStats.list,
       recentLogs: logs.slice(0, 5),
       topUsers: topUsers,

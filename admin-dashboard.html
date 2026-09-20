@@ -550,15 +550,15 @@
 
           <article class="stat-card">
             <div>
-              <span class="stat-label">Total Transactions</span>
-              <strong class="stat-value" id="dashTotalTx" style="display:block;margin-top:10px;">0</strong>
+              <span class="stat-label">All Recorded Transactions</span>
+              <strong class="stat-value" id="dashTotalTx" style="display:block;margin-top:10px;">0</strong><span id="dashVerified">0 verified</span><small style="display:block">All time ? all staff</small>
             </div>
             <div class="stat-bar tx" aria-hidden="true"><span id="dashTxBar" style="width:0%"></span></div>
           </article>
 
           <article class="stat-card">
             <div>
-              <span class="stat-label">Duplicate Blocked</span>
+              <span class="stat-label">Duplicate Transactions</span>
               <strong class="stat-value" id="dashDup" style="display:block;margin-top:10px;">0</strong>
             </div>
             <div class="stat-bar dup" aria-hidden="true"><span id="dashDupBar" style="width:0%"></span></div>
@@ -653,6 +653,7 @@
       document.getElementById('dashTotalAdmins').textContent = String(data.totalAdmins);
       document.getElementById('dashTotalStaff').textContent = String(data.totalStaff);
       document.getElementById('dashTotalTx').textContent = Number(data.totalTransactions).toLocaleString();
+      document.getElementById('dashVerified').textContent = data.verifiedTransactions + ' verified';
       document.getElementById('dashDup').textContent = String(data.duplicateBlocked);
 
       var txPct = Math.min(100, data.totalTransactions ? 70 + Math.min(30, data.totalTransactions) : 0);

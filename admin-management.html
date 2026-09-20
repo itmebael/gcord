@@ -658,20 +658,7 @@
 <div class="backdrop" id="userDetailModal" aria-hidden="true">
   <div class="detail-modal" role="dialog" aria-modal="true" aria-labelledby="userDetailTitle">
     <h2 id="userDetailTitle">Account Details</h2>
-    <p class="sub" id="userDetailSub">Review ID and face capture before verifying access.</p>
-
-    <div class="detail-grid">
-      <div class="photo-card">
-        <strong>Face Capture</strong>
-        <img id="detailFace" alt="Face capture" hidden />
-        <div class="photo-empty" id="detailFaceEmpty">No face photo</div>
-      </div>
-      <div class="photo-card">
-        <strong>Valid ID</strong>
-        <img id="detailId" alt="Valid ID" hidden />
-        <div class="photo-empty" id="detailIdEmpty">No ID uploaded</div>
-      </div>
-    </div>
+    <p class="sub" id="userDetailSub">Review account details and verification status.</p>
 
     <div class="info-list" id="detailInfo"></div>
 
@@ -765,25 +752,12 @@
         ? 'This account is verified and can use the system.'
         : 'User cannot use the system until this account is verified.';
 
-    setPhoto(
-      document.getElementById('detailFace'),
-      document.getElementById('detailFaceEmpty'),
-      user.face_capture_url
-    );
-    setPhoto(
-      document.getElementById('detailId'),
-      document.getElementById('detailIdEmpty'),
-      user.valid_id_url
-    );
-
     var rows = [
       ['Email', user.email || '—'],
       ['Phone', user.phone || '—'],
       ['Role', roleLabel(user.role)],
       ['Account Status', user.status === 'inactive' ? 'Inactive' : 'Active'],
       ['Verification', verificationLabel(user.verification_status)],
-      ['Age', user.age != null ? String(user.age) : '—'],
-      ['Birthday', user.birthday || '—'],
       ['Created', user.created_at ? new Date(user.created_at).toLocaleString() : '—'],
       ['Last Login', user.last_login_at ? new Date(user.last_login_at).toLocaleString() : 'Never']
     ];

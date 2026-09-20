@@ -14,6 +14,7 @@ const context = {
   __gcordSb: { from(table) {
     return {
       select() { return this; }, order() { return this; }, in() { return this; },
+      async range(start, end) { return {data: [transaction].slice(start, end + 1)}; },
       then(resolve) {
         return Promise.resolve(table === 'duplicate_events'
           ? (fallback ? { error: new Error('Unavailable') } : { data: timestamps.map((detected_at, id) => ({

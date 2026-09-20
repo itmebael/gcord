@@ -584,7 +584,7 @@
             <div class="filter-group">
               <span class="filter-label">Period</span>
               <div class="chip-group" role="group" aria-label="Period">
-                <button type="button" class="chip active" data-period="day">Day</button>
+                <button type="button" class="chip active" data-period="all">All Time</button><button type="button" class="chip" data-period="day">Day</button>
                 <button type="button" class="chip" data-period="week">Week</button>
                 <button type="button" class="chip" data-period="month">Month</button>
                 <button type="button" class="chip" data-period="year">Year</button>
@@ -697,6 +697,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="supabase-config.js"></script>
 <script src="supabase-api.js"></script>
+<script src="spreadsheet-export.js"></script>
 <script src="admin-sidebar.js"></script>
 <script src="admin-topbar.js"></script>
 <script src="sidebar.js"></script>
@@ -706,7 +707,7 @@
 
   var state = {
     type: 'all',
-    period: 'day',
+    period: 'all',
     fromDate: null,
     toDate: null,
     report: null,
@@ -726,6 +727,8 @@
   var usagePanel = document.getElementById('usagePanel');
   var usageBody = document.getElementById('usageBody');
   var txnPanel = document.getElementById('txnPanel');
+
+  function escapeHtml(value) { return String(value).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
 
   function pad(n) { return String(n).padStart(2, '0'); }
 
@@ -753,6 +756,7 @@
     var end = todayInManila();
     var start = new Date(end);
 
+    if (period === 'all') return {fromDate: null, toDate: null};
     if (period === 'day') {
       /* today */
     } else if (period === 'week') {
@@ -829,7 +833,7 @@
   function renderTxnTable(rows) {
     reportHead.innerHTML =
       '<tr>' +
-        '<th>Ref #</th><th>Recipient</th><th>Number</th><th>Amount</th>' +
+        '<th>Ref #</th><th>Recipient (GCash owner)</th><th>Claimed by</th><th>Number</th><th>Amount</th>' +
         '<th>Status</th><th>Staff</th><th>Recorded Date</th><th>Recorded Time</th>' +
       '</tr>';
 
@@ -850,6 +854,7 @@
       return '<tr>' +
         '<td>' + (tx.ref || '—') + '</td>' +
         '<td>' + (tx.recipient || '—') + '</td>' +
+        '<td>' + escapeHtml(tx.claimant || 'Not recorded') + '</td>' +
         '<td>' + (tx.number || '—') + '</td>' +
         '<td>' + (tx.amountLabel || '—') + '</td>' +
         '<td>' + pill + '</td>' +
@@ -877,7 +882,10 @@
     }).join('');
   }
 
+  var reportVersion = 0;
   async function loadReport() {
+    var version = ++reportVersion;
+    state.report = null;
     var range = resolveRange(state.period);
     state.fromDate = range.fromDate;
     state.toDate = range.toDate;
@@ -909,11 +917,12 @@
         userId: state.userId,
         fromDate: state.fromDate,
         toDate: state.toDate,
-        useRecordedDate: state.period === 'day' || state.period === 'month'
+        useRecordedDate: true
       });
+      if (version !== reportVersion) return;
       state.report = report;
 
-      var rangeText = formatRangeLabel(report.fromDate, report.toDate);
+      var rangeText = formatRangeLabel(report.fromDate, report.toDate) + ' ? Recorded dates (PHT)';
       document.getElementById('rangeLabel').textContent = rangeText;
       document.getElementById('tableTitle').textContent = titleForType(state.type);
       renderStats(report);
@@ -929,6 +938,7 @@
         if (state.type === 'all') renderUsage(report.usage, rangeText);
       }
     } catch (err) {
+      if (version !== reportVersion) return;
       state.report = null;
       txnPanel.hidden = false;
       usagePanel.hidden = true;
@@ -942,16 +952,10 @@
     }
   }
 
-  function csvEscape(value) {
-    var s = String(value == null ? '' : value);
-    if (/[",\n]/.test(s)) return '"' + s.replace(/"/g, '""') + '"';
-    return s;
-  }
-
   function getExportFilename() {
     var stamp = (state.fromDate || 'all') + '_to_' + (state.toDate || 'all');
     var userStamp = state.userId ? '_user_' + state.userId : '';
-    return ('gcord_' + state.type + userStamp + '_' + stamp + '.xls').replace(/\s+/g, '_');
+    return ('gcord_' + state.type + userStamp + '_' + stamp + '.xml').replace(/\s+/g, '_');
   }
 
   function getExportRowCount(report) {
@@ -961,32 +965,32 @@
 
   function buildExcelLines(report) {
     var lines = [];
-    lines.push(['G-Cash Cash Out — Analytics Report'].map(csvEscape).join(','));
-    lines.push(['Period', formatRangeLabel(report.fromDate, report.toDate)].map(csvEscape).join(','));
-    lines.push(['Data Type', state.type].map(csvEscape).join(','));
-    lines.push(['Total', report.total, 'Verified', report.verified, 'Duplicates', report.duplicate, 'Cash-Out', report.cashOutLabel].map(csvEscape).join(','));
-    lines.push('');
+    lines.push(['G-Cash Cash Out — Analytics Report']);
+    lines.push(['Period', formatRangeLabel(report.fromDate, report.toDate)]);
+    lines.push(['Data Type', state.type]);
+    lines.push(['Total', report.total, 'Verified', report.verified, 'Duplicates', report.duplicate, 'Cash-Out', report.cashOutLabel]);
+    lines.push([]);
 
     if (state.type === 'usage') {
-      lines.push(['Staff', 'Total', 'Verified', 'Duplicates', 'Cash-Out'].map(csvEscape).join(','));
+      lines.push(['Staff', 'Total', 'Verified', 'Duplicates', 'Cash-Out']);
       (report.usage || []).forEach(function (u) {
-        lines.push([u.staffName, u.total, u.verified, u.duplicate, GcordAPI.formatAmount(u.cashOut)].map(csvEscape).join(','));
+        lines.push([u.staffName, u.total, u.verified, u.duplicate, GcordAPI.formatAmount(u.cashOut)]);
       });
     } else {
-      lines.push(['Ref No', 'Recipient', 'Number', 'Amount', 'Status', 'Staff', 'Recorded Date', 'Recorded Time', 'Source'].map(csvEscape).join(','));
+      lines.push(['Ref No', 'Recipient (GCash owner)', 'Claimed by', 'Number', 'Amount', 'Status', 'Staff', 'Recorded Date', 'Recorded Time', 'Source']);
       (report.transactions || []).forEach(function (tx) {
         lines.push([
-          tx.ref, tx.recipient, tx.number, tx.amountLabel, tx.status,
+          tx.ref, tx.recipient, tx.claimant || '', tx.number, tx.amountLabel, tx.status,
           tx.staffName, tx.recordedDate || tx.date, tx.recordedTime || tx.time, tx.source
-        ].map(csvEscape).join(','));
+        ]);
       });
 
       if (state.type === 'all' && report.usage && report.usage.length) {
-        lines.push('');
-        lines.push(['Staff Usage'].map(csvEscape).join(','));
-        lines.push(['Staff', 'Total', 'Verified', 'Duplicates', 'Cash-Out'].map(csvEscape).join(','));
+        lines.push([]);
+        lines.push(['Staff Usage']);
+        lines.push(['Staff', 'Total', 'Verified', 'Duplicates', 'Cash-Out']);
         report.usage.forEach(function (u) {
-          lines.push([u.staffName, u.total, u.verified, u.duplicate, GcordAPI.formatAmount(u.cashOut)].map(csvEscape).join(','));
+          lines.push([u.staffName, u.total, u.verified, u.duplicate, GcordAPI.formatAmount(u.cashOut)]);
         });
       }
     }
@@ -1066,7 +1070,7 @@
 
     var lines = buildExcelLines(report);
     var filename = getExportFilename();
-    var blob = new Blob(['\uFEFF' + lines.join('\r\n')], { type: 'application/vnd.ms-excel;charset=utf-8;' });
+    var blob = new Blob([GcordSpreadsheet(lines)], { type: 'application/xml;charset=utf-8' });
     var url = URL.createObjectURL(blob);
     var a = document.createElement('a');
     a.href = url;
@@ -1092,6 +1096,7 @@
       setActive(periodChips, 'data-period', state.period);
       customDates.classList.toggle('show', state.period === 'custom');
       if (state.period !== 'custom') loadReport();
+      else { state.report = null; ++reportVersion; }
     });
   });
 
@@ -1099,6 +1104,8 @@
     state.userId = userFilter.value === 'all' ? null : userFilter.value;
     loadReport();
   });
+
+  [fromInput, toInput].forEach(function(input) { input.addEventListener('input', function() { state.report = null; ++reportVersion; }); });
 
   document.getElementById('applyCustom').addEventListener('click', loadReport);
   document.getElementById('downloadExcel').addEventListener('click', openDownloadConfirm);

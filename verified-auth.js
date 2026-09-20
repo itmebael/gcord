@@ -8,7 +8,7 @@
     return identity;
   }
   function strong(password) {
-    return password.length>=12 && new TextEncoder().encode(password).length<=72 && /[A-Z]/.test(password) && /[a-z]/.test(password) && /\d/.test(password) && /[^A-Za-z0-9\s]/.test(password);
+    return Array.from(password).length>=12 && new TextEncoder().encode(password).length<=72 && /[A-Z]/.test(password) && /[a-z]/.test(password) && /\d/.test(password) && /[^A-Za-z0-9\s]/.test(password);
   }
   function checkPassword(password) { if(!strong(password))throw new Error('Use at least 12 characters, uppercase, lowercase, a number and a special character (maximum 72 bytes).'); }
   function modal(title, html) {
@@ -45,10 +45,12 @@
   async function rpc(name,args){var result=await client().rpc(name,args);if(result.error)throw result.error;return result.data;}
   async function signup(payload){
     checkPassword(payload.password);
+    var names = [payload.first_name, payload.middle_name, payload.last_name, payload.extension_name].map(function(value){return String(value || '').trim();});
+    if (!names[0] || !names[2]) throw new Error('First name and last name are required.');
+    if (names.some(function(name){return Array.from(name).length > 80;}) || Array.from(names.filter(Boolean).join(' ')).length > 160) throw new Error('Each name must be at most 80 characters and the combined name at most 160 characters.');
     try {
       await verifyEmail(payload.email.trim(), true);
-      var parts=payload.full_name.trim().split(/\s+/);
-      return await rpc('app_complete_verified_signup',{p_details:{first_name:parts[0],last_name:parts.slice(1).join(' ')||parts[0],age:payload.age,birthday:payload.birthday,valid_id_url:payload.valid_id_url,face_capture_url:payload.face_capture_url,phone:payload.phone||null},p_password:payload.password});
+      return await rpc('app_complete_verified_signup',{p_details:{first_name:payload.first_name,last_name:payload.last_name,middle_name:payload.middle_name||null,extension_name:payload.extension_name||null,phone:payload.phone||null},p_password:payload.password});
     } finally {await client().auth.signOut({scope:'local'});}
   }
   function reset(){

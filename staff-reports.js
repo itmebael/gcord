@@ -15,7 +15,7 @@
   function empty(message) { body.replaceChildren(); var tr=document.createElement('tr'),td=document.createElement('td'); td.colSpan=4;td.textContent=message;tr.appendChild(td);body.appendChild(tr); }
   function details(row) {
     var fields = document.getElementById('staffReportDetailFields'); fields.replaceChildren();
-    [['Reference number',row.ref_no],['Recipient',row.recipient_name],['GCash number',row.recipient_number],['Amount',money.format(row.amount)],['Recorded at',recordedAt(row)],['Receipt date',row.txn_date],['Receipt time',row.txn_time],['Status',row.status === 'duplicate' ? 'Duplicate' : 'Verified'],['Source',row.source]].forEach(function(item){
+    [['Reference number',row.ref_no],['Recipient (GCash owner)',row.recipient_name],['Claimed by',row.claimant_name],['GCash number',row.recipient_number],['Amount',money.format(row.amount)],['Recorded at',recordedAt(row)],['Receipt date',row.txn_date],['Receipt time',row.txn_time],['Status',row.status === 'duplicate' ? 'Duplicate' : 'Verified'],['Source',row.source]].forEach(function(item){
       var term=document.createElement('dt'), value=document.createElement('dd'); term.textContent=item[0];value.textContent=item[1] || 'Unavailable';fields.append(term,value);
     });
     dialog.showModal();
@@ -67,11 +67,10 @@
   dialog.addEventListener('click',function(event){if(event.target===dialog){var r=dialog.getBoundingClientRect();if(event.clientX<r.left||event.clientX>r.right||event.clientY<r.top||event.clientY>r.bottom)dialog.close();}});
   download.addEventListener('click',function(){
     if(!dates||download.disabled)return;
-    function cell(value){var text=String(value==null?'':value);if(/^\s*[=+@-]/.test(text))text="'"+text;return '"'+text.replace(/"/g,'""')+'"';}
-    var data=[['Reference','Recorded at (PHT)','Receipt date','Receipt time','Amount (PHP)','Status']].concat(rows.map(function(row){return [row.ref_no,recordedAt(row),row.txn_date,row.txn_time,row.amount,row.status];}));
-    var filename='transactions-'+dates.start+'-to-'+dates.end+'.csv';
+    var data=[['Reference','Recipient (GCash owner)','Claimed by','Recorded at (PHT)','Receipt date','Receipt time','Amount (PHP)','Status']].concat(rows.map(function(row){return [row.ref_no,row.recipient_name,row.claimant_name,recordedAt(row),row.txn_date,row.txn_time,row.amount,row.status];}));
+    var filename='transactions-'+dates.start+'-to-'+dates.end+'.xml';
     GcordExportPreview(data, filename, function () {
-    var url=URL.createObjectURL(new Blob(['\uFEFF'+data.map(function(row){return row.map(cell).join(',');}).join('\r\n')],{type:'text/csv;charset=utf-8'}));
+    var url=URL.createObjectURL(new Blob([GcordSpreadsheet(data)],{type:'application/xml;charset=utf-8'}));
     var link=document.createElement('a');link.href=url;link.download=filename;document.body.appendChild(link);link.click();link.remove();setTimeout(function(){URL.revokeObjectURL(url);},1000);
     });
   });
