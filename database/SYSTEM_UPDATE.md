@@ -13,4 +13,17 @@ Reports download as Excel `.xlsx` workbooks. Open them in Excel or import them i
 
 Automatic receipt capture is already enabled on the scanner. It waits for a stable, readable GCash receipt and then presents the result for review. Real camera testing needs HTTPS (or localhost), camera permission, and access to the OCR service. Capture and Upload remain available.
 
+September 22 scanner/dashboard fixes
+-----------------------------------
+
+Deploy the updated `login.html` as well. It now recognizes the existing persistent session and redirects returning staff to their dashboard and admins to the admin dashboard without another login. Explicit logout clears the saved session. No database migration is needed for this redirect fix; revoked sessions and cleared browser storage still require signing in again.
+
+Deploy `admin-dashboard.html`, `dashboard.html`, `scan.html`, `scanner-auto-capture.js` and `transactions.js` together. The admin summary now has Total Transactions, Successfully Verified (Verified Transactions), and Duplicates Blocked, without the All Time / All Staff caption. Existing totals still cover all saved records.
+
+Scanning and duplicate previews are read-only. Only submitting Save records a transaction or a blocked duplicate. Cancelling returns to the camera, repeated clicks during a save are ignored, and auto capture can retry after an OCR timeout or scanner restart. My Transactions details now display the saved claimant separately from the GCash owner. OCR skips explicitly identified sender names when looking for a masked recipient.
+
+The existing Last 7 Days and This Month report filters pass automated Manila-date boundary and staff isolation checks. Deploy `reports.html`, `staff-reports.js`, `report-trend.js` and `supabase-api.js` together and apply the migration above if the live version still has missing claimant fields or report errors. Historical missing claimants and incorrect owner names require correction using the actual receipt/customer information; they cannot be reconstructed reliably. Earlier cancelled scans cannot be distinguished safely from intentional saves in historical rows, so this update does not delete them automatically.
+
+`npm.cmd test` also checks cancellation without writes, claimant submission, double-click protection, OCR restart and timeout recovery. Live camera/OCR tests across staff accounts and any historical data corrections remain deployment checks.
+
 Validation: `npm.cmd test` runs receipt parsing, scan validation, report boundaries, pagination/count consistency, spreadsheet text preservation and password checks. The SQL migration and real email delivery require validation in your Supabase environment; they have not been executed by this code update.

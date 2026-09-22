@@ -9,13 +9,13 @@ window.isAutoCaptureReceipt = function(data) {
 window.createScannerAutoCapture = function(video, frame, hint, toggle, capture, available) {
   var canvas=document.createElement('canvas');canvas.width=90;canvas.height=160;
   var ctx=canvas.getContext('2d',{willReadFrequently:true}),timer,previous,ready=0,fired=false;
-  var generation=0,checking=false,nextCheck=0,approved=null,anchor=null;
+  var generation=0,checking=false,nextCheck=0,approved=null,anchor=null,inspection=0;
   function invalidate(){generation++;ready=0;approved=null;anchor=null;frame.classList.remove('capture-ready');}
   function reset(){previous=null;invalidate();}
-  function stop(){clearInterval(timer);reset();}
+  function stop(){clearInterval(timer);inspection++;checking=false;nextCheck=0;reset();}
   async function inspect(w,h,gray){
     if(!window.Tesseract){hint.textContent='Receipt detection unavailable. Use Capture or Upload.';return;}
-    checking=true;anchor=gray.slice();var token=generation;
+    checking=true;anchor=gray.slice();var token=generation,check=++inspection,timeout;
     hint.textContent='Checking for a GCash receipt…';
     try{
       // OCR the full sensor frame so portrait preview cropping cannot hide fields.
@@ -25,13 +25,16 @@ window.createScannerAutoCapture = function(video, frame, hint, toggle, capture, 
       var shotContext=shot.getContext('2d');
       shotContext.imageSmoothingEnabled=true;shotContext.imageSmoothingQuality='high';
       shotContext.drawImage(video,0,0,w,h,0,0,shot.width,shot.height);
-      var image=shot.toDataURL('image/jpeg',.9),result=await Tesseract.recognize(image,'eng');
+      var image=shot.toDataURL('image/jpeg',.9),result=await Promise.race([
+        Tesseract.recognize(image,'eng'),
+        new Promise(function(_,reject){timeout=setTimeout(function(){reject(new Error('Receipt detection timed out'));},20000);})
+      ]);
       if(token!==generation||!toggle.checked||!available()||document.hidden||fired)return;
       if(window.isAutoCaptureReceipt(result.data)){
         approved={image:image,at:performance.now()};frame.classList.add('capture-ready');hint.textContent='Receipt detected — hold still to capture.';
       }else{anchor=null;hint.textContent='No readable GCash receipt detected. Show its reference, amount and date.';}
     }catch(error){if(token===generation)hint.textContent='Could not read the receipt. Reposition it or use Capture.';}
-    finally{checking=false;nextCheck=performance.now()+3000;}
+    finally{clearTimeout(timeout);if(check===inspection){checking=false;nextCheck=performance.now()+3000;}}
   }
   function tick(){
     if(fired||!toggle.checked||document.hidden||!available()||video.readyState<2){reset();return;}
@@ -54,7 +57,7 @@ window.createScannerAutoCapture = function(video, frame, hint, toggle, capture, 
       if(!ready)ready=performance.now();
       if(approved){if(performance.now()-approved.at>=1200){var image=approved.image;fired=true;stop();capture(image);}return;}
       if(!checking&&performance.now()>=nextCheck&&performance.now()-ready>=1200)inspect(w,h,gray);
-    }catch(error){stop();hint.textContent='Auto capture unavailable. Use Capture or Upload.';}
+    }catch(error){reset();hint.textContent='Waiting for a readable camera frame. Use Capture or Upload if needed.';}
   }
   toggle.addEventListener('change',function(){reset();hint.textContent=toggle.checked?'Hold the receipt steady for auto capture.':'Auto capture off. Use Capture when ready.';});
   document.addEventListener('visibilitychange',reset);

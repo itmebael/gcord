@@ -1778,8 +1778,8 @@ function togglePwd() {
 <script>
 (function () {
   const session = window.GcordAPI && GcordAPI.getSession();
-  if (session && session.user) {
-    const admin = GcordAPI.isAdmin(session.user);
+  if (session && session.id && session.session_token) {
+    const admin = GcordAPI.isAdmin(session);
     window.location.replace(admin ? 'admin-dashboard.html' : 'dashboard.html');
     return;
   }

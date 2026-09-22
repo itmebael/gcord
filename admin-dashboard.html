@@ -492,6 +492,55 @@
   .top-user-meta span, .top-user-stats span { color: #58738E; font-size: 11px; }
   .progress-line { height: 7px; background: #E2EBF3; }
   .progress-line > i { background: linear-gradient(90deg, #428FFF, #0052CC); }
+  /* Summary cards share a clear hierarchy with the transaction total as the anchor. */
+  .content-grid .stat-card {
+    position: relative;
+    overflow: hidden;
+    min-height: 160px;
+    background: #FFFFFF;
+    border: 1px solid #E1EAF3;
+    box-shadow: 0 8px 24px -18px rgba(24, 55, 91, .28);
+    transition: transform .2s ease, box-shadow .2s ease;
+  }
+  .content-grid .stat-card:hover { transform: translateY(-3px); box-shadow: 0 14px 28px -18px rgba(24, 55, 91, .35); }
+  .content-grid .stat-icon { width: 40px; height: 40px; flex-basis: 40px; border-radius: 13px; }
+  .content-grid .stat-value { font-size: clamp(30px, 3vw, 44px); font-variant-numeric: tabular-nums; }
+  .stat-note { font-size: 11px; line-height: 1.5; color: #64748B; }
+  .content-grid .stat-total {
+    grid-column: 1 / -1;
+    min-height: 188px;
+    background: linear-gradient(120deg, #143F83, #1C63CD);
+    border-color: #2863B5;
+    box-shadow: 0 14px 30px -18px rgba(26, 83, 173, .6);
+  }
+  .stat-total::after { content: ''; position: absolute; right: -36px; top: -58px; width: 190px; height: 190px; border: 28px solid rgba(255,255,255,.06); border-radius: 50%; pointer-events: none; }
+  .stat-total > * { position: relative; z-index: 1; }
+  .content-grid .stat-total .stat-label, .content-grid .stat-total .stat-value { color: #FFFFFF; }
+  .stat-total .stat-icon { color: #FFFFFF; background: rgba(255,255,255,.14); }
+  .stat-total .stat-note { color: #D7E7FF; }
+  .stat-total .stat-bar { background: rgba(255,255,255,.15); height: 5px; }
+  .stat-total .stat-bar > span { background: #93C5FD; }
+  .content-grid .stat-verified { background: linear-gradient(145deg, #FFFFFF, #EDF9F3); border-color: #CDEADC; }
+  .stat-verified .stat-icon { color: #15734F; background: #D9F2E5; }
+  .content-grid .stat-verified .stat-value { color: #126443; }
+  .content-grid .stat-duplicate { background: linear-gradient(145deg, #FFFFFF, #FFF1F2); border-color: #F1D8DC; }
+  .stat-duplicate .stat-icon { color: #B13E55; background: #FBE2E7; }
+  .content-grid .stat-duplicate .stat-value { color: #A22F49; }
+  .stat-verified .stat-bar > span { background: #289E74; }
+  .stat-verified .stat-bar { background: #D9EDE3; }
+  .stat-duplicate .stat-bar { background: #F2DFE4; }
+  .stat-duplicate .stat-bar > span { background: #D4657C; }
+  .content-grid .panel { background: #FFFFFF; border: 1px solid #E1EAF3; box-shadow: 0 8px 24px -18px rgba(24,55,91,.22); }
+  .panel-heading { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 18px; }
+  .panel-heading .panel-title { margin: 0; }
+  .panel-caption { color: #56718B; background: #F0F5FA; padding: 5px 9px; border-radius: 7px; font-size: 10px; font-weight: 600; }
+  .content-grid .chart-wrap { background: repeating-linear-gradient(to top, transparent 0, transparent 43px, #E8EFF6 43px, #E8EFF6 44px), #F9FBFE; border-color: #EDF2F7; }
+  .content-grid .bars { grid-template-columns: repeat(7, minmax(0, 1fr)); gap: clamp(6px, 1.4vw, 20px); }
+  .content-grid .bars span { width: 100%; max-width: 36px; justify-self: center; border-radius: 7px 7px 3px 3px; }
+  .content-grid .activity-list { background: #FFFFFF; border: 0; }
+  .content-grid .activity-item { position: relative; padding: 14px 10px 14px 25px; }
+  .content-grid .activity-item::before { content: ''; position: absolute; left: 3px; top: 22px; width: 7px; height: 7px; border-radius: 50%; background: #5689CF; box-shadow: 0 0 0 4px #EDF4FE; }
+  @media (prefers-reduced-motion: reduce) { .content-grid .stat-card { transition: none; } .content-grid .stat-card:hover { transform: none; } }
   @media (max-width: 1200px) {
     .content-grid { grid-template-columns: minmax(0, 1fr); }
     .stats, .panels { grid-column: auto; grid-row: auto; }
@@ -530,6 +579,7 @@
               <span class="stat-label">Total Admins</span>
             </div>
             <strong class="stat-value" id="dashTotalAdmins">0</strong>
+            <small class="stat-note">System administrators</small>
           </article>
 
           <article class="stat-card">
@@ -546,28 +596,42 @@
               <span class="stat-label">Total Staff</span>
             </div>
             <strong class="stat-value" id="dashTotalStaff">0</strong>
+            <small class="stat-note">Staff accounts</small>
           </article>
 
-          <article class="stat-card">
-            <div>
-              <span class="stat-label">All Recorded Transactions</span>
-              <strong class="stat-value" id="dashTotalTx" style="display:block;margin-top:10px;">0</strong><span id="dashVerified">0 verified</span><small style="display:block">All time ? all staff</small>
+          <article class="stat-card stat-total">
+            <div class="stat-head">
+              <div class="stat-icon" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="5" y="3" width="14" height="18" rx="3"/><path d="M9 8h6M9 12h6M9 16h3"/></svg></div>
+              <span class="stat-label">Total Transactions</span>
             </div>
+            <strong class="stat-value" id="dashTotalTx">0</strong>
+            <small class="stat-note">Verified transactions and blocked duplicates</small>
             <div class="stat-bar tx" aria-hidden="true"><span id="dashTxBar" style="width:0%"></span></div>
           </article>
 
-          <article class="stat-card">
-            <div>
-              <span class="stat-label">Duplicate Transactions</span>
-              <strong class="stat-value" id="dashDup" style="display:block;margin-top:10px;">0</strong>
+          <article class="stat-card stat-duplicate">
+            <div class="stat-head">
+              <div class="stat-icon" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m12 3 8 3v6c0 5-8 9-8 9s-8-4-8-9V6zM9 9l6 6m0-6-6 6"/></svg></div>
+              <span class="stat-label">Duplicates Blocked</span>
             </div>
+            <strong class="stat-value" id="dashDup">0</strong>
+            <small class="stat-note">Repeated references prevented</small>
             <div class="stat-bar dup" aria-hidden="true"><span id="dashDupBar" style="width:0%"></span></div>
+          </article>
+          <article class="stat-card stat-verified" aria-label="Verified Transactions">
+            <div class="stat-head">
+              <div class="stat-icon" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="m8 12 3 3 5-6"/></svg></div>
+              <span class="stat-label">Successfully Verified</span>
+            </div>
+            <strong class="stat-value" id="dashVerified">0</strong>
+            <small class="stat-note">Verified Transactions</small>
+            <div class="stat-bar" aria-hidden="true"><span id="dashVerifiedBar" style="width:0%"></span></div>
           </article>
         </section>
 
         <section class="panels">
           <article class="panel">
-            <div class="panel-title">Transaction Trends</div>
+            <div class="panel-heading"><div class="panel-title">Transaction Trends</div><span class="panel-caption">Last 7 days</span></div>
             <div class="chart-wrap">
               <div class="bars" id="trendBars" aria-label="Transaction trends bar chart"></div>
               <p id="trendSummary" style="margin:10px 0 0;text-align:center;color:#58738E;font-size:10px;">Loading transaction data...</p>
@@ -575,7 +639,7 @@
           </article>
 
           <article class="panel">
-            <div class="panel-title">Recent System Activities</div>
+            <div class="panel-heading"><div class="panel-title">Recent System Activities</div><span class="panel-caption">Activity log</span></div>
             <div class="activity-list" id="recentActivities">
               <div class="activity-item"><p>Loading activities…</p><time></time></div>
             </div>
@@ -653,15 +717,16 @@
       document.getElementById('dashTotalAdmins').textContent = String(data.totalAdmins);
       document.getElementById('dashTotalStaff').textContent = String(data.totalStaff);
       document.getElementById('dashTotalTx').textContent = Number(data.totalTransactions).toLocaleString();
-      document.getElementById('dashVerified').textContent = data.verifiedTransactions + ' verified';
+      document.getElementById('dashVerified').textContent = Number(data.verifiedTransactions).toLocaleString();
       document.getElementById('dashDup').textContent = String(data.duplicateBlocked);
 
-      var txPct = Math.min(100, data.totalTransactions ? 70 + Math.min(30, data.totalTransactions) : 0);
+      var txPct = data.totalTransactions ? 100 : 0;
       var dupPct = data.totalTransactions
-        ? Math.max(6, Math.round((data.duplicateBlocked / data.totalTransactions) * 100))
+        ? Math.round((data.duplicateBlocked / data.totalTransactions) * 100)
         : 0;
       document.getElementById('dashTxBar').style.width = txPct + '%';
       document.getElementById('dashDupBar').style.width = dupPct + '%';
+      document.getElementById('dashVerifiedBar').style.width = (data.totalTransactions ? Math.round(data.verifiedTransactions / data.totalTransactions * 100) : 0) + '%';
 
       var today = new Date();
       today.setHours(0, 0, 0, 0);

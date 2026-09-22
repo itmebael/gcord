@@ -70,3 +70,5 @@ for (const [amount, expected] of [[150, '150'], [150.5, '150.5'], ['150.00', '15
   assert.strictEqual(parsed.reviewRequired, !expected);
 }
 console.log('Workflow amount formats: PASS');
+assert.strictEqual(context.GcordTransactions.parseGCashText('GCash\nSender\nJO** S.\nAmount PHP 100.00').recipient, '', 'Never use masked sender as GCash owner');
+assert.strictEqual(context.GcordTransactions.parseGCashText('GCash\nSender\nJO** S.\nRecipient: MA** R.\nAmount PHP 100.00').recipient, 'MA** R.', 'Use recipient when sender is also present');

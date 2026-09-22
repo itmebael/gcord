@@ -875,6 +875,7 @@
         row.dataset.search = search;
         row.dataset.ref = tx.ref || '';
         row.dataset.recipient = tx.recipient || '';
+        row.dataset.claimant = tx.claimant || '';
         row.dataset.number = tx.number || '';
         row.dataset.date = tx.date || '';
         row.dataset.time = tx.time || '';
@@ -997,6 +998,7 @@
       if (!transactionDetailModal) return;
       detailRef.textContent = row.dataset.ref || '';
       detailRecipient.textContent = row.dataset.recipient || 'Unknown';
+      document.getElementById('detailClaimant').textContent = row.dataset.claimant || 'Not recorded';
       detailNumber.textContent = row.dataset.number || '—';
       detailDate.textContent = row.dataset.date || '—';
       detailTime.textContent = row.dataset.time || '—';
@@ -1062,7 +1064,8 @@
     </div>
     <div class="transaction-detail-list">
       <div class="transaction-detail-row"><strong>Ref #:</strong><span id="detailRef"></span></div>
-      <div class="transaction-detail-row"><strong>Recipient:</strong><span id="detailRecipient"></span></div>
+      <div class="transaction-detail-row"><strong>GCash Owner:</strong><span id="detailRecipient"></span></div>
+      <div class="transaction-detail-row"><strong>Claimed By:</strong><span id="detailClaimant"></span></div>
       <div class="transaction-detail-row"><strong>Number:</strong><span id="detailNumber"></span></div>
       <div class="transaction-detail-row"><strong>Date:</strong><span id="detailDate"></span></div>
       <div class="transaction-detail-row"><strong>Time:</strong><span id="detailTime"></span></div>

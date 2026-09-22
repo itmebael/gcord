@@ -55,9 +55,11 @@ for (const file of ['supabase-api.js', 'report-trend.js']) vm.runInContext(fs.re
   assert.equal(elements.get('trendDays').children.length, 1);
   await trend.load('Last 7 Days');
   assert.equal(results.at(-1).dates.start, '2026-09-11');
+  assert.deepEqual(Array.from(results.at(-1).rows, row => row.id), [1, 2, 3], 'Last 7 Days changes the returned records');
   assert.equal(elements.get('trendDays').children.length, 7);
   await trend.load('This Month');
   assert.equal(results.at(-1).dates.start, '2026-09-01');
+  assert.deepEqual(Array.from(results.at(-1).rows, row => row.id), [1, 2, 3], 'This Month excludes future records and other staff');
   await trend.load('Custom', { from: '2026-09-16', to: '2026-09-16' });
   assert.deepEqual(Array.from(results.at(-1).rows, row => row.id), [1]);
   elements.get('refreshTrend').click();

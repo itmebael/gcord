@@ -509,7 +509,7 @@
 <div class="backdrop" id="resultBackdrop" aria-hidden="true">
   <div class="result-modal" role="dialog" aria-modal="true" aria-labelledby="resultTitle">
     <h2 id="resultTitle">Confirm Transaction</h2>
-    <p class="sub">Review the extracted GCash details, then save to Transaction Management.</p>
+    <p class="sub">Nothing is saved yet. Review the details and press Save to record this transaction. Cancel discards the scan, even if it was read successfully.</p>
     <p id="resultReviewWarning" class="earnings-note" role="status" hidden>Some receipt fields could not be extracted. Check the original receipt and complete or correct the fields before saving.</p>
     <div class="dup-banner" id="dupBanner">This reference number already exists. Saving will mark it as Duplicate.</div>
     <form id="resultForm" class="form-grid" novalidate>
@@ -546,7 +546,7 @@
         </div>
       </div>
       <div class="actions" style="grid-template-columns:1fr 1fr;">
-        <button class="action-button" type="button" id="cancelResultBtn">Edit / Cancel</button>
+        <button class="action-button" type="button" id="cancelResultBtn">Cancel — Discard Scan</button>
         <button class="action-button primary" type="submit">Okay — Save</button>
       </div>
     </form>
@@ -580,6 +580,7 @@
   var dupBanner = document.getElementById('dupBanner');
   var toast = document.getElementById('toast');
   var stream = null;
+  var cameraRequest = 0;
   var busy = false;
   var autoCapture = createScannerAutoCapture(video, document.getElementById('scannerFrame'), scannerHelp,
     document.getElementById('autoCaptureEnabled'), function (shot) {
@@ -602,6 +603,7 @@
 
   async function startCamera() {
     stopCamera();
+    var request = cameraRequest;
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
       setCameraStatus(false, 'Camera Unavailable');
       scannerHelp.textContent = 'Camera not supported. Use Upload Receipt Photo instead.';
@@ -610,12 +612,18 @@
     try {
       var frameRatio = document.getElementById('scannerFrame').clientWidth / document.getElementById('scannerFrame').clientHeight;
       if (!Number.isFinite(frameRatio) || frameRatio <= 0) frameRatio = 9 / 16;
-      stream = await navigator.mediaDevices.getUserMedia({
+      var openedStream = await navigator.mediaDevices.getUserMedia({
         video: { facingMode: { ideal: 'environment' }, aspectRatio: { ideal: frameRatio }, width: { ideal: 1920 }, height: { ideal: 1920 / frameRatio } },
         audio: false
       });
+      if (request !== cameraRequest) {
+        openedStream.getTracks().forEach(function (track) { track.stop(); });
+        return;
+      }
+      stream = openedStream;
       video.srcObject = stream;
       await video.play();
+      if (request !== cameraRequest) return;
       preview.style.display = 'none';
       video.style.display = 'block';
       scanLine.style.display = 'block';
@@ -623,12 +631,15 @@
       scannerHelp.textContent = 'Position the GCash receipt within the frame';
       autoCapture.start();
     } catch (err) {
+      if (request !== cameraRequest) return;
+      stopCamera();
       setCameraStatus(false, 'Camera Blocked');
       scannerHelp.textContent = 'Allow camera access or upload a receipt photo.';
     }
   }
 
   function stopCamera() {
+    cameraRequest++;
     autoCapture.stop();
     if (stream) {
       stream.getTracks().forEach(function (track) { track.stop(); });
@@ -689,7 +700,8 @@
     '<div><dt>Claimed by</dt><dd data-duplicate="name"></dd></div>' +
     '<div><dt>Claim time · Philippine time</dt><dd data-duplicate="time"></dd></div></dl>' +
     '<p data-duplicate="save" role="status" aria-live="polite"></p>' +
-    '<button type="submit" value="transactions" autofocus>Go to My Transactions</button></form>';
+    '<button type="submit" value="review" autofocus>Review / Edit Reference</button>' +
+    '<button type="submit" value="transactions">Go to My Transactions</button></form>';
   document.body.appendChild(duplicateDialog);
   var reviewAfterDuplicate = false;
   duplicateDialog.addEventListener('close', function () {
@@ -745,20 +757,7 @@
     var duplicate = await fillResultForm(data);
     if (duplicate) {
       reviewAfterDuplicate = true;
-      var saveStatus = duplicateDialog.querySelector('[data-duplicate="save"]');
-      var nextButton = duplicateDialog.querySelector('button');
-      nextButton.disabled = true;
-      saveStatus.textContent = 'Recording duplicate scan...';
-      try {
-        var saved = await GcordAPI.client().rpc('app_record_duplicate_scan', {p_ref: data.ref});
-        if (saved.error) throw saved.error;
-        saveStatus.textContent = 'Duplicate scan recorded. No new claim or earnings added.';
-      } catch (error) {
-        saveStatus.textContent = 'Duplicate detected, but not saved. ' +
-          (error.code === 'PGRST202' ? 'Apply database/record_duplicate_scan.sql first.' : 'Please try scanning again.');
-      } finally {
-        nextButton.disabled = false;
-      }
+      duplicateDialog.querySelector('[data-duplicate="save"]').textContent = 'Preview only. Nothing has been saved. Review the reference before saving.';
       return duplicate;
     }
     resultBackdrop.classList.add('active');
@@ -835,6 +834,9 @@
   }
 
   async function savePayload(data, source) {
+    if (savePayload.pending) return null;
+    savePayload.pending = true;
+    try {
     var user = GcordAPI.getCurrentUser();
     if (!user) {
       showToast('Please log in again to save.', 'err');
@@ -878,6 +880,9 @@
     }, 900);
 
     return result;
+    } finally {
+      savePayload.pending = false;
+    }
   }
 
   function showCaptured(dataUrl) {
@@ -1048,9 +1053,22 @@
     startCamera();
   });
 
-  document.getElementById('cancelResultBtn').addEventListener('click', closeResult);
+  function cancelResult() {
+    if (savePayload.pending) return;
+    closeResult();
+    reviewAfterDuplicate = false;
+    if (duplicateDialog.open) duplicateDialog.close();
+    document.getElementById('resultForm').reset();
+    delete dupBanner.dataset.popupRef;
+    dupBanner.classList.remove('show');
+    preview.removeAttribute('src');
+    preview.style.display = 'none';
+    showToast('Scan discarded. Nothing was saved.');
+    if (document.getElementById('cameraPane').classList.contains('active')) startCamera();
+  }
+  document.getElementById('cancelResultBtn').addEventListener('click', cancelResult);
   resultBackdrop.addEventListener('click', function (e) {
-    if (e.target === resultBackdrop) closeResult();
+    if (e.target === resultBackdrop) cancelResult();
   });
 
   document.getElementById('resultRef').addEventListener('input', checkDuplicatePreview);
@@ -1115,6 +1133,10 @@
 
   startCamera();
   window.addEventListener('beforeunload', stopCamera);
+  window.addEventListener('pagehide', stopCamera);
+  window.addEventListener('pageshow', function (event) {
+    if (event.persisted && document.getElementById('cameraPane').classList.contains('active')) startCamera();
+  });
 })();
 </script>
 <script src="staff-account-menu.js"></script>

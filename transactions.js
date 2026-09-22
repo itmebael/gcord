@@ -146,7 +146,8 @@
       return acceptName(match[1]) || (!match[1].trim() && acceptName(lines[index + 1] || ''));
     });
     if (!result.recipient) {
-      lines.some(function (line) {
+      lines.some(function (line, index) {
+        if (/\b(?:from|sender)\b/i.test(line + ' ' + (lines[index - 1] || ''))) return false;
         return /[*\u2022\u2217\u25cf\uff0a\u00b7\u2027\u2219]|\.(?:[ \t]*\.)+/.test(line) && acceptName(line);
       });
     }
