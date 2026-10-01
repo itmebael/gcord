@@ -408,6 +408,9 @@
   #signupView .password-error { color: #DC2626; font-size: 13px; margin: 8px 0 0; }
   .input-wrap .eye { position:absolute; right:5px; top:50%; transform:translateY(-50%); display:grid; place-items:center; width:44px; height:44px; padding:0; margin:0; border:0; border-radius:8px; background:transparent; cursor:pointer; color:var(--muted-soft); }
   .input-wrap .eye svg { display:block; position:static; transform:none; width:18px; height:18px; pointer-events:none; }
+  /* Keep the custom visibility button when Edge offers its own reveal control. */
+  .input-wrap input::-ms-reveal,
+  .input-wrap input::-ms-clear { display: none; }
   .input-wrap .eye:hover { color:var(--blue); background:rgba(0,82,204,.05); }
   .input-wrap .eye:focus-visible { outline:2px solid var(--blue); outline-offset:-3px; }
   .input-wrap #pwd, .input-wrap #suPassword, .input-wrap #suConfirmPassword { padding-right:52px; }
@@ -1772,6 +1775,7 @@ function togglePwd() {
 })();
 </script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase-loader.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bcryptjs@2.4.3/dist/bcrypt.min.js"></script>
 <script src="supabase-config.js"></script>
 <script src="supabase-api.js"></script>

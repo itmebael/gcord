@@ -150,6 +150,7 @@ CREATE TABLE transactions (
   matched_transaction_id  BIGINT REFERENCES transactions(id) ON DELETE SET NULL ON UPDATE CASCADE,
   ocr_confidence          NUMERIC(5,2),
   notes                   VARCHAR(500),
+  claimant_name           VARCHAR(160),
   created_at              TIMESTAMP NOT NULL DEFAULT NOW(),
   updated_at              TIMESTAMP NOT NULL DEFAULT NOW()
 );
@@ -600,7 +601,7 @@ RETURNS BOOLEAN
 LANGUAGE sql
 STABLE
 AS $$
-  SELECT COALESCE(app_current_user_role() = 'super_admin', FALSE);
+  SELECT COALESCE(app_current_user_role() IN ('admin', 'super_admin'), FALSE);
 $$;
 
 CREATE OR REPLACE FUNCTION app_verify_password(p_password TEXT, p_hash TEXT)

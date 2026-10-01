@@ -892,6 +892,24 @@
 
   async function getTopUsers(limit) {
     var sb = requireClient();
+    var viewRes = await sb.from('v_top_users_by_transactions')
+      .select('user_id,full_name,role,transaction_count,total_cash_out')
+      .gt('transaction_count', 0)
+      .order('transaction_count', { ascending: false })
+      .order('total_cash_out', { ascending: false })
+      .limit(limit || 5);
+    if (!viewRes.error) {
+      return (viewRes.data || []).map(function (u) {
+        return {
+          id: u.user_id,
+          name: u.full_name || 'Unknown',
+          role: (u.role === 'admin' || u.role === 'super_admin') ? 'Admin' : 'Staff',
+          count: Number(u.transaction_count) || 0,
+          amount: Number(u.total_cash_out) || 0
+        };
+      });
+    }
+
     var usersRes = await sb.from('users').select('id,full_name,role,first_name,last_name').in('role', ['staff', 'admin', 'super_admin']);
     if (usersRes.error) throw usersRes.error;
     var topTransactions = await listTransactions({all: true});
@@ -913,6 +931,7 @@
     });
 
     return Object.keys(map).map(function (k) { return map[k]; })
+      .filter(function (u) { return u.count > 0; })
       .sort(function (a, b) { return b.count - a.count || b.amount - a.amount; })
       .slice(0, limit || 5);
   }

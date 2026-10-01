@@ -17,10 +17,7 @@
     min-height: 100vh;
     font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     color: var(--ink);
-    background:
-      radial-gradient(circle at 8% 6%, rgba(61,139,255,0.24), transparent 30%),
-      radial-gradient(circle at 92% 18%, rgba(0,182,122,0.16), transparent 28%),
-      linear-gradient(135deg, #F7FBFF 0%, #EEF5FF 48%, #F9FBFE 100%);
+    background: #F5F7FA;
   }
   .app {
     min-height: 100vh;
@@ -82,27 +79,24 @@
   }
   .menu svg { flex: 0 0 auto; }
   .main { min-width: 0; padding: 22px clamp(20px, 3vw, 42px) 34px; overflow: visible; }
-  .page { max-width: 720px; margin: 0 auto; }
+  .page { max-width: 960px; margin: 0 auto; }
   .page-banner {
-    background: rgba(255,255,255,0.82);
-    border: 1px solid rgba(10,37,64,0.18);
-    border-radius: 14px;
-    padding: 16px 18px;
-    margin-bottom: 22px;
-    box-shadow: 0 18px 48px -34px rgba(10,37,64,0.5);
+    padding: 12px 0 20px;
+    border-bottom: 1px solid #DCE2EA;
+    margin-bottom: 20px;
   }
-  .page-banner h1 { font-size: clamp(18px, 2vw, 26px); font-weight: 800; }
+  .page-banner h1 { font-size: 26px; font-weight: 700; }
   .hero {
-    display: flex;
-    flex-direction: column;
+    display: grid;
+    grid-template-columns: 64px minmax(0, 1fr) auto;
     align-items: center;
-    gap: 10px;
-    text-align: center;
-    margin-bottom: 24px;
+    gap: 6px 16px;
+    padding: 0 0 24px;
   }
   .hero-avatar {
-    width: 88px;
-    height: 88px;
+    width: 64px;
+    height: 64px;
+    grid-row: 1 / 3;
     border-radius: 50%;
     display: grid;
     place-items: center;
@@ -110,7 +104,8 @@
     background: linear-gradient(155deg, #2485FF 0%, #0052CC 100%);
     box-shadow: 0 16px 36px -18px rgba(0,82,204,0.7);
   }
-  .hero h2 { font-size: 22px; font-weight: 800; }
+  .hero h2 { font-size: 20px; font-weight: 700; overflow-wrap: anywhere; }
+  .hero .role-pill { grid-column: 3; grid-row: 1 / 3; }
   .role-pill {
     display: inline-flex;
     padding: 5px 12px;
@@ -120,14 +115,11 @@
     font-size: 12px;
     font-weight: 800;
   }
-  .hero-email { color: #64748B; font-size: 13px; }
+  .hero-email { grid-column: 2; color: #64748B; font-size: 13px; overflow-wrap: anywhere; }
   .panel {
-    background: rgba(255,255,255,0.9);
-    border: 1px solid rgba(255,255,255,0.8);
-    border-radius: 18px;
-    padding: 22px;
-    box-shadow: 0 18px 48px -34px rgba(10,37,64,0.5);
-    margin-bottom: 18px;
+    background: transparent;
+    border-top: 1px solid #DCE2EA;
+    padding: 24px 0;
     scroll-margin-top: 24px;
   }
   .panel h3 {
@@ -140,9 +132,9 @@
     gap: 14px;
   }
   .form-grid.two {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   }
-  .field { display: grid; gap: 6px; }
+  .field { display: grid; gap: 6px; min-width: 0; }
   .field label {
     font-size: 12px;
     font-weight: 700;
@@ -151,7 +143,9 @@
   .field input {
     height: 44px;
     border: 1px solid rgba(10,37,64,0.14);
-    border-radius: 12px;
+    border-radius: 6px;
+    width: 100%;
+    min-width: 0;
     padding: 0 14px;
     font: inherit;
     font-size: 14px;
@@ -173,6 +167,7 @@
   .field.invalid .error { display: block; }
   .actions {
     display: flex;
+    flex-wrap: wrap;
     justify-content: flex-end;
     gap: 10px;
     margin-top: 16px;
@@ -181,7 +176,7 @@
     min-height: 42px;
     padding: 0 16px;
     border: 0;
-    border-radius: 12px;
+    border-radius: 6px;
     font: inherit;
     font-weight: 700;
     cursor: pointer;
@@ -189,6 +184,9 @@
   .btn.primary { background: #1D5BD6; color: #fff; }
   .btn.ghost { background: #F1F5F9; color: #475569; }
   .btn.danger { background: #DC2626; color: #fff; }
+  .btn:disabled { opacity: .55; cursor: wait; }
+  .btn:focus-visible { outline: 3px solid #91B9F5; outline-offset: 3px; }
+  .switch input:focus-visible + span { outline: 3px solid #91B9F5; outline-offset: 3px; }
   .toggle-row {
     display: flex;
     align-items: center;
@@ -282,7 +280,7 @@
         </div>
         <h2 id="heroName">Admin</h2>
         <div class="role-pill">Admin</div>
-        <div class="hero-email" id="heroEmail">superadmin@gcash.local</div>
+        <div class="hero-email" id="heroEmail"></div>
       </div>
 
       <section class="panel" id="account">
@@ -350,7 +348,7 @@
             <small>Get notified when a new admin login is detected</small>
           </div>
           <label class="switch">
-            <input type="checkbox" id="loginAlerts" checked />
+            <input type="checkbox" id="loginAlerts" aria-label="Login alerts" checked />
             <span></span>
           </label>
         </div>
@@ -360,7 +358,7 @@
             <small>Alert when a duplicate transaction is blocked</small>
           </div>
           <label class="switch">
-            <input type="checkbox" id="duplicateAlerts" checked />
+            <input type="checkbox" id="duplicateAlerts" aria-label="Duplicate alerts" checked />
             <span></span>
           </label>
         </div>
@@ -370,7 +368,7 @@
             <small>Confirm identity before deleting admin accounts</small>
           </div>
           <label class="switch">
-            <input type="checkbox" id="requireReauth" />
+            <input type="checkbox" id="requireReauth" aria-label="Require password on sensitive actions" />
             <span></span>
           </label>
         </div>
@@ -392,6 +390,7 @@
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase-loader.js"></script>
 <script src="supabase-config.js"></script>
 <script src="supabase-api.js"></script>
 <script src="admin-sidebar.js"></script>
@@ -401,15 +400,13 @@
 (function () {
   if (!GcordAPI.requireAuth({ adminOnly: true })) return;
 
-  var STORAGE_PROFILE = 'gcord_admin_profile';
-  var STORAGE_SECURITY = 'gcord_admin_security';
 
   var defaults = {
     profile: {
-      firstName: 'Super',
-      lastName: 'Admin',
-      email: 'superadmin@gcash.local',
-      phone: '09170000000'
+      firstName: '',
+      lastName: '',
+      email: '',
+      phone: ''
     },
     security: {
       loginAlerts: true,
@@ -417,19 +414,6 @@
       requireReauth: false
     }
   };
-
-  function loadJson(key, fallback) {
-    try {
-      var raw = localStorage.getItem(key);
-      return raw ? Object.assign({}, fallback, JSON.parse(raw)) : Object.assign({}, fallback);
-    } catch (e) {
-      return Object.assign({}, fallback);
-    }
-  }
-
-  function saveJson(key, value) {
-    localStorage.setItem(key, JSON.stringify(value));
-  }
 
   function showToast(message, type) {
     var toast = document.getElementById('toast');
@@ -464,8 +448,8 @@
     document.getElementById('requireReauth').checked = !!security.requireReauth;
   }
 
-  var profile = loadJson(STORAGE_PROFILE, defaults.profile);
-  var security = loadJson(STORAGE_SECURITY, defaults.security);
+  var profile = Object.assign({}, defaults.profile);
+  var security = Object.assign({}, defaults.security);
 
   // Prefill from live session when available
   var sessionUser = GcordAPI.getSession();
@@ -481,7 +465,51 @@
   fillProfile(profile);
   fillSecurity(security);
 
-  document.getElementById('profileForm').addEventListener('submit', function (e) {
+  var profileControls = document.querySelectorAll('#profileForm input, #profileForm button');
+  profileControls.forEach(function (control) { control.disabled = true; });
+  (async function () {
+    try {
+      var result = await GcordAPI.client().from('users')
+        .select('id,username,email,first_name,last_name,middle_name,extension_name,full_name,phone,role,status')
+        .eq('id', sessionUser.id).single();
+      if (result.error) throw result.error;
+      sessionUser = GcordAPI.setSession(Object.assign({}, GcordAPI.getSession(), result.data));
+      profile = {
+        firstName: sessionUser.first_name || '', lastName: sessionUser.last_name || '',
+        email: sessionUser.email || '', phone: sessionUser.phone || ''
+      };
+      fillProfile(profile);
+      var nameLabel = document.getElementById('adminProfileName');
+      var emailLabel = document.getElementById('adminProfileEmail');
+      if (nameLabel) nameLabel.textContent = sessionUser.full_name;
+      if (emailLabel) emailLabel.textContent = sessionUser.email;
+    } catch (err) {
+      showToast('Could not refresh account settings: ' + err.message, 'err');
+    } finally {
+      profileControls.forEach(function (control) { control.disabled = false; });
+    }
+  })();
+
+  var securityReady = false;
+  var securityButton = document.getElementById('saveSecurityBtn');
+  securityButton.disabled = true;
+  (async function () {
+    try {
+      var result = await GcordAPI.client().from('user_security_settings')
+        .select('login_alerts,duplicate_alerts,require_reauth').eq('user_id', sessionUser.id).maybeSingle();
+      if (result.error) throw result.error;
+      if (result.data) {
+        security = { loginAlerts: result.data.login_alerts, duplicateAlerts: result.data.duplicate_alerts, requireReauth: result.data.require_reauth };
+      }
+      fillSecurity(security);
+      securityReady = true;
+      securityButton.disabled = false;
+    } catch (err) {
+      showToast('Could not load security settings: ' + err.message, 'err');
+    }
+  })();
+
+  document.getElementById('profileForm').addEventListener('submit', async function (e) {
     e.preventDefault();
     var firstName = document.getElementById('firstName');
     var lastName = document.getElementById('lastName');
@@ -499,15 +527,37 @@
       return;
     }
 
-    profile = {
+    var draft = {
       firstName: firstName.value.trim(),
       lastName: lastName.value.trim(),
       email: email.value.trim(),
       phone: phone.value.trim()
     };
-    saveJson(STORAGE_PROFILE, profile);
-    updateHero(profile);
-    showToast('Account settings saved.');
+    var form = e.currentTarget;
+    var submit = form.querySelector('button[type="submit"]');
+    if (submit.disabled) return;
+    submit.disabled = true;
+    submit.textContent = 'Saving...';
+    document.getElementById('resetProfileBtn').disabled = true;
+    try {
+      var saved = await GcordAPI.updateUser(sessionUser.id, {
+        first_name: draft.firstName, last_name: draft.lastName, email: draft.email, phone: draft.phone
+      });
+      sessionUser = GcordAPI.setSession(Object.assign({}, GcordAPI.getSession(), saved));
+      profile = { firstName: saved.first_name || '', lastName: saved.last_name || '', email: saved.email || '', phone: saved.phone || '' };
+      fillProfile(profile);
+      var nameLabel = document.getElementById('adminProfileName');
+      var emailLabel = document.getElementById('adminProfileEmail');
+      if (nameLabel) nameLabel.textContent = sessionUser.full_name;
+      if (emailLabel) emailLabel.textContent = sessionUser.email;
+      showToast('Account settings saved.');
+    } catch (err) {
+      showToast(err.message || 'Could not save account settings.', 'err');
+    } finally {
+      submit.disabled = false;
+      submit.textContent = 'Save Changes';
+      document.getElementById('resetProfileBtn').disabled = false;
+    }
   });
 
   document.getElementById('resetProfileBtn').addEventListener('click', function () {
@@ -565,14 +615,29 @@
     });
   });
 
-  document.getElementById('saveSecurityBtn').addEventListener('click', function () {
-    security = {
+  document.getElementById('saveSecurityBtn').addEventListener('click', async function () {
+    if (!securityReady || securityButton.disabled) return;
+    var draft = {
       loginAlerts: document.getElementById('loginAlerts').checked,
       duplicateAlerts: document.getElementById('duplicateAlerts').checked,
       requireReauth: document.getElementById('requireReauth').checked
     };
-    saveJson(STORAGE_SECURITY, security);
-    showToast('Security settings saved.');
+    securityButton.disabled = true;
+    securityButton.textContent = 'Saving...';
+    try {
+      var result = await GcordAPI.client().from('user_security_settings').upsert({
+        user_id: sessionUser.id, login_alerts: draft.loginAlerts,
+        duplicate_alerts: draft.duplicateAlerts, require_reauth: draft.requireReauth
+      }).select('user_id').single();
+      if (result.error) throw result.error;
+      security = draft;
+      showToast('Security settings saved.');
+    } catch (err) {
+      showToast(err.message || 'Could not save security settings.', 'err');
+    } finally {
+      securityButton.disabled = false;
+      securityButton.textContent = 'Save Security Settings';
+    }
   });
 
   function focusHash() {

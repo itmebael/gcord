@@ -101,7 +101,7 @@ RETURNS BOOLEAN
 LANGUAGE sql
 STABLE
 AS $$
-  SELECT COALESCE(app_current_user_role() = 'super_admin', FALSE);
+  SELECT COALESCE(app_current_user_role() IN ('admin', 'super_admin'), FALSE);
 $$;
 
 CREATE OR REPLACE FUNCTION app_verify_password(p_password TEXT, p_hash TEXT)
