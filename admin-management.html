@@ -609,12 +609,22 @@
     <form id="addUserForm" class="form-grid" novalidate>
       <div class="form-grid two">
         <div class="field">
-          <label for="firstName">First Name</label>
-          <input id="firstName" name="first_name" required />
+          <label for="lastName">Last Name</label>
+          <input id="lastName" name="last_name" class="name-input" autocomplete="family-name" required />
         </div>
         <div class="field">
-          <label for="lastName">Last Name</label>
-          <input id="lastName" name="last_name" required />
+          <label for="middleName">Middle Name</label>
+          <input id="middleName" name="middle_name" class="name-input" autocomplete="additional-name" required />
+        </div>
+      </div>
+      <div class="form-grid two">
+        <div class="field">
+          <label for="firstName">First Name</label>
+          <input id="firstName" name="first_name" class="name-input" autocomplete="given-name" required />
+        </div>
+        <div class="field">
+          <label for="suffix">Suffix</label>
+          <input id="suffix" name="extension_name" class="name-input" autocomplete="honorific-suffix" placeholder="Jr., Sr., II, III" />
         </div>
       </div>
       <div class="field">
@@ -622,8 +632,9 @@
         <input id="email" name="email" type="email" required />
       </div>
       <div class="field">
-        <label for="phone">Phone Number</label>
-        <input id="phone" name="phone" type="tel" placeholder="09171234567" />
+        <label for="phone">Mobile Number</label>
+        <input id="phone" name="phone" type="tel" inputmode="numeric" autocomplete="tel" value="+63 " maxlength="14" placeholder="+63 9123456789" aria-describedby="phoneHelp" />
+        <small id="phoneHelp">Use +63 followed by 10 digits.</small>
       </div>
       <div class="form-grid two">
         <div class="field">
@@ -701,6 +712,37 @@
     return 'Staff';
   }
 
+  function toTitleCase(value) {
+    return String(value || '').toLowerCase().replace(/\b([a-z])/g, function (match) {
+      return match.toUpperCase();
+    }).replace(/\b(Ii|Iii|Iv|Vi|Vii|Viii|Ix|X)\b/g, function (match) {
+      return match.toUpperCase();
+    });
+  }
+
+  function formatCompleteName(user) {
+    if (user.full_name) return user.full_name;
+    return [
+      user.first_name,
+      user.middle_name || user.middle_initial,
+      user.last_name,
+      user.extension_name
+    ].filter(Boolean).join(' ').trim();
+  }
+
+  function normalizeMobileInput(value) {
+    var digits = String(value || '').replace(/\D/g, '');
+    if (digits.indexOf('63') === 0) digits = digits.slice(2);
+    if (digits.charAt(0) === '0') digits = digits.slice(1);
+    digits = digits.slice(0, 10);
+    return '+63 ' + digits;
+  }
+
+  function getMobileDigits() {
+    var phone = document.getElementById('phone');
+    return phone.value.replace(/\D/g, '').replace(/^63/, '').slice(0, 10);
+  }
+
   function updateStats(list) {
     document.getElementById('statTotalAdmins').textContent = String(
       list.filter(function (u) { return u.role === 'admin' || u.role === 'super_admin'; }).length
@@ -745,7 +787,7 @@
 
   function openUserDetail(user) {
     selectedUserId = user.id;
-    var name = user.full_name || ((user.first_name || '') + ' ' + (user.last_name || '')).trim();
+    var name = formatCompleteName(user);
     document.getElementById('userDetailTitle').textContent = name || 'Account Details';
     document.getElementById('userDetailSub').textContent =
       user.verification_status === 'verified'
@@ -787,7 +829,7 @@
     var q = (search.value || '').trim().toLowerCase();
     var role = roleFilter.value;
     var rows = users.filter(function (u) {
-      var name = (u.full_name || (u.first_name + ' ' + u.last_name)).toLowerCase();
+      var name = formatCompleteName(u).toLowerCase();
       var matchName = !q || name.indexOf(q) !== -1 || String(u.email || '').toLowerCase().indexOf(q) !== -1;
       var matchRole = role === 'all' || u.role === role ||
         (role === 'admin' && u.role === 'super_admin');
@@ -795,7 +837,7 @@
     });
 
     table.innerHTML = rows.map(function (u) {
-      var name = u.full_name || ((u.first_name || '') + ' ' + (u.last_name || '')).trim();
+      var name = formatCompleteName(u);
       var active = u.status !== 'inactive';
       var v = u.verification_status || 'pending';
       var statusPill = '<span class="status-pill ' + verificationClass(v) + '">' + verificationLabel(v) + '</span>';
@@ -846,6 +888,7 @@
     form.reset();
     document.getElementById('status').value = 'active';
     document.getElementById('role').value = 'staff';
+    document.getElementById('phone').value = '+63 ';
     modal.classList.add('active');
     modal.setAttribute('aria-hidden', 'false');
   }
@@ -861,21 +904,55 @@
     if (e.target === modal) closeModal();
   });
 
+  Array.prototype.forEach.call(document.querySelectorAll('.name-input'), function (input) {
+    input.addEventListener('input', function () {
+      var start = input.selectionStart;
+      var before = input.value;
+      input.value = toTitleCase(input.value);
+      if (document.activeElement === input && start != null) {
+        var offset = input.value.length - before.length;
+        input.setSelectionRange(start + offset, start + offset);
+      }
+    });
+    input.addEventListener('blur', function () {
+      input.value = toTitleCase(input.value.trim().replace(/\s+/g, ' '));
+    });
+  });
+
+  document.getElementById('phone').addEventListener('input', function (e) {
+    e.target.value = normalizeMobileInput(e.target.value);
+  });
+  document.getElementById('phone').addEventListener('keydown', function (e) {
+    var controlKeys = ['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Tab', 'Home', 'End'];
+    if (controlKeys.indexOf(e.key) !== -1 || e.ctrlKey || e.metaKey) return;
+    if (!/^\d$/.test(e.key) || getMobileDigits().length >= 10) e.preventDefault();
+  });
+  document.getElementById('phone').addEventListener('blur', function (e) {
+    e.target.value = normalizeMobileInput(e.target.value);
+  });
+
   form.addEventListener('submit', async function (e) {
     e.preventDefault();
     var btn = document.getElementById('saveAddUser');
+    var phoneDigits = getMobileDigits();
     var payload = {
-      first_name: document.getElementById('firstName').value.trim(),
-      last_name: document.getElementById('lastName').value.trim(),
+      first_name: toTitleCase(document.getElementById('firstName').value.trim()),
+      middle_name: toTitleCase(document.getElementById('middleName').value.trim()),
+      last_name: toTitleCase(document.getElementById('lastName').value.trim()),
+      extension_name: toTitleCase(document.getElementById('suffix').value.trim()),
       email: document.getElementById('email').value.trim(),
-      phone: document.getElementById('phone').value.trim(),
+      phone: phoneDigits ? '+63 ' + phoneDigits : '',
       role: document.getElementById('role').value,
       status: document.getElementById('status').value,
       password: document.getElementById('password').value
     };
 
-    if (!payload.first_name || !payload.last_name || !payload.email || payload.password.length < 8) {
+    if (!payload.first_name || !payload.middle_name || !payload.last_name || !payload.email || payload.password.length < 8) {
       showToast('Please complete all required fields.', true);
+      return;
+    }
+    if (phoneDigits.length !== 10) {
+      showToast('Enter a valid Philippine mobile number: +63 followed by 10 digits.', true);
       return;
     }
 

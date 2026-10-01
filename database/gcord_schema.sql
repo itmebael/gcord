@@ -81,16 +81,12 @@ DROP TABLE IF EXISTS daily_usage_stats CASCADE;
 DROP TABLE IF EXISTS transactions CASCADE;
 DROP TABLE IF EXISTS users CASCADE;
 
--- Drop functions
-DROP FUNCTION IF EXISTS sp_save_transaction(text, text, text, numeric, date, time, txn_source, bigint);
+-- Functions are refreshed below with CREATE OR REPLACE.
+-- Do not drop them here: additive migrations can have RLS policies that depend
+-- on auth helpers such as app_current_user_id().
+-- app_login is safe to drop first because it is an RPC entrypoint, not used by
+-- RLS policies, and PostgreSQL cannot replace it if the OUT columns changed.
 DROP FUNCTION IF EXISTS app_login(text, text);
-DROP FUNCTION IF EXISTS app_logout();
-DROP FUNCTION IF EXISTS app_find_transaction_by_ref(text);
-DROP FUNCTION IF EXISTS app_current_user_id();
-DROP FUNCTION IF EXISTS app_current_user_role();
-DROP FUNCTION IF EXISTS app_is_admin();
-DROP FUNCTION IF EXISTS app_session_token();
-DROP FUNCTION IF EXISTS app_verify_password(text, text);
 
 -- =============================================================================
 -- 1) USERS
@@ -103,12 +99,19 @@ CREATE TABLE users (
   first_name        VARCHAR(80)  NOT NULL,
   last_name         VARCHAR(80)  NOT NULL,
   middle_initial    VARCHAR(5),
+  middle_name       VARCHAR(80),
+  extension_name    VARCHAR(80),
   full_name         VARCHAR(160) GENERATED ALWAYS AS (
                       TRIM(BOTH FROM (
                         first_name || ' ' ||
-                        CASE WHEN middle_initial IS NULL OR middle_initial = '' THEN ''
-                             ELSE middle_initial || '. ' END ||
-                        last_name
+                        CASE
+                          WHEN middle_name IS NOT NULL AND middle_name <> '' THEN middle_name || ' '
+                          WHEN middle_initial IS NULL OR middle_initial = '' THEN ''
+                          ELSE middle_initial || '. '
+                        END ||
+                        last_name ||
+                        CASE WHEN extension_name IS NULL OR extension_name = '' THEN ''
+                             ELSE ' ' || extension_name END
                       ))
                     ) STORED,
   phone             VARCHAR(20),

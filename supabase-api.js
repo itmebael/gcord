@@ -48,7 +48,9 @@
       email: user.email,
       first_name: user.first_name,
       last_name: user.last_name,
-      full_name: user.full_name || ((user.first_name || '') + ' ' + (user.last_name || '')).trim(),
+      middle_name: user.middle_name || null,
+      extension_name: user.extension_name || null,
+      full_name: user.full_name || [user.first_name, user.middle_name || user.middle_initial, user.last_name, user.extension_name].filter(Boolean).join(' ').trim(),
       role: user.role,
       phone: user.phone || null,
       session_token: user.session_token || null
@@ -184,6 +186,14 @@
     var n = String(num || '').replace(/\D/g, '');
     if (n.indexOf('63') === 0 && n.length >= 12) n = '0' + n.slice(2);
     return n;
+  }
+
+  function normalizePhilippineMobile(num) {
+    var digits = String(num || '').replace(/\D/g, '');
+    if (digits.indexOf('63') === 0) digits = digits.slice(2);
+    if (digits.charAt(0) === '0') digits = digits.slice(1);
+    digits = digits.slice(0, 10);
+    return digits.length === 10 ? '+63 ' + digits : '';
   }
 
   function formatRefDisplay(ref) {
@@ -346,7 +356,7 @@
   async function listUsers(filters) {
     var sb = requireClient();
     var q = sb.from('users').select(
-      'id,username,email,first_name,last_name,middle_initial,full_name,phone,role,status,age,birthday,valid_id_url,face_capture_url,verification_status,verified_at,created_at,last_login_at'
+      'id,username,email,first_name,last_name,middle_initial,middle_name,extension_name,full_name,phone,role,status,age,birthday,valid_id_url,face_capture_url,verification_status,verified_at,created_at,last_login_at'
     ).order('id', { ascending: true });
     if (filters && filters.role && filters.role !== 'all') q = q.eq('role', filters.role);
     if (filters && filters.status) q = q.eq('status', filters.status);
@@ -387,7 +397,9 @@
       first_name: String(payload.first_name || '').trim(),
       last_name: String(payload.last_name || '').trim(),
       middle_initial: payload.middle_initial ? String(payload.middle_initial).trim() : null,
-      phone: payload.phone ? normalizeNumber(payload.phone) : null,
+      middle_name: payload.middle_name ? String(payload.middle_name).trim() : null,
+      extension_name: payload.extension_name ? String(payload.extension_name).trim() : null,
+      phone: payload.phone ? (normalizePhilippineMobile(payload.phone) || normalizeNumber(payload.phone)) : null,
       role: role,
       status: payload.status || 'active',
       age: payload.age != null ? Number(payload.age) : null,
@@ -400,7 +412,7 @@
       verified_by_user_id: (payload.verification_status === 'pending') ? null : (getSession() && getSession().id) || null
     };
 
-    var res = await sb.from('users').insert(row).select('id,username,email,first_name,last_name,full_name,phone,role,status,created_at').single();
+    var res = await sb.from('users').insert(row).select('id,username,email,first_name,last_name,middle_name,extension_name,full_name,phone,role,status,created_at').single();
     if (res.error) throw res.error;
 
     await sb.from('user_security_settings').insert({
@@ -429,8 +441,10 @@
     var data = {};
     if (patch.first_name != null) data.first_name = String(patch.first_name).trim();
     if (patch.last_name != null) data.last_name = String(patch.last_name).trim();
+    if (patch.middle_name != null) data.middle_name = String(patch.middle_name).trim() || null;
+    if (patch.extension_name != null) data.extension_name = String(patch.extension_name).trim() || null;
     if (patch.email != null) data.email = String(patch.email).trim().toLowerCase();
-    if (patch.phone != null) data.phone = normalizeNumber(patch.phone);
+    if (patch.phone != null) data.phone = normalizePhilippineMobile(patch.phone) || normalizeNumber(patch.phone);
     if (patch.role != null) {
       if (patch.role !== 'staff' && patch.role !== 'admin') {
         throw new Error('Role must be Staff or Admin.');
@@ -438,7 +452,7 @@
       data.role = patch.role;
     }
     if (patch.status != null) data.status = patch.status;
-    var res = await sb.from('users').update(data).eq('id', id).select('id,username,email,first_name,last_name,full_name,phone,role,status').single();
+    var res = await sb.from('users').update(data).eq('id', id).select('id,username,email,first_name,last_name,middle_name,extension_name,full_name,phone,role,status').single();
     if (res.error) throw res.error;
     return res.data;
   }
@@ -547,7 +561,7 @@
       verified_by_user_id: verificationStatus === 'verified' ? (session && session.id) : null
     };
     var res = await sb.from('users').update(data).eq('id', id)
-      .select('id,username,email,first_name,last_name,full_name,phone,role,status,age,birthday,valid_id_url,face_capture_url,verification_status,verified_at')
+      .select('id,username,email,first_name,last_name,middle_name,extension_name,full_name,phone,role,status,age,birthday,valid_id_url,face_capture_url,verification_status,verified_at')
       .single();
     if (res.error) throw res.error;
 

@@ -45,14 +45,12 @@ CREATE INDEX IF NOT EXISTS idx_sess_token_active
   ON user_sessions (session_token)
   WHERE is_active = TRUE;
 
+-- Functions are refreshed below with CREATE OR REPLACE.
+-- Do not drop them here: later migrations can have RLS policies that depend
+-- on auth helpers such as app_current_user_id().
+-- app_login is safe to drop first because it is an RPC entrypoint, not used by
+-- RLS policies, and PostgreSQL cannot replace it if the OUT columns changed.
 DROP FUNCTION IF EXISTS app_login(text, text);
-DROP FUNCTION IF EXISTS app_logout();
-DROP FUNCTION IF EXISTS app_find_transaction_by_ref(text);
-DROP FUNCTION IF EXISTS app_current_user_id();
-DROP FUNCTION IF EXISTS app_current_user_role();
-DROP FUNCTION IF EXISTS app_is_admin();
-DROP FUNCTION IF EXISTS app_session_token();
-DROP FUNCTION IF EXISTS app_verify_password(text, text);
 
 CREATE OR REPLACE FUNCTION app_session_token()
 RETURNS TEXT
