@@ -129,14 +129,14 @@
       if (/\.(?:[ \t]*\.)+/.test(name)) {
         name = name.replace(/\.(?:[ \t]*\.)+/g, function (mask) {
           return mask.replace(/[ \t]/g, '');
-        }).replace(/\./g, '*');
+        }).replace(/\.{2,}/g, function (mask) { return mask.replace(/\./g, '*'); });
       }
       // OCR often merges the name and mobile number into one line.
       name = name.replace(/\s*\(?\+?(?:63\s*9|09|9\d{2})[\d *xX()-]{6,}\)?\s*$/, '').trim();
       // Accept masked initials and dotted/asterisked separators that OCR commonly produces.
       name = name.replace(/\s+/g, ' ').trim();
       if (!/^[A-Za-z\u00c0-\u024f][A-Za-z\u00c0-\u024f *\u2022.'-]{1,79}$/.test(name)) return false;
-      if (/\b(?:reference|amount|gcash|success(?:ful(?:ly)?)?|total|date|time|php|sent|received|payment|receipt|number|send|money|express|transfer|thank|you|from|balance|mobile|phone|account)\b/i.test(name)) return false;
+      if (/\b(?:facebook|messenger|reference|amount|gcash|success(?:ful(?:ly)?)?|total|date|time|php|sent|received|payment|receipt|number|send|money|express|transfer|thank|you|from|balance|mobile|phone|account)\b/i.test(name)) return false;
       result.recipient = name.toUpperCase(); return true;
     }
     // Names can follow a label or appear on its next line, including masked names.
@@ -193,6 +193,13 @@
       ref: field('reference_number'), date: field('date'), time: field('time'),
       workflow: true, reviewRequired: output.parse_error !== false
     };
+    // Reject app chrome and malformed model output so local OCR can retry the name.
+    // Preserve the original spelling and mask characters of valid receipt names.
+    if (parsed.recipient && (!/^[A-Za-z\u00c0-\u024f][A-Za-z\u00c0-\u024f\s*\u2022\u2217\u25cf\uff0a\u00b7\u2027\u2219.'\u2018\u2019-]{1,79}$/.test(parsed.recipient) ||
+        /\b(?:facebook|messenger|gcash|amount|reference|receipt|sent|total|phone|number)\b/i.test(parsed.recipient))) {
+      parsed.recipient = '';
+      parsed.reviewRequired = true;
+    }
     if (['recipient', 'number', 'amount', 'ref', 'date', 'time'].some(function (key) {
       return !parsed[key];
     })) parsed.reviewRequired = true;

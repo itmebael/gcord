@@ -50,6 +50,16 @@ async function scan(output, localReader, detectedText) {
   assert.strictEqual(reused.opened[0].recipient, 'JU** CR**');
   assert.strictEqual(reused.opened[0].amount, receipt.amount);
   assert.strictEqual(localCalls, 0, 'Reuse detection OCR without reading the same image again');
+  const wrongName = await scan({ ...receipt, name: 'Facebook (1) Facebook' }, {
+    recognize: async () => ({ data: { text: 'Facebook\nGCash\nJA\u2022\u2022\u2022E S.\n+63 963 770 6803\nSent via GCash\nAmount 500.00' } })
+  });
+  assert.strictEqual(wrongName.opened[0].recipient, 'JA***E S.', 'Recover the masked receipt name instead of app text');
+  assert.strictEqual(wrongName.opened[0].reviewRequired, true);
+  assert.strictEqual(wrongName.opened[0].ref, receipt.reference_number);
+  const unreadableName = await scan({ ...receipt, name: 'Facebook (1) Facebook' }, {
+    recognize: async () => ({ data: { text: 'Facebook\n+63 963 770 6803\nAmount 500.00' } })
+  });
+  assert.strictEqual(unreadableName.opened[0].recipient, '', 'Leave the name empty when only app text is readable');
   const partial = await scan([{ ...receipt, name: '', date: '', parse_error: true }], reader);
   assert.strictEqual(partial.opened.length, 1, 'Incomplete workflow result must open for manual review');
   assert.strictEqual(partial.opened[0].recipient, '');
