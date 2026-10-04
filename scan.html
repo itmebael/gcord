@@ -457,7 +457,7 @@
                 <svg width="18" height="18" fill="none" stroke="#657080" stroke-width="2.4" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v6h6"/></svg>
                 Rescan
               </button>
-              <input class="hidden-input" id="fileInput" type="file" accept="image/*" capture="environment" />
+              <input class="hidden-input" id="fileInput" type="file" accept="image/*" />
             </div>
           </div>
 
@@ -567,6 +567,7 @@
 <script src="supabase-api.js"></script>
 <script src="transactions.js?v=20261004-recipient-8"></script>
 <script src="sidebar.js"></script>
+<script src="scanner-ocr.js"></script>
 <script src="scanner-auto-capture.js"></script>
 <script>
 (function () {
@@ -1026,7 +1027,10 @@
         ocrProgress.textContent = 'Reading receipt text... 0%';
         try {
           if (!detectedText && typeof Tesseract === 'undefined') throw new Error('Local text reader did not load');
-          var result = detectedText ? { data: detectedText } : await Tesseract.recognize(imageDataUrl, 'eng', {
+          var readText = window.GcordScannerOCR
+            ? function (image, language, options) { return window.GcordScannerOCR.recognize(image, options); }
+            : function (image, language, options) { return Tesseract.recognize(image, language, options); };
+          var result = detectedText ? { data: detectedText } : await readText(imageDataUrl, 'eng', {
             logger: function (m) {
               if (m.status === 'recognizing text' && m.progress != null) {
                 ocrProgress.textContent = 'Reading GCash receipt... ' + Math.round(m.progress * 100) + '%';

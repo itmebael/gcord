@@ -26,7 +26,7 @@ window.createScannerAutoCapture = function(video, frame, hint, toggle, capture, 
       shotContext.imageSmoothingEnabled=true;shotContext.imageSmoothingQuality='high';
       shotContext.drawImage(video,0,0,w,h,0,0,shot.width,shot.height);
       var image=shot.toDataURL('image/jpeg',.9),result=await Promise.race([
-        Tesseract.recognize(image,'eng'),
+        window.GcordScannerOCR ? window.GcordScannerOCR.recognize(image) : Tesseract.recognize(image,'eng'),
         new Promise(function(_,reject){timeout=setTimeout(function(){reject(new Error('Receipt detection timed out'));},20000);})
       ]);
       if(token!==generation||!toggle.checked||!available()||document.hidden||fired)return;
@@ -55,11 +55,11 @@ window.createScannerAutoCapture = function(video, frame, hint, toggle, capture, 
       var lit=mean>55&&mean<235&&clipped/n<.65,clear=contrast>24&&edges/(n*2)>7;
       if(!lit||!clear||!steady){invalidate();hint.textContent=!lit?'Adjust lighting to reduce darkness or glare.':!clear?'Move closer and let the camera focus.':'Hold the receipt steady.';return;}
       if(!ready)ready=performance.now();
-      if(approved){if(performance.now()-approved.at>=1200){var image=approved.image,ocr=approved.ocr;fired=true;stop();capture(image,ocr);}return;}
-      if(!checking&&performance.now()>=nextCheck&&performance.now()-ready>=1200)inspect(w,h,gray);
+      if(approved){if(performance.now()-approved.at>=500){var image=approved.image,ocr=approved.ocr;fired=true;stop();capture(image,ocr);}return;}
+      if(!checking&&performance.now()>=nextCheck&&performance.now()-ready>=750)inspect(w,h,gray);
     }catch(error){reset();hint.textContent='Waiting for a readable camera frame. Use Capture or Upload if needed.';}
   }
   toggle.addEventListener('change',function(){reset();hint.textContent=toggle.checked?'Hold the receipt steady for auto capture.':'Auto capture off. Use Capture when ready.';});
   document.addEventListener('visibilitychange',reset);
-  return {start:function(){stop();fired=false;timer=setInterval(tick,250);},stop:stop};
+  return {start:function(){stop();fired=false;if(window.GcordScannerOCR)window.GcordScannerOCR.prepare().catch(function(){});timer=setInterval(tick,250);},stop:stop};
 };
