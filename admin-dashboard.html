@@ -678,12 +678,13 @@
 
   function formatLogTime(iso) {
     if (!iso) return '';
-    var d = new Date(iso);
+    var d = GcordAPI.parseDatabaseTimestamp(iso);
     if (isNaN(d.getTime())) return iso;
     return d.toLocaleString('en-US', {
+      timeZone: 'Asia/Manila',
       month: '2-digit', day: '2-digit', year: 'numeric',
       hour: 'numeric', minute: '2-digit'
-    });
+    }) + ' PHT';
   }
 
   function renderTopUsers(users) {

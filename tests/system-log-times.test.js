@@ -10,6 +10,9 @@ vm.runInContext(fs.readFileSync(path.join(__dirname, '../supabase-api.js'), 'utf
 const page = fs.readFileSync(path.join(__dirname, '../system-logs.html'), 'utf8');
 const mapLog = page.slice(page.indexOf('  function mapLog(row)'), page.indexOf('  function rebuildDateIndex()'));
 vm.runInContext("var ICONS = { info: { cls: 'login', svg: '' } };" + mapLog, context);
+const dashboard = fs.readFileSync(path.join(__dirname, '../admin-dashboard.html'), 'utf8');
+const formatLogTime = dashboard.slice(dashboard.indexOf('  function formatLogTime(iso)'), dashboard.indexOf('  function renderTopUsers(users)'));
+vm.runInContext(formatLogTime, context);
 
 const originalTZ = process.env.TZ;
 try {
@@ -20,10 +23,14 @@ try {
       const log = context.mapLog({ created_at: timestamp });
       assert.equal(log.timeLabel, '09/16/2026, 9:26 PM PHT', zone);
       assert.equal(log.date, '2026-09-16', zone);
+      assert.equal(context.formatLogTime(timestamp), '09/16/2026, 9:26 PM PHT', zone);
     }
     const midnight = context.mapLog({ created_at: '2026-09-16T16:01:00' });
     assert.equal(midnight.timeLabel, '09/17/2026, 12:01 AM PHT', zone);
     assert.equal(midnight.date, '2026-09-17', zone);
+    assert.equal(context.formatLogTime('2026-09-16T16:01:00'), '09/17/2026, 12:01 AM PHT', zone);
+    assert.equal(context.formatLogTime(''), '');
+    assert.equal(context.formatLogTime('invalid'), 'invalid');
     assert.equal(context.mapLog({ created_at: 'invalid' }).timeLabel, 'invalid');
   }
 } finally {
