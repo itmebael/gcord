@@ -3,7 +3,7 @@
   "private": true,
   "scripts": {
     "start": "node local-server.js",
-    "test": "node tests/masked-recipient-names.test.js && node tests/scan-flow.test.js && node tests/scan-fallback.test.js && node tests/scan-validation.test.js && node tests/scan-lifecycle.test.js && node tests/report-filters.test.js && node tests/system-update.test.js && node tests/session-persistence.test.js && node tests/duplicate-claim-details.test.js"
+    "test": "node tests/masked-recipient-names.test.js && node tests/scan-flow.test.js && node tests/scan-fallback.test.js && node tests/scan-validation.test.js && node tests/scan-lifecycle.test.js && node tests/report-filters.test.js && node tests/system-update.test.js && node tests/session-persistence.test.js && node tests/duplicate-claim-details.test.js && node tests/duplicate-recording.test.js"
   },
   "engines": {
     "node": ">=22"

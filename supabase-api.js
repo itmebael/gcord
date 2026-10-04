@@ -788,6 +788,20 @@
     return fallback;
   }
 
+  async function recordDuplicateScan(ref) {
+    var sb = requireClient();
+    await requireActiveSession();
+    var result = await sb.rpc('app_record_duplicate_scan', { p_ref: normalizeRef(ref) });
+    if (result.error) {
+      if (result.error.code === 'PGRST202' || result.error.code === '42883') {
+        throw new Error('Apply database/record_duplicate_scan.sql in Supabase, then reload this page.');
+      }
+      throw result.error;
+    }
+    if (!result.data) throw new Error('The database did not confirm the duplicate record.');
+    return { transactionId: result.data, isDuplicate: true };
+  }
+
   async function addTransaction(payload) {
     var sb = requireClient();
     var user = await requireActiveSession();
@@ -1258,6 +1272,7 @@
     getTransactionStats: getTransactionStats,
     findTransactionByRef: findTransactionByRef,
     addTransaction: addTransaction,
+    recordDuplicateScan: recordDuplicateScan,
     listSystemLogs: listSystemLogs,
     listDuplicateEvents: listDuplicateEvents,
     listNotifications: listNotifications,

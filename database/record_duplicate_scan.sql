@@ -22,7 +22,12 @@ BEGIN
     v_original.amount, v_original.txn_date, v_original.txn_time,
     'duplicate', 'scan', v_uid, v_original.id)
   RETURNING id INTO v_id;
-  -- The earnings trigger records the duplicate event and excludes it from earnings.
+  -- Also support databases without the earnings event trigger. If installed,
+  -- that trigger already inserted this event; the unique key prevents repeats.
+  INSERT INTO public.duplicate_events
+    (ref_no, original_transaction_id, duplicate_transaction_id, amount, resolved_status)
+  VALUES (v_ref, v_original.id, v_id, v_original.amount, 'blocked')
+  ON CONFLICT (original_transaction_id, duplicate_transaction_id) DO NOTHING;
   RETURN v_id;
 END $$;
 REVOKE ALL ON FUNCTION public.app_record_duplicate_scan(text) FROM PUBLIC;
