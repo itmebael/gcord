@@ -403,14 +403,21 @@
 
       <section class="profile-body" aria-labelledby="personalDetailsTitle">
         <h2 id="personalDetailsTitle">Personal details</h2>
-        <dl class="details">
-          <div class="profile-detail-tile"><dt>Lastname:</dt><dd>Zhang</dd></div>
-          <div class="profile-detail-tile"><dt>Firstname:</dt><dd>Mace</dd></div>
-          <div class="profile-detail-tile"><dt>M.I</dt><dd>V.</dd></div>
-          <div class="profile-detail-tile"><dt>Email Address:</dt><dd>mAce_ang@gmail.com</dd></div>
-          <div class="profile-detail-tile"><dt>Role:</dt><dd>Staff</dd></div>
-          <div class="profile-detail-tile"><dt>Phone Number:</dt><dd>09171234567</dd></div>
-        </dl>
+        <form id="profileForm">
+          <div class="details">
+            <div class="profile-detail-tile field"><label for="profileLast">Lastname</label><input id="profileLast" autocomplete="family-name" required maxlength="80" /></div>
+            <div class="profile-detail-tile field"><label for="profileFirst">Firstname</label><input id="profileFirst" autocomplete="given-name" required maxlength="80" /></div>
+            <div class="profile-detail-tile field"><label for="profileInitial">M.I</label><input id="profileInitial" maxlength="5" /></div>
+            <div class="profile-detail-tile field"><label for="profileEmail">Email Address</label><input id="profileEmail" type="email" autocomplete="email" required maxlength="160" /></div>
+            <div class="profile-detail-tile field"><label for="profileRole">Role</label><input id="profileRole" readonly aria-describedby="profileRoleHelp" /><small id="profileRoleHelp">Managed by an administrator.</small></div>
+            <div class="profile-detail-tile field"><label for="profilePhone">Phone Number</label><input id="profilePhone" type="tel" autocomplete="tel" pattern="(09[0-9]{9}|\+?639[0-9]{9})" title="Enter a Philippine mobile number, such as 09171112233 or +639171112233." /></div>
+          </div>
+          <div class="modal-actions">
+            <button class="btn ghost" type="button" id="cancelProfileBtn">Cancel</button>
+            <button class="btn primary" type="submit" id="saveProfileBtn">Save changes</button>
+          </div>
+          <p id="profileStatus" role="status" aria-live="polite"></p>
+        </form>
 
         </section><section class="profile-security" aria-labelledby="securityTitle"><h2 id="securityTitle">Account &amp; security</h2><p class="security-intro">Manage your password and sign-in session.</p>
         <div class="account-list">
@@ -466,9 +473,18 @@
 <script src="supabase-api.js"></script>
 <script src="sidebar.js"></script>
 <script>
-  (function () {
+  (async function () {
     var user = GcordAPI.requireAuth();
     if (!user) return;
+    var profileInputs = document.querySelectorAll('#profileForm input, #profileForm button');
+    profileInputs.forEach(function (input) { input.disabled = true; });
+    try {
+      var currentProfile = await GcordAPI.getOwnProfile();
+      user = GcordAPI.setSession(Object.assign({}, user, currentProfile));
+      profileInputs.forEach(function (input) { input.disabled = false; });
+    } catch (err) {
+      document.getElementById('profileStatus').textContent = 'Could not load your saved details. Reload the page to try again.';
+    }
 
     var roleLabel = (user.role === 'admin' || user.role === 'super_admin') ? 'Admin' : 'Staff';
     var first = user.first_name || '';
@@ -486,15 +502,56 @@
     if (rolePill) rolePill.textContent = roleLabel;
     if (emailSmall) emailSmall.textContent = user.email || '—';
 
-    var details = document.querySelectorAll('.details dd');
-    if (details.length >= 6) {
-      details[0].textContent = last || '—';
-      details[1].textContent = first || '—';
-      details[2].textContent = '—';
-      details[3].textContent = user.email || '—';
-      details[4].textContent = roleLabel;
-      details[5].textContent = user.phone || '—';
+    var profileForm = document.getElementById('profileForm');
+    var saveProfileBtn = document.getElementById('saveProfileBtn');
+    var cancelProfileBtn = document.getElementById('cancelProfileBtn');
+    var profileStatus = document.getElementById('profileStatus');
+    function fillProfile() {
+      document.getElementById('profileLast').value = user.last_name || last;
+      document.getElementById('profileFirst').value = user.first_name || first;
+      document.getElementById('profileInitial').value = user.middle_initial || '';
+      document.getElementById('profileEmail').value = user.email || '';
+      document.getElementById('profileRole').value = roleLabel;
+      document.getElementById('profilePhone').value = user.phone || '';
     }
+    fillProfile();
+    cancelProfileBtn.addEventListener('click', function () {
+      fillProfile();
+      profileStatus.textContent = '';
+    });
+    profileForm.addEventListener('submit', async function (event) {
+      event.preventDefault();
+      if (!profileForm.reportValidity()) return;
+      var patch = {
+        first_name: document.getElementById('profileFirst').value.trim(),
+        last_name: document.getElementById('profileLast').value.trim(),
+        middle_initial: document.getElementById('profileInitial').value.trim().replace(/\.+$/, ''),
+        email: document.getElementById('profileEmail').value.trim(),
+        phone: document.getElementById('profilePhone').value.trim()
+      };
+      if (!patch.first_name || !patch.last_name) {
+        profileStatus.textContent = 'Enter your first and last names.';
+        return;
+      }
+      saveProfileBtn.disabled = cancelProfileBtn.disabled = true;
+      profileForm.querySelectorAll('input').forEach(function (input) { input.disabled = true; });
+      profileStatus.textContent = 'Saving changes…';
+      try {
+        var saved = await GcordAPI.updateUser(user.id, patch);
+        user = GcordAPI.setSession(Object.assign({}, user, saved));
+        first = user.first_name || '';
+        last = user.last_name || '';
+        fillProfile();
+        heroName.textContent = user.full_name || (first + ' ' + last).trim();
+        emailSmall.textContent = user.email || '—';
+        profileStatus.textContent = 'Personal details saved.';
+      } catch (err) {
+        profileStatus.textContent = err.message || 'Could not save personal details. Please try again.';
+      } finally {
+        saveProfileBtn.disabled = cancelProfileBtn.disabled = false;
+        profileForm.querySelectorAll('input').forEach(function (input) { input.disabled = false; });
+      }
+    });
 
     var modal = document.getElementById('passwordModal');
     var form = document.getElementById('passwordForm');

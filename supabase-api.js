@@ -48,6 +48,7 @@
       email: user.email,
       first_name: user.first_name,
       last_name: user.last_name,
+      middle_initial: user.middle_initial || null,
       middle_name: user.middle_name || null,
       extension_name: user.extension_name || null,
       full_name: user.full_name || [user.first_name, user.middle_name || user.middle_initial, user.last_name, user.extension_name].filter(Boolean).join(' ').trim(),
@@ -436,11 +437,22 @@
     return res.data;
   }
 
+  async function getOwnProfile() {
+    var session = getSession();
+    if (!session || !session.id) throw new Error('Please sign in again.');
+    var res = await requireClient().from('users')
+      .select('id,username,email,first_name,last_name,middle_initial,middle_name,extension_name,full_name,phone,role,status')
+      .eq('id', session.id).single();
+    if (res.error) throw res.error;
+    return res.data;
+  }
+
   async function updateUser(id, patch) {
     var sb = requireClient();
     var data = {};
     if (patch.first_name != null) data.first_name = String(patch.first_name).trim();
     if (patch.last_name != null) data.last_name = String(patch.last_name).trim();
+    if (patch.middle_initial != null) data.middle_initial = String(patch.middle_initial).trim() || null;
     if (patch.middle_name != null) data.middle_name = String(patch.middle_name).trim() || null;
     if (patch.extension_name != null) data.extension_name = String(patch.extension_name).trim() || null;
     if (patch.email != null) data.email = String(patch.email).trim().toLowerCase();
@@ -452,7 +464,7 @@
       data.role = patch.role;
     }
     if (patch.status != null) data.status = patch.status;
-    var res = await sb.from('users').update(data).eq('id', id).select('id,username,email,first_name,last_name,middle_name,extension_name,full_name,phone,role,status').single();
+    var res = await sb.from('users').update(data).eq('id', id).select('id,username,email,first_name,last_name,middle_initial,middle_name,extension_name,full_name,phone,role,status').single();
     if (res.error) throw res.error;
     return res.data;
   }
@@ -740,15 +752,25 @@
         }
         // Read claim details under the current user's existing row permissions.
         var detail = await sb.from('transactions')
-          .select('recipient_name,txn_date,txn_time').eq('id', row.id).maybeSingle();
-        if (!detail.error && detail.data) row = Object.assign({}, row, detail.data);
+          .select('recipient_name,claimant_name,claimed_at,created_at,txn_date,txn_time').eq('id', row.id).maybeSingle();
+        if (!detail.error && detail.data) {
+          row = Object.assign({}, row, detail.data, {
+            claimed_by_name: detail.data.claimant_name || row.claimed_by_name || null,
+            claimed_at: detail.data.claimed_at || row.claimed_at || detail.data.created_at || null
+          });
+        }
       }
       return row || null;
     }
     // Fallback before RLS migration
-    var res = await sb.from('transactions').select('id,ref_no,status,created_by_user_id,recipient_name,txn_date,txn_time').eq('ref_no', key).order('id', { ascending: true }).limit(1);
+    var res = await sb.from('transactions').select('id,ref_no,status,created_by_user_id,recipient_name,claimant_name,claimed_at,created_at,txn_date,txn_time').eq('ref_no', key).order('id', { ascending: true }).limit(1);
     if (res.error) throw res.error;
-    return (res.data && res.data[0]) || null;
+    var fallback = (res.data && res.data[0]) || null;
+    if (fallback) {
+      fallback.claimed_by_name = fallback.claimant_name || null;
+      fallback.claimed_at = fallback.claimed_at || fallback.created_at || null;
+    }
+    return fallback;
   }
 
   async function addTransaction(payload) {
@@ -1211,6 +1233,7 @@
     getUserStats: getUserStats,
     createUser: createUser,
     updateUser: updateUser,
+    getOwnProfile: getOwnProfile,
     changePassword: changePassword,
     deleteUser: deleteUser,
     setUserActiveStatus: setUserActiveStatus,

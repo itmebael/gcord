@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Gcord Admin Settings</title>
+<title>Gcord Admin Profile Management</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
@@ -258,6 +258,42 @@
   @media (max-width: 560px) {
     .form-grid.two { grid-template-columns: 1fr; }
   }
+  /* Profile workspace */
+  body { background: radial-gradient(circle at 8% 6%, #dae7ff, transparent 35%), linear-gradient(135deg, #f7fbff, #eef3fc); }
+  .admin-profile { max-width: 1200px; display: grid; grid-template-columns: minmax(240px, .8fr) minmax(0, 1.7fr); gap: 20px; }
+  .admin-profile .page-banner { grid-column: 1 / -1; margin: 0; padding: 28px; border-radius: 24px; color: #fff; background: linear-gradient(115deg, #285be9, #193cb2); box-shadow: 0 18px 40px -20px #204dc080; }
+  .workspace-kicker { margin-bottom: 8px; font-size: 10px; font-weight: 800; letter-spacing: .13em; color: #e0eaff; }
+  .admin-profile .page-banner h1 { font-size: clamp(23px, 2.4vw, 32px); font-weight: 800; line-height: 1.2; letter-spacing: -.035em; }
+  .admin-profile .page-banner p:last-child { margin-top: 10px; font-size: 13px; line-height: 1.6; color: #e0eaff; }
+  .admin-profile .hero, .admin-profile .panel { min-width: 0; margin: 0; padding: 26px; border: 1px solid #fff; border-radius: 24px; background: linear-gradient(135deg, #ffffffeb, #edf3ffb8); box-shadow: 0 12px 34px #284a9510; }
+  .admin-profile .hero { grid-column: 1; grid-row: 2 / 4; display: flex; flex-direction: column; justify-content: center; gap: 14px; text-align: center; }
+  .admin-profile .hero-avatar { width: 100px; height: 100px; border-radius: 30px; margin-bottom: 8px; box-shadow: 0 12px 28px #2455df30; }
+  .admin-profile .hero-avatar svg { width: 58px; height: 58px; }
+  .admin-profile .hero h2 { font-size: 23px; color: #18315a; line-height: 1.35; }
+  .admin-profile .hero-email { color: #607393; line-height: 1.6; }
+  .admin-profile .role-pill { background: #e4ecff; color: #2454d6; }
+  .admin-profile #account, .admin-profile #password { grid-column: 2; }
+  .admin-profile #security, .admin-profile .panel:last-child { grid-column: 1 / -1; }
+  .admin-profile .panel h3 { font-size: 18px; color: #18315a; margin-bottom: 18px; }
+  .panel-intro { margin: -8px 0 18px; color: #617491; font-size: 13px; line-height: 1.6; }
+  .admin-profile #profileForm > .form-grid.two { display: contents; }
+  .admin-profile #profileForm { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+  .admin-profile #profileForm .field { padding: 15px; border: 1px solid #e1e9fa; border-radius: 14px; background: #ffffffb5; }
+  .admin-profile .field label { color: #617491; font-size: 11px; }
+  .admin-profile .field input { border-radius: 10px; }
+  .admin-profile #profileForm .actions { grid-column: 1 / -1; }
+  .admin-profile .btn { border-radius: 12px; font-size: 13px; }
+  .admin-profile .toggle-row { padding: 16px 0; }
+  @media (max-width: 760px) {
+    .admin-profile { grid-template-columns: minmax(0, 1fr); gap: 14px; }
+    .admin-profile .hero, .admin-profile #account, .admin-profile #password { grid-column: 1; grid-row: auto; }
+    .admin-profile .hero, .admin-profile .panel, .admin-profile .page-banner { padding: 20px; border-radius: 20px; }
+    .admin-profile .hero-avatar { width: 72px; height: 72px; border-radius: 22px; }
+  }
+  @media (max-width: 420px) {
+    .admin-profile #profileForm { grid-template-columns: minmax(0, 1fr); }
+    .admin-profile .actions .btn { flex: 1; }
+  }
 </style>
 </head>
 <body>
@@ -267,10 +303,12 @@
   <main class="main">
     <div id="admin-topbar-root"></div>
 
-    <div class="page">
-      <div class="page-banner">
-        <h1>Admin Settings</h1>
-      </div>
+    <div class="page admin-profile">
+      <header class="page-banner">
+        <p class="workspace-kicker">YOUR WORKSPACE</p>
+        <h1>Profile Management</h1>
+        <p>Your personal details and account settings in one place.</p>
+      </header>
 
       <div class="hero">
         <div class="hero-avatar" aria-hidden="true">
@@ -284,7 +322,7 @@
       </div>
 
       <section class="panel" id="account">
-        <h3>Account Settings</h3>
+        <h3>Personal details</h3>
         <form id="profileForm" class="form-grid" novalidate>
           <div class="form-grid two">
             <div class="field">
@@ -305,8 +343,8 @@
           </div>
           <div class="field">
             <label for="phone">Phone Number</label>
-            <input id="phone" name="phone" type="tel" required />
-            <div class="error">Phone number is required.</div>
+            <input id="phone" name="phone" type="tel" inputmode="numeric" minlength="11" maxlength="11" pattern="[0-9]{11}" required />
+            <div class="error">Phone number must be exactly 11 digits.</div>
           </div>
           <div class="actions">
             <button class="btn ghost" type="button" id="resetProfileBtn">Reset</button>
@@ -316,7 +354,8 @@
       </section>
 
       <section class="panel" id="password">
-        <h3>Change Password</h3>
+        <h3>Account &amp; security</h3>
+        <p class="panel-intro">Keep your account secure by updating your password.</p>
         <form id="passwordForm" class="form-grid" novalidate>
           <div class="field">
             <label for="currentPassword">Current Password</label>
@@ -509,20 +548,25 @@
     }
   })();
 
+  document.getElementById('phone').addEventListener('input', function () {
+    this.value = this.value.replace(/[^0-9]/g, '').slice(0, 11);
+  });
+
   document.getElementById('profileForm').addEventListener('submit', async function (e) {
     e.preventDefault();
     var firstName = document.getElementById('firstName');
     var lastName = document.getElementById('lastName');
     var email = document.getElementById('email');
     var phone = document.getElementById('phone');
+    var phoneOk = /^[0-9]{11}$/.test(phone.value);
     var emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.value.trim());
 
     setInvalid(firstName.closest('.field'), !firstName.value.trim());
     setInvalid(lastName.closest('.field'), !lastName.value.trim());
     setInvalid(email.closest('.field'), !emailOk);
-    setInvalid(phone.closest('.field'), !phone.value.trim());
+    setInvalid(phone.closest('.field'), !phoneOk);
 
-    if (!firstName.value.trim() || !lastName.value.trim() || !emailOk || !phone.value.trim()) {
+    if (!firstName.value.trim() || !lastName.value.trim() || !emailOk || !phoneOk) {
       showToast('Please fix the highlighted fields.', 'err');
       return;
     }

@@ -978,11 +978,11 @@
         lines.push([u.staffName, u.total, u.verified, u.duplicate, GcordAPI.formatAmount(u.cashOut)]);
       });
     } else {
-      lines.push(['Ref No', 'Recipient (GCash owner)', 'Claimed by', 'Number', 'Amount', 'Status', 'Staff', 'Recorded Date', 'Recorded Time', 'Source']);
+      lines.push(['Ref No', 'Recipient (GCash owner)', 'Claimed by', 'Number', 'Amount', 'Status', 'Staff', 'Recorded Date', 'Recorded Time']);
       (report.transactions || []).forEach(function (tx) {
         lines.push([
           tx.ref, tx.recipient, tx.claimant || '', tx.number, tx.amountLabel, tx.status,
-          tx.staffName, tx.recordedDate || tx.date, tx.recordedTime || tx.time, tx.source
+          tx.staffName, tx.recordedDate || tx.date, tx.recordedTime || tx.time
         ]);
       });
 

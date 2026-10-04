@@ -685,8 +685,8 @@
 
   function claimMessage(exists) {
     var time = exists.claimed_at ? new Date(exists.claimed_at) : null;
-    return 'Duplicate — already claimed by ' + (exists.claimed_by_name || 'Unknown (claimant not recorded)') +
-      '. Claimed at: ' + (time && !isNaN(time.getTime()) ? time.toLocaleString('en-PH', {timeZone:'Asia/Manila'}) + ' (Philippine time)' : 'Not recorded') +
+    return 'Duplicate — already claimed by ' + (exists.claimed_by_name || exists.claimant_name || 'Claimant not recorded') +
+      '. Claim / record time: ' + (time && !isNaN(time.getTime()) ? time.toLocaleString('en-PH', {timeZone:'Asia/Manila'}) + ' (Philippine time)' : 'Not recorded') +
       '. This transaction cannot be claimed again.';
   }
 
@@ -701,8 +701,7 @@
     '<div><dt>Claimed by</dt><dd data-duplicate="name"></dd></div>' +
     '<div><dt>Claim time · Philippine time</dt><dd data-duplicate="time"></dd></div></dl>' +
     '<p data-duplicate="save" role="status" aria-live="polite"></p>' +
-    '<button type="submit" value="review" autofocus>Review / Edit Reference</button>' +
-    '<button type="submit" value="transactions">Go to My Transactions</button></form>';
+    '<button type="submit" value="transactions" autofocus>Go to My Transactions</button></form>';
   document.body.appendChild(duplicateDialog);
   var reviewAfterDuplicate = false;
   duplicateDialog.addEventListener('close', function () {
@@ -721,7 +720,7 @@
     duplicateDialog.querySelector('[data-duplicate="save"]').textContent = '';
     var time = original && original.claimed_at ? new Date(original.claimed_at) : null;
     duplicateDialog.querySelector('[data-duplicate="ref"]').textContent = GcordTransactions.normalizeRef(ref);
-    duplicateDialog.querySelector('[data-duplicate="name"]').textContent = original && original.claimed_by_name || 'Claimant not recorded';
+    duplicateDialog.querySelector('[data-duplicate="name"]').textContent = original && (original.claimed_by_name || original.claimant_name) || 'Claimant not recorded';
     duplicateDialog.querySelector('[data-duplicate="time"]').textContent = time && !isNaN(time.getTime())
       ? time.toLocaleString('en-PH', {timeZone: 'Asia/Manila'}) : 'Not recorded';
     if (!duplicateDialog.open) {
