@@ -766,6 +766,10 @@
       }
       return row || null;
     }
+    // Authentication failures must not be turned into an empty table lookup.
+    if (rpc.error.code === '42501' || /not authenticated|session.*(?:expired|invalid)/i.test(rpc.error.message || '')) {
+      throw new Error('Your session is no longer valid. Please sign out and sign in again.');
+    }
     // Fallback before RLS migration
     var res = await sb.from('transactions').select('id,ref_no,status,created_by_user_id,recipient_name,claimant_name,claimed_at,created_at,txn_date,txn_time').eq('ref_no', key).order('id', { ascending: true }).limit(1);
     if (res.error && (res.error.code === '42703' || res.error.code === 'PGRST204')) {

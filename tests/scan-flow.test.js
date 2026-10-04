@@ -110,6 +110,14 @@ async function scan(output, localReader) {
     assert.strictEqual(fields.resultAmount.value, '50000.00');
     assert.strictEqual(fields.resultRef.value, reported[0].reference_number);
     assert.strictEqual(fields.resultReviewWarning.hidden, true);
+    global.fetch = async () => ({ok: false, status: 400,
+      json: async () => ({message: 'Missing workflow input receipt_image; test-key'})});
+    await require('../api/roboflow-workflow')(
+      {method: 'POST', body: {image: 'data:image/png;base64,test'}},
+      {status(code) {assert.equal(code, 400); return this;}, json(body) {responseBody = body;}}
+    );
+    assert.match(responseBody.error, /Missing workflow input receipt_image/);
+    assert(!responseBody.error.includes('test-key'), 'Never return the upstream API key');
   } finally {
     global.fetch = previousFetch;
     if (previousKey === undefined) delete process.env.ROBOFLOW_API_KEY;

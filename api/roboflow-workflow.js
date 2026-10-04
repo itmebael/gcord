@@ -57,11 +57,16 @@ module.exports = async function handler(request, response) {
         inputs: { image: { type: isUrl ? 'url' : 'base64', value: value } }
       })
     });
-    const result = await roboflowResponse.json();
+    const result = await roboflowResponse.json().catch(() => null);
     if (!roboflowResponse.ok) {
+      // Return the upstream reason without exposing the API key or image payload.
+      const reason = result && (result.message || result.error || result.detail);
+      const detail = typeof reason === 'string'
+        ? reason.split(process.env.ROBOFLOW_API_KEY).join('[redacted]').slice(0, 500) : '';
       const message = roboflowResponse.status === 401
         ? 'Receipt extraction failed (HTTP 401): Roboflow rejected the API key. Check ROBOFLOW_API_KEY in Vercel Project Settings > Environment Variables for the deployed environment, then redeploy.'
-        : 'Receipt extraction failed (HTTP ' + roboflowResponse.status + ').';
+        : 'Receipt extraction failed (HTTP ' + roboflowResponse.status + ').' + (detail ? ' ' + detail : '') +
+          (roboflowResponse.status === 400 ? ' Check the deployed Roboflow workflow URL and its image input configuration.' : '');
       response.status(roboflowResponse.status).json({
         error: message
       });
