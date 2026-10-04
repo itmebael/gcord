@@ -6,7 +6,7 @@ const source = fs.readFileSync(path.join(__dirname, '../scan.html'), 'utf8');
 const start = source.indexOf('  async function runRoboflow(imageDataUrl) {');
 const end = source.indexOf("  document.querySelectorAll('.mode-tab')", start);
 
-async function scan(output, localReader) {
+async function scan(output, localReader, detectedText) {
   const opened = [];
   const messages = [];
   const button = { disabled: false };
@@ -24,7 +24,7 @@ async function scan(output, localReader) {
   vm.createContext(context);
   vm.runInContext(fs.readFileSync(path.join(__dirname, '../transactions.js'), 'utf8'), context);
   vm.runInContext(source.slice(start, end), context);
-  await context.runOcr('data:image/png;base64,test');
+  await context.runOcr('data:image/png;base64,test', detectedText);
   assert.strictEqual(context.busy, false);
   assert.strictEqual(button.disabled, false);
   return { opened, messages };
@@ -45,6 +45,11 @@ async function scan(output, localReader) {
     assert.strictEqual(result.opened[0].number, receipt.number);
     assert.strictEqual(result.opened[0].reviewRequired, false);
   }
+  const reused = await scan({ ...receipt, name: '' }, reader,
+    { text: 'GCash\nRecipient Name: JU** CR**\nAmount PHP 999.00' });
+  assert.strictEqual(reused.opened[0].recipient, 'JU** CR**');
+  assert.strictEqual(reused.opened[0].amount, receipt.amount);
+  assert.strictEqual(localCalls, 0, 'Reuse detection OCR without reading the same image again');
   const partial = await scan([{ ...receipt, name: '', date: '', parse_error: true }], reader);
   assert.strictEqual(partial.opened.length, 1, 'Incomplete workflow result must open for manual review');
   assert.strictEqual(partial.opened[0].recipient, '');

@@ -745,14 +745,17 @@
     if (!rpc.error) {
       var row = Array.isArray(rpc.data) ? rpc.data[0] : (rpc.data && rpc.data[0]) || rpc.data;
       if (row) {
-        var claim = await sb.rpc('app_duplicate_claim_details', { p_ref: key });
+        // These reads are independent; avoid an extra network round trip of waiting.
+        var details = await Promise.all([
+          sb.rpc('app_duplicate_claim_details', { p_ref: key }),
+          sb.from('transactions')
+            .select('recipient_name,claimant_name,claimed_at,created_at,txn_date,txn_time').eq('id', row.id).maybeSingle()
+        ]);
+        var claim = details[0], detail = details[1];
         if (!claim.error) {
           var claimRow = Array.isArray(claim.data) ? claim.data[0] : claim.data;
           if (claimRow) row = Object.assign({}, row, claimRow);
         }
-        // Read claim details under the current user's existing row permissions.
-        var detail = await sb.from('transactions')
-          .select('recipient_name,claimant_name,claimed_at,created_at,txn_date,txn_time').eq('id', row.id).maybeSingle();
         if (detail.error && (detail.error.code === '42703' || detail.error.code === 'PGRST204')) {
           detail = await sb.from('transactions')
             .select('recipient_name,claimant_name,created_at,txn_date,txn_time').eq('id', row.id).maybeSingle();

@@ -17,6 +17,21 @@ async function lookup(rpcAvailable, detailsAvailable) {
   return context.findTransactionByRef('1234567890123');
 }
 (async () => {
+  let detailStarted = false, releaseClaim;
+  const parallelClient = {
+    rpc: async name => name === 'app_find_transaction_by_ref'
+      ? {data: [{id: 42}]} : new Promise(resolve => {releaseClaim = resolve;}),
+    from: () => ({select() {return this;}, eq() {return this;},
+      maybeSingle: async () => {detailStarted = true; return {data: {claimant_name: 'Customer'}};}})
+  };
+  const parallelContext = {requireClient: () => parallelClient, normalizeRef: ref => ref};
+  vm.createContext(parallelContext);
+  vm.runInContext(source.slice(source.indexOf('  async function findTransactionByRef('), source.indexOf('  async function addTransaction(')), parallelContext);
+  const checking = parallelContext.findTransactionByRef('1234567890123');
+  await new Promise(setImmediate);
+  assert(detailStarted, 'Protected details load while the claim RPC is still pending');
+  releaseClaim({data: [{claimed_by_name: 'Customer'}]});
+  assert.equal((await checking).claimed_by_name, 'Customer');
   for (const code of ['42703', 'PGRST204']) {
     const selections = [];
     const sb = {

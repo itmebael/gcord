@@ -31,7 +31,7 @@ window.createScannerAutoCapture = function(video, frame, hint, toggle, capture, 
       ]);
       if(token!==generation||!toggle.checked||!available()||document.hidden||fired)return;
       if(window.isAutoCaptureReceipt(result.data)){
-        approved={image:image,at:performance.now()};frame.classList.add('capture-ready');hint.textContent='Receipt detected — hold still to capture.';
+        approved={image:image,ocr:result.data,at:performance.now()};frame.classList.add('capture-ready');hint.textContent='Receipt detected — hold still to capture.';
       }else{anchor=null;hint.textContent='No readable GCash receipt detected. Show its reference, amount and date.';}
     }catch(error){if(token===generation)hint.textContent='Could not read the receipt. Reposition it or use Capture.';}
     finally{clearTimeout(timeout);if(check===inspection){checking=false;nextCheck=performance.now()+3000;}}
@@ -55,7 +55,7 @@ window.createScannerAutoCapture = function(video, frame, hint, toggle, capture, 
       var lit=mean>55&&mean<235&&clipped/n<.65,clear=contrast>24&&edges/(n*2)>7;
       if(!lit||!clear||!steady){invalidate();hint.textContent=!lit?'Adjust lighting to reduce darkness or glare.':!clear?'Move closer and let the camera focus.':'Hold the receipt steady.';return;}
       if(!ready)ready=performance.now();
-      if(approved){if(performance.now()-approved.at>=1200){var image=approved.image;fired=true;stop();capture(image);}return;}
+      if(approved){if(performance.now()-approved.at>=1200){var image=approved.image,ocr=approved.ocr;fired=true;stop();capture(image,ocr);}return;}
       if(!checking&&performance.now()>=nextCheck&&performance.now()-ready>=1200)inspect(w,h,gray);
     }catch(error){reset();hint.textContent='Waiting for a readable camera frame. Use Capture or Upload if needed.';}
   }
