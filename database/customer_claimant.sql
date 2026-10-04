@@ -8,7 +8,9 @@ LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path = pg_catalog, public AS
 BEGIN
   IF public.app_current_user_id() IS NULL THEN RAISE EXCEPTION 'Not authenticated'; END IF;
   -- Legacy verified records use their saved record time when no claim timestamp exists.
-  RETURN QUERY SELECT t.id, t.ref_no, NULLIF(trim(t.claimant_name), '')::varchar, COALESCE(t.claimed_at, t.created_at)
+  -- JSON access also supports schemas without the optional earnings claimed_at column.
+  RETURN QUERY SELECT t.id, t.ref_no, NULLIF(trim(t.claimant_name), '')::varchar,
+    COALESCE((to_jsonb(t)->>'claimed_at')::timestamptz, t.created_at::timestamptz)
   FROM public.transactions t
   WHERE regexp_replace(t.ref_no, '[^0-9]', '', 'g') = regexp_replace(COALESCE(p_ref, ''), '[^0-9]', '', 'g')
     AND t.status = 'verified' ORDER BY t.id LIMIT 1;

@@ -753,6 +753,10 @@
         // Read claim details under the current user's existing row permissions.
         var detail = await sb.from('transactions')
           .select('recipient_name,claimant_name,claimed_at,created_at,txn_date,txn_time').eq('id', row.id).maybeSingle();
+        if (detail.error && (detail.error.code === '42703' || detail.error.code === 'PGRST204')) {
+          detail = await sb.from('transactions')
+            .select('recipient_name,claimant_name,created_at,txn_date,txn_time').eq('id', row.id).maybeSingle();
+        }
         if (!detail.error && detail.data) {
           row = Object.assign({}, row, detail.data, {
             claimed_by_name: detail.data.claimant_name || row.claimed_by_name || null,
@@ -764,6 +768,9 @@
     }
     // Fallback before RLS migration
     var res = await sb.from('transactions').select('id,ref_no,status,created_by_user_id,recipient_name,claimant_name,claimed_at,created_at,txn_date,txn_time').eq('ref_no', key).order('id', { ascending: true }).limit(1);
+    if (res.error && (res.error.code === '42703' || res.error.code === 'PGRST204')) {
+      res = await sb.from('transactions').select('id,ref_no,status,created_by_user_id,recipient_name,claimant_name,created_at,txn_date,txn_time').eq('ref_no', key).order('id', { ascending: true }).limit(1);
+    }
     if (res.error) throw res.error;
     var fallback = (res.data && res.data[0]) || null;
     if (fallback) {
