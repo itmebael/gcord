@@ -1066,7 +1066,7 @@
     if (busy) return;
     var shot = captureFromVideo();
     if (!shot) return;
-    await runOcr(shot, detectedText);
+    await runOcr(shot);
   });
 
   document.getElementById('uploadBtn').addEventListener('click', function () {

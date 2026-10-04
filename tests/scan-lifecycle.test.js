@@ -15,6 +15,27 @@ vm.createContext(context);
 vm.runInContext(source.slice(source.indexOf('  async function openResult('), source.indexOf('  function readPayloadFromForm(')), context);
 
 (async () => {
+  let captureClick;
+  const capturedShots = [];
+  const captureContext = {
+    busy: false,
+    document: {getElementById: () => ({addEventListener: (event, handler) => {captureClick = handler;}})},
+    captureFromVideo: () => 'data:image/jpeg;base64,captured',
+    runOcr: async (...args) => {capturedShots.push(args);}
+  };
+  vm.createContext(captureContext);
+  const captureStart = source.indexOf("  document.getElementById('captureBtn').addEventListener");
+  const captureEnd = source.indexOf("  document.getElementById('uploadBtn').addEventListener", captureStart);
+  vm.runInContext(source.slice(captureStart, captureEnd), captureContext);
+  await captureClick();
+  assert.deepEqual(capturedShots, [['data:image/jpeg;base64,captured']], 'Capture sends the photo to OCR without requiring auto-detection text');
+  captureContext.busy = true;
+  await captureClick();
+  captureContext.busy = false;
+  captureContext.captureFromVideo = () => null;
+  await captureClick();
+  assert.equal(capturedShots.length, 1, 'Busy or unready camera must not start another scan');
+
   let discarded = 0;
   Object.assign(context, {
     savePayload: {}, preview: {removeAttribute: noop, style: {}}, showToast: noop, startCamera: noop,
