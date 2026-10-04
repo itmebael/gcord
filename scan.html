@@ -701,16 +701,13 @@
     '<div><dt>Claimed by</dt><dd data-duplicate="name"></dd></div>' +
     '<div><dt>Claim time · Philippine time</dt><dd data-duplicate="time"></dd></div></dl>' +
     '<p data-duplicate="save" role="status" aria-live="polite"></p>' +
-    '<button type="button" data-duplicate="record" autofocus>Record blocked duplicate</button>' +
-    '<button type="submit" value="review">Review reference</button>' +
-    '<button type="submit" value="transactions">Go to My Transactions</button></form>';
+    '<button type="submit" value="transactions" autofocus>Go to My Transactions</button></form>';
   document.body.appendChild(duplicateDialog);
   var reviewAfterDuplicate = false;
   var duplicateRecording = false;
   duplicateDialog.addEventListener('cancel', function (event) {
     if (duplicateRecording) event.preventDefault();
   });
-  duplicateDialog.querySelector('[data-duplicate="record"]').addEventListener('click', recordBlockedDuplicate);
   async function recordBlockedDuplicate() {
     if (duplicateRecording || duplicateDialog.dataset.recorded === 'true') return;
     duplicateRecording = true;
@@ -727,7 +724,6 @@
     } finally {
       duplicateRecording = false;
       buttons.forEach(function (button) { button.disabled = false; });
-      duplicateDialog.querySelector('[data-duplicate="record"]').disabled = duplicateDialog.dataset.recorded === 'true';
     }
   }
   duplicateDialog.addEventListener('close', function () {
@@ -740,13 +736,12 @@
     resultBackdrop.classList.add('active');
     resultBackdrop.setAttribute('aria-hidden', 'false');
   });
-  function showDuplicatePopup(original, ref) {
+  function showDuplicatePopup(original, ref, alreadyRecorded) {
     clearTimeout(showToast._t);
     toast.className = 'toast';
     duplicateDialog.querySelector('[data-duplicate="save"]').textContent = '';
     duplicateDialog.dataset.ref = GcordTransactions.normalizeRef(ref);
-    duplicateDialog.dataset.recorded = 'false';
-    duplicateDialog.querySelector('[data-duplicate="record"]').disabled = false;
+    duplicateDialog.dataset.recorded = alreadyRecorded ? 'true' : 'false';
     var time = original && original.claimed_at ? new Date(original.claimed_at) : null;
     duplicateDialog.querySelector('[data-duplicate="ref"]').textContent = GcordTransactions.normalizeRef(ref);
     duplicateDialog.querySelector('[data-duplicate="name"]').textContent = original && (original.claimed_by_name || original.claimant_name) || 'Claimant not recorded';
@@ -756,6 +751,11 @@
       duplicateDialog.returnValue = '';
       duplicateDialog.showModal();
     }
+    if (alreadyRecorded) {
+      duplicateDialog.querySelector('[data-duplicate="save"]').textContent = 'Blocked duplicate recorded. You can view it in My Transactions.';
+      return Promise.resolve();
+    }
+    return recordBlockedDuplicate();
   }
 
   function checkClaimBanner(input, banner) {
@@ -767,8 +767,10 @@
       banner.classList.toggle('show', !!exists);
       if (exists) {
         banner.textContent = claimMessage(exists);
-        if (banner.dataset.popupRef !== ref) showDuplicatePopup(exists, ref);
-        banner.dataset.popupRef = ref;
+        if (banner.dataset.popupRef !== ref) {
+          banner.dataset.popupRef = ref;
+          return showDuplicatePopup(exists, ref).then(function () { return exists; });
+        }
       } else {
         delete banner.dataset.popupRef;
       }
@@ -788,8 +790,6 @@
     delete dupBanner.dataset.popupRef;
     var duplicate = await fillResultForm(data);
     if (duplicate) {
-      reviewAfterDuplicate = true;
-      duplicateDialog.querySelector('[data-duplicate="save"]').textContent = 'Preview only. Nothing has been saved. Review the reference before saving.';
       return duplicate;
     }
     resultBackdrop.classList.add('active');
@@ -897,14 +897,11 @@
       try {
         var original = await GcordTransactions.findByRef(data.ref);
         banner.textContent = original ? claimMessage(original) : 'Duplicate blocked. Original claim details are unavailable.';
-        showDuplicatePopup(original, data.ref);
+        showDuplicatePopup(original, data.ref, true);
       } catch (error) {
         banner.textContent = 'Duplicate blocked. Could not load original claim details.';
-        showDuplicatePopup(null, data.ref);
+        showDuplicatePopup(null, data.ref, true);
       }
-      duplicateDialog.dataset.recorded = 'true';
-      duplicateDialog.querySelector('[data-duplicate="record"]').disabled = true;
-      duplicateDialog.querySelector('[data-duplicate="save"]').textContent = 'Blocked duplicate recorded. You can view it in My Transactions.';
       return result;
     } else {
       showToast('Transaction saved to Transaction Management.');

@@ -47,7 +47,7 @@ const vm = require('node:vm');
   await context.recordBlockedDuplicate();
   assert.equal(calls, 1, 'Repeated clicks save one blocked attempt');
   assert.equal(context.duplicateDialog.dataset.recorded, 'true');
-  assert.equal(buttons[0].disabled, true);
+  assert.equal(buttons[0].disabled, false);
   assert.equal(buttons[1].disabled, false);
   context.duplicateDialog.dataset.recorded = 'false';
   context.GcordAPI.recordDuplicateScan = async () => {throw new Error('Database unavailable');};
@@ -55,5 +55,18 @@ const vm = require('node:vm');
   assert.equal(context.duplicateDialog.dataset.recorded, 'false');
   assert.equal(buttons[0].disabled, false, 'Failed saves allow retry');
   assert.match(message.textContent, /Database unavailable/);
-  console.log('Explicit duplicate recording, errors and repeated clicks PASS');
+  assert(!scan.includes('Record blocked duplicate</button>'));
+  assert(!scan.includes('Review reference</button>'));
+  Object.assign(context, {
+    clearTimeout: () => {}, showToast: {}, toast: {},
+    GcordTransactions: {normalizeRef: ref => ref},
+    recordBlockedDuplicate: async () => {calls++;},
+  });
+  context.duplicateDialog.showModal = () => {context.duplicateDialog.open = true;};
+  vm.runInContext(scan.slice(scan.indexOf('  function showDuplicatePopup('), scan.indexOf('  function checkClaimBanner(')), context);
+  await context.showDuplicatePopup(null, '1234567890123');
+  assert.equal(calls, 2, 'Detected duplicates record automatically');
+  await context.showDuplicatePopup(null, '1234567890123', true);
+  assert.equal(calls, 2, 'Already saved duplicates do not create another record');
+  console.log('Automatic duplicate recording, errors and repeated calls PASS');
 })().catch(error => {console.error(error); process.exitCode = 1;});
