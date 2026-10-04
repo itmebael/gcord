@@ -145,19 +145,22 @@
       if (!match) return false;
       return acceptName(match[1]) || (!match[1].trim() && acceptName(lines[index + 1] || ''));
     });
+    // Prefer a name beside or directly above the recipient phone over unrelated masks.
+    if (!result.recipient) {
+      lines.some(function (line, index) {
+        if (!result.number || normalizeNumber(line) !== result.number) return false;
+        if (/\b(?:from|sender)\b/i.test(line + ' ' + (lines[index - 1] || ''))) return false;
+        if (acceptName(line)) return true;
+        if (index === 0) return false;
+        var candidate = lines[index - 1];
+        if (/\b(?:from|sender)\b/i.test(candidate + ' ' + (lines[index - 2] || ''))) return false;
+        return acceptName(candidate);
+      });
+    }
     if (!result.recipient) {
       lines.some(function (line, index) {
         if (/\b(?:from|sender)\b/i.test(line + ' ' + (lines[index - 1] || ''))) return false;
         return /[*\u2022\u2217\u25cf\uff0a\u00b7\u2027\u2219]|\.(?:[ \t]*\.)+/.test(line) && acceptName(line);
-      });
-    }
-    // Common receipt layout: an unlabelled recipient name directly above their phone.
-    if (!result.recipient) {
-      lines.some(function (line, index) {
-        if (!result.number || normalizeNumber(line) !== result.number || index === 0) return false;
-        var candidate = lines[index - 1];
-        if (/\b(?:from|sender)\b/i.test(candidate + ' ' + (lines[index - 2] || ''))) return false;
-        return acceptName(candidate);
       });
     }
 

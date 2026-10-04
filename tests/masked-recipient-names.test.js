@@ -72,3 +72,6 @@ for (const [amount, expected] of [[150, '150'], [150.5, '150.5'], ['150.00', '15
 console.log('Workflow amount formats: PASS');
 assert.strictEqual(context.GcordTransactions.parseGCashText('GCash\nSender\nJO** S.\nAmount PHP 100.00').recipient, '', 'Never use masked sender as GCash owner');
 assert.strictEqual(context.GcordTransactions.parseGCashText('GCash\nSender\nJO** S.\nRecipient: MA** R.\nAmount PHP 100.00').recipient, 'MA** R.', 'Use recipient when sender is also present');
+assert.strictEqual(context.GcordTransactions.parseGCashText('GCash\nJUAN DELA CRUZ 09171234567\nAmount PHP 100.00').recipient, 'JUAN DELA CRUZ', 'Read an unmasked name merged with its phone');
+assert.strictEqual(context.GcordTransactions.parseGCashText('GCash\nOTHER** NAME\nJUAN DELA CRUZ\n09171234567\nAmount PHP 100.00').recipient, 'JUAN DELA CRUZ', 'Prefer the recipient beside the phone over unrelated masked text');
+assert.strictEqual(context.GcordTransactions.parseGCashText('GCash\nSender\nJUAN DELA CRUZ 09171234567\nAmount PHP 100.00').recipient, '', 'Do not use a merged sender name and phone');
