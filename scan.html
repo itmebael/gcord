@@ -1007,6 +1007,16 @@
       ocrProgress.textContent = 'Checking receipt with Roboflow...';
       var roboflowResult = await runRoboflow(imageDataUrl);
       var parsed = GcordTransactions.parseRoboflowResult(roboflowResult);
+      if (roboflowResult && !roboflowResult.fallback) {
+        // Preserve the Workflow's masked name, including bullets and asterisks.
+        var workflowName = String(roboflowResult.name ?? '').trim();
+        if (workflowName) {
+          parsed = parsed || {};
+          parsed.recipient = workflowName;
+        }
+      }
+      console.log('Workflow name:', roboflowResult?.name);
+      console.log('Parsed recipient:', parsed?.recipient);
       var fallbackReviewMessage = roboflowResult && (roboflowResult.reviewMessage || roboflowResult.warning)
         || 'Cloud scanning was unavailable. These details came from local OCR; check them against the receipt before saving.';
       if (roboflowResult && roboflowResult.fallback) {
