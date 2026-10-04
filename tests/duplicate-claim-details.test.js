@@ -17,6 +17,30 @@ async function lookup(rpcAvailable, detailsAvailable) {
   return context.findTransactionByRef('1234567890123');
 }
 (async () => {
+  for (const code of ['42703', 'PGRST204']) {
+    const selections = [];
+    const sb = {
+      rpc: async () => ({error: {code: 'PGRST202', message: 'Function not found'}}),
+      from: () => ({select(columns) {selections.push(columns); this.columns = columns; return this;},
+        eq() {return this;}, order() {return this;},
+        async limit() {
+          return /claimant_name|claimed_at/.test(this.columns)
+            ? {error: {code, message: 'Column not found'}}
+            : {data: [{id: 42, created_at: '2026-09-22T02:00:00Z'}]};
+        }})
+    };
+    const legacy = {requireClient: () => sb, normalizeRef: value => value};
+    vm.createContext(legacy);
+    vm.runInContext(source.slice(source.indexOf('  async function findTransactionByRef('), source.indexOf('  async function addTransaction(')), legacy);
+    const result = await legacy.findTransactionByRef('1234567890123');
+    assert.equal(result.id, 42);
+    assert.equal(result.claimed_by_name, null);
+    assert.equal(result.claimed_at, '2026-09-22T02:00:00Z');
+    assert.equal(selections.length, 3);
+    sb.from = () => ({select() {return this;}, eq() {return this;}, order() {return this;},
+      limit: async () => ({error: {code: '42501', message: 'Access denied'}})});
+    await assert.rejects(legacy.findTransactionByRef('1234567890123'), error => error.code === '42501');
+  }
   for (const rpc of [true, false]) {
     const result = await lookup(rpc, true);
     assert.equal(result.claimed_by_name, 'Cash Customer');

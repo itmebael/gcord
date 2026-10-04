@@ -771,6 +771,10 @@
     if (res.error && (res.error.code === '42703' || res.error.code === 'PGRST204')) {
       res = await sb.from('transactions').select('id,ref_no,status,created_by_user_id,recipient_name,claimant_name,created_at,txn_date,txn_time').eq('ref_no', key).order('id', { ascending: true }).limit(1);
     }
+    if (res.error && (res.error.code === '42703' || res.error.code === 'PGRST204')) {
+      // Older databases may have neither of the optional claim columns yet.
+      res = await sb.from('transactions').select('id,ref_no,status,created_by_user_id,recipient_name,created_at,txn_date,txn_time').eq('ref_no', key).order('id', { ascending: true }).limit(1);
+    }
     if (res.error) throw res.error;
     var fallback = (res.data && res.data[0]) || null;
     if (fallback) {
